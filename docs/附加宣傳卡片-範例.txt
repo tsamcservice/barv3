@@ -1,0 +1,269 @@
+附加宣傳卡片
+
+【卡片一】
+{
+  "type": "bubble",
+  "size": "mega",
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "image",
+        "url": "https://cdn.smore.com/u/thumbs/f7a7/thumb-6bac36890ed7ace90443b5d2173aaa6e.jpeg",
+        "size": "full",
+        "aspectRatio": "10:12",
+        "aspectMode": "cover",
+        "margin": "15px"
+      },
+      {
+        "type": "image",
+        "url": "https://raw.githubusercontent.com/tsamcservice/tsamcservice.github.io/main/data/images/png-f2.png",
+        "position": "absolute",
+        "size": "300px",
+        "margin": "none",
+        "animated": true,
+        "aspectMode": "fit",
+        "aspectRatio": "20:2"
+      },
+      {
+        "type": "image",
+        "url": "https://raw.githubusercontent.com/tsamcservice/tsamcservice.github.io/main/data/images/PNG2.png",
+        "size": "300px",
+        "aspectRatio": "100:125",
+        "animated": true,
+        "aspectMode": "cover",
+        "position": "absolute"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "spacing": "none",
+        "contents": [],
+        "offsetTop": "250px",
+        "offsetStart": "10px"
+      },
+      {
+        "size": "xl",
+        "text": "英文小旅行X心靈大冒險",
+        "type": "text",
+        "align": "center",
+        "weight": "bold",
+        "margin": "md"
+      },
+      {
+        "type": "text",
+        "text": "5/19(一)10:00~12:00",
+        "align": "center",
+        "margin": "sm",
+        "size": "xl"
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [],
+        "paddingEnd": "65px",
+        "paddingStart": "5px"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "button",
+            "color": "#A4924A",
+            "style": "primary",
+            "height": "sm",
+            "offsetEnd": "1px",
+            "action": {
+              "type": "uri",
+              "label": "報名玩玩",
+              "uri": "https://forms.gle/hWKgry37mAmQRpDr8"
+            }
+          },
+          {
+            "type": "button",
+            "color": "#A4924B",
+            "style": "primary",
+            "height": "sm",
+            "offsetStart": "1px",
+            "action": {
+              "type": "uri",
+              "label": "分享好友",
+              "uri": "SSSS"
+            }
+          }
+        ],
+        "margin": "md"
+      }
+    ],
+    "backgroundColor": "#E1E6E0",
+    "paddingAll": "none"
+  },
+  "footer": {
+    "type": "box",
+    "layout": "horizontal",
+    "spacing": "none",
+    "contents": [
+      {
+        "type": "text",
+        "text": "呈璽元宇宙3D展覽館",
+        "wrap": true,
+        "color": "#00000050",
+        "align": "center",
+        "action": {
+          "type": "uri",
+          "label": "action",
+          "uri": "https://lihi3.cc/LY5qf"
+        },
+        "size": "sm",
+        "margin": "none"
+      }
+    ],
+    "backgroundColor": "#E1E6E0",
+    "height": "30px",
+    "margin": "none",
+    "paddingAll": "2px"
+  },
+  "styles": {
+    "footer": {
+      "separatorColor": "#000000",
+      "separator": true
+    }
+  }
+}
+
+
+
+【卡片二】
+{
+  "type": "bubble",
+  "size": "mega",
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "image",
+        "url": "https://cdn.smore.com/u/thumbs/a2ff/thumb-f16c05e460f10521643137cf7c700b62.jpeg",
+        "size": "full",
+        "aspectRatio": "10:12",
+        "aspectMode": "cover",
+        "margin": "15px"
+      },
+      {
+        "type": "image",
+        "url": "https://raw.githubusercontent.com/tsamcservice/tsamcservice.github.io/main/data/images/png-f2.png",
+        "position": "absolute",
+        "size": "300px",
+        "margin": "none",
+        "animated": true,
+        "aspectMode": "fit",
+        "aspectRatio": "20:2"
+      },
+      {
+        "type": "image",
+        "url": "https://raw.githubusercontent.com/tsamcservice/tsamcservice.github.io/main/data/images/PNG2.png",
+        "size": "300px",
+        "aspectRatio": "100:125",
+        "animated": true,
+        "aspectMode": "cover",
+        "position": "absolute"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "spacing": "none",
+        "contents": [],
+        "offsetTop": "250px",
+        "offsetStart": "10px"
+      },
+      {
+        "size": "xl",
+        "text": "人類圖桌遊",
+        "type": "text",
+        "align": "center",
+        "weight": "bold",
+        "margin": "md"
+      },
+      {
+        "type": "text",
+        "text": "5/19(一)14:00~17:00",
+        "align": "center",
+        "margin": "sm",
+        "size": "xl"
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [],
+        "paddingEnd": "65px",
+        "paddingStart": "5px"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "button",
+            "color": "#A4924A",
+            "style": "primary",
+            "height": "sm",
+            "offsetEnd": "1px",
+            "action": {
+              "type": "uri",
+              "label": "報名玩玩",
+              "uri": "https://forms.gle/hWKgry37mAmQRpDr8"
+            }
+          },
+          {
+            "type": "button",
+            "color": "#A4924B",
+            "style": "primary",
+            "height": "sm",
+            "offsetStart": "1px",
+            "action": {
+              "type": "uri",
+              "label": "分享好友",
+              "uri": "SSSS"
+            }
+          }
+        ],
+        "margin": "md"
+      }
+    ],
+    "backgroundColor": "#E1E6E0",
+    "paddingAll": "none"
+  },
+  "footer": {
+    "type": "box",
+    "layout": "horizontal",
+    "spacing": "none",
+    "contents": [
+      {
+        "type": "text",
+        "text": "呈璽元宇宙3D展覽館",
+        "wrap": true,
+        "color": "#00000050",
+        "align": "center",
+        "action": {
+          "type": "uri",
+          "label": "action",
+          "uri": "https://lihi3.cc/LY5qf"
+        },
+        "size": "sm",
+        "margin": "none"
+      }
+    ],
+    "backgroundColor": "#E1E6E0",
+    "height": "30px",
+    "margin": "none",
+    "paddingAll": "2px"
+  },
+  "styles": {
+    "footer": {
+      "separatorColor": "#000000",
+      "separator": true
+    }
+  }
+}

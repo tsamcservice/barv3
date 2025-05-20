@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我專屬的會員卡片</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="js/flex2html.css">
+    <script src="js/flex2html.min.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container { 
+            display: flex; 
+            gap: 32px; 
+            margin: 32px auto; 
+            max-width: 1200px;
+            padding: 0 16px;
+        }
+        .form-section { 
+            flex: 1; 
+            background: #fff; 
+            padding: 24px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+        .preview-section { 
+            flex: 1; 
+            background: #fff; 
+            padding: 24px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+        .form-group { 
+            margin-bottom: 16px; 
+        }
+        label { 
+            display: block; 
+            font-weight: bold; 
+            margin-bottom: 4px;
+            color: #333;
+        }
+        input[type="text"], 
+        input[type="url"], 
+        input[type="color"] { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="text"]:focus, 
+        input[type="url"]:focus { 
+            border-color: #4caf50;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+        }
+        .promo-list { 
+            display: flex; 
+            gap: 8px; 
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .promo-card-thumb { 
+            border: 2px solid #ddd; 
+            border-radius: 6px; 
+            width: 120px; 
+            height: 160px; 
+            overflow: hidden; 
+            cursor: pointer; 
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .promo-card-thumb:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .promo-card-thumb.selected { 
+            border-color: #4caf50;
+            box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+        }
+        .promo-card-thumb .sort-btn { 
+            position: absolute; 
+            top: 4px; 
+            right: 4px; 
+            background: #fff; 
+            border: 1px solid #ddd; 
+            border-radius: 50%; 
+            width: 24px; 
+            height: 24px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        .promo-card-thumb .sort-btn:hover {
+            background: #f5f5f5;
+            border-color: #4caf50;
+        }
+        .sort-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 載入中狀態 */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4caf50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 儲存按鈕樣式 */
+        button[type="submit"],
+        button.save-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.2s ease;
+        }
+        button[type="submit"]:hover,
+        button.save-button:hover {
+            background: #45a049;
+        }
+        button[type="submit"]:disabled,
+        button.save-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        /* 錯誤訊息樣式 */
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 16px 0;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center; margin-top:24px;">我專屬的會員卡片</h1>
+    <div class="container">
+        <div class="form-section">
+            <div class="liff-user" id="liffUser"></div>
+            <form id="cardForm">
+                <div class="form-group">
+                    <label>主圖連結（前台/後台皆可改）</label>
+                    <input type="url" id="main_image_url" name="main_image_url">
+                    <input type="file" id="main_image_upload" accept="image/*" style="display:inline-block;width:auto;">
+                    <button type="button" id="main_image_upload_btn">上傳</button>
+                    <img id="main_image_preview" src="" style="max-width:80px;max-height:80px;display:none;margin-top:4px;">
+                </div>
+                <div class="form-group">
+                    <label>主圖前雪花動畫（僅後台可改）</label>
+                    <input type="url" id="snow_image_url" name="snow_image_url">
+                    <input type="file" id="snow_image_upload" accept="image/*" style="display:inline-block;width:auto;">
+                    <button type="button" id="snow_image_upload_btn">上傳</button>
+                    <img id="snow_image_preview" src="" style="max-width:80px;max-height:80px;display:none;margin-top:4px;">
+                </div>
+                <div class="form-group">
+                    <label>主圖後連結（前台/後台皆可改）</label>
+                    <input type="url" id="main_image_link" name="main_image_link">
+                </div>
+                <div class="form-group">
+                    <label>行事曆圖片（僅後台可改）</label>
+                    <input type="url" id="calendar_image_url" name="calendar_image_url">
+                    <input type="file" id="calendar_image_upload" accept="image/*" style="display:inline-block;width:auto;">
+                    <button type="button" id="calendar_image_upload_btn">上傳</button>
+                    <img id="calendar_image_preview" src="" style="max-width:80px;max-height:80px;display:none;margin-top:4px;">
+                </div>
+                <div class="form-group">
+                    <label>行事曆下會員編號（僅後台可改）</label>
+                    <input type="text" id="amember_id" name="amember_id">
+                </div>
+                <div class="form-group">
+                    <label>愛心圖片（僅後台可改）</label>
+                    <input type="url" id="love_icon_url" name="love_icon_url">
+                    <input type="file" id="love_icon_upload" accept="image/*" style="display:inline-block;width:auto;">
+                    <button type="button" id="love_icon_upload_btn">上傳</button>
+                    <img id="love_icon_preview" src="" style="max-width:80px;max-height:80px;display:none;margin-top:4px;">
+                </div>
+                <div class="form-group">
+                    <label>愛心圖片下號碼（瀏覽數，僅後台可改）</label>
+                    <input type="text" id="pageview" name="pageview">
+                </div>
+                <div class="form-group">
+                    <label>主標題（前台/後台皆可改）</label>
+                    <input type="text" id="main_title_1" name="main_title_1">
+                </div>
+                <div class="form-group">
+                    <label>主標題顏色（前台/後台皆可改）</label>
+                    <input type="color" id="main_title_1_color" name="main_title_1_color" value="#000000">
+                </div>
+                <div class="form-group">
+                    <label>副標題（前台/後台皆可改）</label>
+                    <input type="text" id="main_title_2" name="main_title_2">
+                </div>
+                <div class="form-group">
+                    <label>副標題顏色（前台/後台皆可改）</label>
+                    <input type="color" id="main_title_2_color" name="main_title_2_color" value="#000000">
+                </div>
+                <div class="form-group">
+                    <label>會員圖片（前台/後台皆可改）</label>
+                    <input type="url" id="member_image_url" name="member_image_url">
+                    <input type="file" id="member_image_upload" accept="image/*" style="display:inline-block;width:auto;">
+                    <button type="button" id="member_image_upload_btn">上傳</button>
+                    <img id="member_image_preview" src="" style="max-width:80px;max-height:80px;display:none;margin-top:4px;">
+                </div>
+                <div class="form-group">
+                    <label>會員圖片後連結（前台/後台皆可改）</label>
+                    <input type="url" id="member_image_link" name="member_image_link">
+                </div>
+                <div class="form-group">
+                    <label>會員名字（前台/後台皆可改）</label>
+                    <input type="text" id="display_name" name="display_name">
+                </div>
+                <div class="form-group">
+                    <label>會員名字顏色1（前台/後台皆可改）</label>
+                    <input type="color" id="name_color1" name="name_color1" value="#A4924C">
+                </div>
+                <div class="form-group">
+                    <label>會員名字顏色2（前台/後台皆可改）</label>
+                    <input type="color" id="name_color2" name="name_color2" value="#A4924C">
+                </div>
+                <div class="form-group">
+                    <label>按鈕1文字（前台/後台皆可改）</label>
+                    <input type="text" id="button_1_text" name="button_1_text">
+                </div>
+                <div class="form-group">
+                    <label>按鈕1連結（前台/後台皆可改）</label>
+                    <input type="url" id="button_1_url" name="button_1_url">
+                </div>
+                <div class="form-group">
+                    <label>按鈕1顏色（前台/後台皆可改）</label>
+                    <input type="color" id="button_1_color" name="button_1_color" value="#A4924A">
+                </div>
+                <div class="form-group">
+                    <label>分享按鈕文字（前台/後台皆可改）</label>
+                    <input type="text" id="s_button_text" name="s_button_text">
+                </div>
+                <div class="form-group">
+                    <label>分享按鈕連結（前台可見不可改，後台可改）</label>
+                    <input type="url" id="s_button_url" name="s_button_url">
+                </div>
+                <div class="form-group">
+                    <label>分享按鈕顏色（前台/後台皆可改）</label>
+                    <input type="color" id="s_button_color" name="s_button_color" value="#A4924B">
+                </div>
+                <div class="form-group">
+                    <label>宣傳卡片選擇與排序</label>
+                    <div class="promo-list" id="promoList"></div>
+                </div>
+            </form>
+        </div>
+        <div class="preview-section">
+            <h2>即時預覽</h2>
+            <div class="flex-preview" id="flexPreview"></div>
+        </div>
+    </div>
+    <script src="js/member-card.js"></script>
+</body>
+</html> 

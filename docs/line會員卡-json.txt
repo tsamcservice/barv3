@@ -1,0 +1,260 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "image",
+        "size": "full",
+        "aspectRatio": "1:1",
+        "aspectMode": "cover",
+        "url": "https://cdn.smore.com/u/thumbs/acd5/thumb-4e4ed7988eab7114ae54df8501d45ba0.png"
+      },
+      {
+        "type": "image",
+        "url": "https://raw.githubusercontent.com/tsamcservice/tsamcservice.github.io/main/data/images/PNG2.png",
+        "size": "full",
+        "aspectRatio": "1:1",
+        "animated": true,
+        "aspectMode": "cover",
+        "position": "absolute",
+        "action": {
+          "type": "uri",
+          "label": "action",
+          "uri": "https://secure.smore.com/n/td1qc"
+        }
+      },
+      {
+        "type": "box",
+        "width": "90px",
+        "layout": "horizontal",
+        "spacing": "none",
+        "contents": [
+          {
+            "type": "box",
+            "action": {
+              "uri": "https://lihi3.cc/ZWV2u",
+              "type": "uri",
+              "label": "VIP會員號碼"
+            },
+            "layout": "vertical",
+            "contents": [
+              {
+                "url": "https://www.mice.stu.edu.tw/wp-content/uploads/sites/80/2019/01/icon_calendar.png",
+                "type": "image",
+                "action": {
+                  "uri": "https://lihi3.cc/ZWV2u",
+                  "type": "uri",
+                  "label": "action"
+                },
+                "size": "35px"
+              },
+              {
+                "type": "text",
+                "text": "AmemberId",
+                "size": "10px",
+                "align": "center",
+                "gravity": "center",
+                "offsetTop": "30px",
+                "position": "absolute",
+                "offsetStart": "12px",
+                "color": "#FFFFFF"
+              }
+            ],
+            "cornerRadius": "30px",
+            "backgroundColor": "#A4924A"
+          },
+          {
+            "type": "box",
+            "action": {
+              "uri": "https://secure.smore.com/n/td1qc",
+              "type": "uri",
+              "label": "愛心會員號碼"
+            },
+            "layout": "vertical",
+            "contents": [
+              {
+                "url": "https://raw.githubusercontent.com/tsamcservice/tsamcservice.github.io/main/data/images/loveicon.png",
+                "type": "image",
+                "action": {
+                  "uri": "https://secure.smore.com/n/td1qc",
+                  "type": "uri",
+                  "label": "action"
+                },
+                "size": "32px"
+              },
+              {
+                "type": "text",
+                "size": "10px",
+                "align": "center",
+                "gravity": "center",
+                "position": "absolute",
+                "offsetTop": "30px",
+                "offsetStart": "12px",
+                "text": "memberId",
+                "color": "#FFFFFF"
+              }
+            ],
+            "cornerRadius": "30px",
+            "backgroundColor": "#d00308"
+          }
+        ],
+        "offsetTop": "250px",
+        "offsetStart": "10px",
+        "height": "45px",
+        "position": "absolute"
+      },
+      {
+        "size": "20px",
+        "text": "【mainTitle_1】",
+        "type": "text",
+        "align": "center",
+        "color": "textColor",
+        "weight": "bold",
+        "margin": "md"
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+          {
+            "type": "text",
+            "text": "mainTitle_2",
+            "wrap": true,
+            "size": "16px",
+            "margin": "sm",
+            "color": "textColor"
+          }
+        ],
+        "paddingEnd": "65px",
+        "paddingStart": "5px",
+        "height": "95px"
+      },
+      {
+        "type": "box",
+        "width": "65px",
+        "layout": "vertical",
+        "spacing": "none",
+        "contents": [
+          {
+            "type": "box",
+            "action": {
+              "uri": "subTitle_2",
+              "type": "uri",
+              "label": "action"
+            },
+            "layout": "vertical",
+            "contents": [
+              {
+                "url": "textContent_1",
+                "type": "image",
+                "action": {
+                  "uri": "subTitle_2",
+                  "type": "uri",
+                  "label": "官網"
+                },
+                "aspectRatio": "1:1",
+                "aspectMode": "cover",
+                "backgroundColor": "#E1E6E0"
+              }
+            ],
+            "cornerRadius": "35px",
+            "borderWidth": "semi-bold",
+            "borderColor": "#A4924C"
+          },
+          {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+              {
+                "type": "text",
+                "size": "14px",
+                "text": "displayName",
+                "style": "italic",
+                "color": "#A4924C",
+                "align": "center",
+                "weight": "bold",
+                "wrap": true,
+                "margin": "none"
+              }
+            ],
+            "paddingAll": "none",
+            "cornerRadius": "none",
+            "margin": "none",
+            "spacing": "none"
+          }
+        ],
+        "position": "absolute",
+        "offsetEnd": "5px",
+        "margin": "md",
+        "offsetTop": "315px"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "button",
+            "action": {
+              "type": "uri",
+              "label": "textContent_2",
+              "uri": "textContent_2_url"
+            },
+            "color": "#A4924A",
+            "style": "primary",
+            "height": "sm",
+            "offsetEnd": "1px"
+          },
+          {
+            "type": "button",
+            "action": {
+              "type": "uri",
+              "label": "分享給好友",
+              "uri": "SSSS"
+            },
+            "color": "#A4924B",
+            "style": "primary",
+            "height": "sm",
+            "offsetStart": "1px"
+          }
+        ],
+        "margin": "md"
+      }
+    ],
+    "backgroundColor": "#E1E6E0",
+    "paddingAll": "10px"
+  },
+  "footer": {
+    "type": "box",
+    "layout": "horizontal",
+    "spacing": "none",
+    "contents": [
+      {
+        "type": "text",
+        "text": "呈璽元宇宙3D展覽館",
+        "wrap": true,
+        "color": "#00000050",
+        "align": "center",
+        "action": {
+          "type": "uri",
+          "label": "action",
+          "uri": "https://lihi3.cc/LY5qf"
+        },
+        "size": "sm",
+        "margin": "none"
+      }
+    ],
+    "backgroundColor": "#E1E6E0",
+    "height": "30px",
+    "margin": "none",
+    "paddingAll": "2px"
+  },
+  "styles": {
+    "footer": {
+      "separatorColor": "#000000",
+      "separator": true
+    }
+  }
+}

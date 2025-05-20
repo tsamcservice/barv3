@@ -1,0 +1,171 @@
+卡片預覽編修頁面說明
+
+@【主圖】前台、後台皆可改
+檔案上是https://cdn.smore.com/u/thumbs/acd5/thumb-4e4ed7988eab7114ae54df8501d45ba0.png
+
+初始圖案是TS-B1.png(我先放在docs裡,到時請移至upload/vip/，該圖的公開連結來帶入運用)
+
+登入後
+可讓會員自行上傳圖片，並帶入連結，也可讓會員編修更改連結,位置在upload/vip/line的userid/
+
+
+@【主圖前雪花動畫】前台會員預覽頁不用看到欄位也不可改，僅後台可改
+檔案上是https://raw.githubusercontent.com/tsamcservice/tsamcservice.github.io/main/data/images/PNG2.png
+
+初始圖片是APNG1.png(我先放在docs裡,到時請移至upload/vip/，該圖的公開連結來帶入運用)
+
+
+@【主圖後的連結】前台、後台皆可改
+檔案上是https://secure.smore.com/n/td1qc
+
+初始是https://secure.smore.com/n/td1qc
+
+登入後
+可讓會員自行在預覽畫面編修更改連結
+
+
+@【行事曆圖片】前台會員預覽頁不用看到欄位也不可改，僅後台可改
+檔案上是https://www.mice.stu.edu.tw/wp-content/uploads/sites/80/2019/01/icon_calendar.png
+
+初始是icon_calendar.png(我先放在docs裡,到時請移至upload/vip/，該圖的公開連結來帶入運用)
+
+
+@【行事曆下會員編號】前台會員預覽頁不用看到欄位也不可改，僅後台可改
+檔案上是AmemberId
+
+初始是Tsamc
+
+
+
+@【愛心圖片】前台會員預覽頁不用看到欄位也不可改，僅後台可改
+檔案上是https://raw.githubusercontent.com/tsamcservice/tsamcservice.github.io/main/data/images/loveicon.png
+
+初始是loveicon.png(我先放在docs裡,到時請移至upload/vip/，該圖的公開連結來帶入運用)
+
+
+@【愛心圖片下號碼】前台會員預覽頁不用看到欄位也不可改，僅後台可改
+檔案上是PageView
+初始是0000(4位數字)直接帶本卡片頁的瀏覽數
+
+
+
+@【主標文字】前台、後台皆可改
+
+檔案上是【mainTitle_1】同步"altText"中的"Flex Message"
+初始是 我在呈璽....
+
+登入後
+可讓會員自行在預覽畫面編修更改文字內容
+
+@【主標文字顏色】前台、後台皆可改
+
+檔案上是【textColor1】
+初始是#00000
+
+登入後
+可讓會員自行在預覽選擇,帶入HEX碼
+
+@【副標文字】前台、後台皆可改
+
+檔案上是【mainTitle_2】
+初始是
+我在呈璽，欣賞美好幸福！我在呈璽，喝茶喝咖啡很悠閒！！我不在呈璽，就是在前往呈璽的路上！！！
+
+登入後
+可讓會員自行在預覽畫面編修更改文字內容
+
+
+@【副標文字顏色】前台、後台皆可改
+
+檔案上是【textColor2】
+初始是#00000
+
+登入後
+可讓會員自行在預覽選擇,帶入HEX碼
+
+
+
+@【會員圖片】前台、後台皆可改
+檔案上是https://raw.githubusercontent.com/tsamcservice/tsamcservice.github.io/main/data/images/8c2a0367cf3d71a0.png
+
+初始圖案是TS-LOGO.png(我先放在docs裡,到時請移至upload/vip/，該圖的公開連結來帶入運用)
+
+登入後
+自動帶入LINE會員頭像，並且上傳至upload/vip/line的userid/user.png，也可讓會員自行上傳圖片，並帶入連結，也可讓會員編修更改連結
+
+
+@【會員圖片後連結】前台、後台皆可改
+檔案上是【MEM_URL】
+
+初始連結為 https://secure.smore.com/n/td1qc
+
+登入後
+可讓會員編修更改連結
+
+
+@【會員名字】前台、後台皆可改
+檔案上是【displayName】
+
+初始為 呈璽
+
+登入後
+自動帶入LINE名字，也可讓會員自行編修更改名字
+
+
+
+@【會員名字顏色】前台、後台皆可改
+檔案上是【Name_color1】【Name_color2】
+
+初始為 #A4924C
+
+登入後
+可讓會員自行在預覽選擇,帶入HEX碼
+
+
+
+@【按鈕文字】前台、後台皆可改
+檔案上是【button_1】
+初始為 加呈璽好友
+登入後
+可讓會員自行編修更改文字
+
+@【按鈕後連結】前台、後台皆可改
+檔案上是【button_1_url】
+初始為 https://lin.ee/JLLIBlP
+登入後
+可讓會員自行編修更改連結
+
+@【按鈕顏色】前台、後台皆可改
+檔案上是【button_1_color】
+
+初始為 #A4924A
+登入後
+可讓會員自行在預覽選擇,帶入HEX碼
+
+
+
+@【分享按鈕文字】前台、後台皆可改
+檔案上是【S_button】
+初始為 分享給好友
+登入後
+可讓會員自行編修更改文字
+
+@【分享按鈕後連結】前台可看到欄位但不可改、後台皆可改
+檔案上是SSSS
+初始為 執行分享到LINE群組的程式碼,將整組卡片分享到line
+登入後
+可讓會員看到並有複製按鈕，供會員複製
+
+@【分享按鈕顏色】前台、後台皆可改
+檔案上是【S_button_color】
+初始為 #A4924B
+登入後
+可讓會員自行在預覽選擇,帶入HEX碼
+
+【圖片欄位補充說明】
+
+1. 所有卡片圖片（主圖、雪花動畫、行事曆、愛心、會員頭像等）初始值皆放置於 upload/vip/ 目錄，並以公開連結引用。
+2. 會員登入後，可於前台自行上傳圖片，圖片將儲存於 upload/vip/line的userid/ 專屬目錄，並自動更新卡片預覽。
+3. 上傳後的圖片連結會即時帶入卡片 JSON，並於預覽區即時顯示。
+4. 編輯器每個圖片欄位皆有「上傳」按鈕，操作方式與選擇文字顏色類似，支援即時切換與預覽。
+5. 所有圖片欄位的初始值、路徑、權限，請依本說明及 README.md 為準。

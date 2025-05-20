@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE Flex Message 編輯器</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/flex2html.css">
+    <script src="js/flex2html.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="editor-container">
+            <div class="editor-section">
+                <h2>Flex Message 編輯器</h2>
+                <div class="editor-tools">
+                    <button onclick="addComponent('box')">新增 Box</button>
+                    <button onclick="addComponent('text')">新增文字</button>
+                    <button onclick="addComponent('image')">新增圖片</button>
+                    <button onclick="addComponent('button')">新增按鈕</button>
+                </div>
+                <div id="editor" class="editor"></div>
+            </div>
+            <div class="preview-section">
+                <h2>即時預覽</h2>
+                <div id="flex2html" class="preview"></div>
+                <div class="preview-actions">
+                    <button onclick="saveCard()">儲存卡片</button>
+                    <button onclick="previewCard()">預覽卡片</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/editor.js"></script>
+    <script>
+        // 預設顯示官方範例卡片
+        const flexMessage = {
+            "type": "flex",
+            "altText": "Flex Message",
+            "contents": {
+                "type": "bubble",
+                "hero": {
+                    "type": "image",
+                    "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png",
+                    "size": "full",
+                    "aspectRatio": "20:13",
+                    "aspectMode": "cover"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "Brown Cafe",
+                            "weight": "bold",
+                            "size": "xl"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "baseline",
+                            "margin": "md",
+                            "contents": [
+                                {
+                                    "type": "icon",
+                                    "size": "sm",
+                                    "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_gold_star_28.png"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "4.0",
+                                    "size": "sm",
+                                    "color": "#999999",
+                                    "margin": "md",
+                                    "flex": 0
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "(2,000+)",
+                                    "color": "#999999",
+                                    "size": "sm",
+                                    "align": "end"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "margin": "lg",
+                            "spacing": "sm",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "baseline",
+                                    "spacing": "sm",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "營業時間",
+                                            "color": "#aaaaaa",
+                                            "size": "sm",
+                                            "flex": 1
+                                        },
+                                        {
+                                            "type": "text",
+                                            "text": "10:00 - 23:00",
+                                            "wrap": true,
+                                            "color": "#666666",
+                                            "size": "sm",
+                                            "flex": 5
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "style": "primary",
+                            "height": "sm",
+                            "action": {
+                                "type": "uri",
+                                "label": "查看地圖",
+                                "uri": "https://linecorp.com"
+                            }
+                        }
+                    ],
+                    "flex": 0
+                }
+            }
+        };
+        window.onload = function() {
+            flex2html('flex2html', flexMessage);
+        };
+    </script>
+</body>
+</html> 
