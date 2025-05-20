@@ -1,3 +1,20 @@
+# 會員卡 Flex Message 編輯與分享系統
+
+## 版本資訊
+- 當前版本：20250520-f
+- 部署狀態：自動部署已啟用
+
+## 功能特點
+- 會員卡編輯
+- Flex Message 預覽
+- 分享功能
+- 自動部署
+
+## 技術架構
+- Next.js
+- Supabase
+- Vercel 部署
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
