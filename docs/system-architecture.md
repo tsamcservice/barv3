@@ -1,5 +1,64 @@
 # 系統架構文件
 
+## 版本資訊
+- 當前版本：20250520-f
+- 部署狀態：自動部署已啟用
+- 部署平台：Vercel
+- 程式碼管理：GitHub
+
+## 系統架構
+
+### 前端架構
+- 框架：Next.js
+- UI 元件：React
+- 樣式：CSS/SCSS
+- 狀態管理：React Hooks
+
+### 後端架構
+- API 路由：Next.js API Routes
+- 資料庫：Supabase
+- 認證：Supabase Auth
+
+### 部署架構
+- 主機：Vercel
+- 自動部署：GitHub Actions + Vercel
+- 環境變數管理：Vercel Environment Variables
+
+## 資料庫設計
+- 使用者表（users）
+- 會員卡表（member_cards）
+- 促銷卡表（promo_cards）
+
+## API 設計
+- GET /api/cards：查詢卡片
+- POST /api/cards：更新/新增卡片
+- GET /api/cards/list：列出所有卡片
+- DELETE /api/cards：刪除卡片
+
+## 版本控制
+- 主分支：master
+- 功能分支：feature/*
+- 修復分支：hotfix/*
+- 版本標籤：v{日期}-{功能}
+
+## 部署流程
+1. 程式碼推送到 GitHub
+2. Vercel 自動偵測變更
+3. 執行建置流程
+4. 部署到 Vercel CDN
+5. 提供部署 URL
+
+## 環境變數
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- NODE_ENV
+- NEXT_PUBLIC_API_URL
+
+## 監控與維護
+- 部署狀態監控：Vercel Dashboard
+- 錯誤追蹤：Vercel Logs
+- 效能監控：Vercel Analytics
+
 ## 1. 資料庫結構 (Supabase)
 
 ### 1.1 會員資料表 (users)

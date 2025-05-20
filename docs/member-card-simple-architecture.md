@@ -622,3 +622,88 @@ INSERT INTO member_cards (
 
 ---
 （本段已同步於 2025-05-18-f 時間截點） 
+
+## 版本資訊
+- 當前版本：20250520-f
+- 部署狀態：自動部署已啟用
+- 最後更新：2024-05-20
+
+## 功能架構
+
+### 前端功能
+- 會員卡編輯器
+- Flex Message 預覽
+- 即時預覽
+- 分享功能
+- JSON 複製
+
+### 後端功能
+- 卡片資料儲存
+- 使用者認證
+- API 路由處理
+- 資料庫操作
+
+## 資料結構
+
+### 會員卡資料
+```json
+{
+  "pageId": "string",
+  "userId": "string",
+  "cardTitle": "string",
+  "cardSubtitle": "string",
+  "cardImage": "string",
+  "cardColor": "string",
+  "flexJson": "object"
+}
+```
+
+### Flex Message 結構
+```json
+{
+  "type": "bubble",
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "會員卡標題"
+      }
+    ]
+  }
+}
+```
+
+## API 端點
+
+### 卡片操作
+- GET /api/cards：查詢卡片
+- POST /api/cards：更新/新增卡片
+- GET /api/cards/list：列出所有卡片
+- DELETE /api/cards：刪除卡片
+
+## 部署資訊
+- 平台：Vercel
+- 自動部署：已啟用
+- 環境變數：已設定
+- 監控：Vercel Dashboard
+
+## 版本控制
+- 主分支：master
+- 功能分支：feature/*
+- 修復分支：hotfix/*
+- 版本標籤：v{日期}-{功能}
+
+## 開發流程
+1. 功能開發
+2. 本地測試
+3. 提交程式碼
+4. 自動部署
+5. 生產環境測試
+
+## 維護指南
+- 定期檢查部署狀態
+- 監控錯誤日誌
+- 更新環境變數
+- 備份資料庫 
