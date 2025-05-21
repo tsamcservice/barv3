@@ -20,7 +20,7 @@ CREATE TABLE member_cards (
   page_id text NOT NULL,
   line_user_id text,
   user_id uuid REFERENCES users(id),
-  card_title text,
+  card_alt_title text,
   main_image_url text,
   main_image_link text,
   snow_image_url text,
@@ -70,7 +70,7 @@ CREATE INDEX IF NOT EXISTS idx_promo_cards_card_id ON promo_cards(card_id);
 -- 插入預設卡片資料
 INSERT INTO member_cards (
   page_id,
-  card_title,
+  card_alt_title,
   main_image_url,
   main_image_link,
   snow_image_url,
@@ -98,6 +98,7 @@ INSERT INTO member_cards (
 ) VALUES (
   'M01001',
   '我在呈璽',
+  '我在呈璽/呈璽',
   'https://barv2.vercel.app/uploads/vip/TS-B1.png',
   'https://secure.smore.com/n/td1qc',
   'https://barv2.vercel.app/uploads/vip/APNG1.png',
@@ -385,4 +386,38 @@ INSERT INTO member_cards (
       }
     }
   }'::jsonb
-); 
+);
+
+-- 啟用 UUID 擴展
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 創建 Storage 儲存桶
+INSERT INTO storage.buckets (id, name, public) VALUES
+  ('member-cards', 'member-cards', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 設定 Storage 權限策略
+CREATE POLICY "允許公開讀取 member-cards 儲存桶"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'member-cards');
+
+CREATE POLICY "允許已認證用戶上傳到 member-cards 儲存桶"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'member-cards' AND
+    auth.role() = 'authenticated'
+  );
+
+CREATE POLICY "允許用戶更新自己的檔案"
+  ON storage.objects FOR UPDATE
+  USING (
+    bucket_id = 'member-cards' AND
+    auth.uid() = owner
+  );
+
+CREATE POLICY "允許用戶刪除自己的檔案"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'member-cards' AND
+    auth.uid() = owner
+  ); 
