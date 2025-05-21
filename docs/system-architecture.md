@@ -373,3 +373,7 @@ const defaultCards = {
 - 所有 API 路徑皆以 `/api/` 開頭，Vercel 路由設定已優先導向 API，避免被靜態頁面覆蓋。
 - 前端 fetch API 時會檢查回應的 content-type，若非 JSON 或 HTTP 狀態非 200，會顯示友善錯誤訊息。
 - 例外狀況（如 API 連線失敗、資料庫連線失敗）會彈窗提示，方便 debug。 
+
+## 專案型態說明
+- 本專案為 Next.js 專案，所有 API 路由請放在 pages/api 目錄下，首頁與靜態頁面請以 Next.js 標準結構為主。
+- 請勿隨意加入 vercel.json 或更改專案型態，以免影響 Vercel 部署與 API 運作。 

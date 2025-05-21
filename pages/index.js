@@ -44,6 +44,23 @@ export default function Home() {
       >
         進入會員卡
       </a>
+      <a
+        href="/member-card-simtest.html"
+        style={{
+          display: 'inline-block',
+          padding: '1rem 2rem',
+          background: '#06C755',
+          color: '#fff',
+          borderRadius: '8px',
+          textDecoration: 'none',
+          fontSize: '1.2rem',
+          fontWeight: 'bold',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          marginTop: '1rem'
+        }}
+      >
+        flex碼測試預覽頁
+      </a>
     </div>
   );
 } 
