@@ -99,20 +99,20 @@ INSERT INTO member_cards (
   'M01001',
   '我在呈璽',
   '我在呈璽/呈璽',
-  'https://barv2.vercel.app/uploads/vip/TS-B1.png',
+  'https://barv3.vercel.app/uploads/vip/TS-B1.png',
   'https://secure.smore.com/n/td1qc',
-  'https://barv2.vercel.app/uploads/vip/APNG1.png',
-  'https://barv2.vercel.app/uploads/vip/icon_calendar.png',
+  'https://barv3.vercel.app/uploads/vip/APNG1.png',
+  'https://barv3.vercel.app/uploads/vip/icon_calendar.png',
   'https://lihi3.cc/ZWV2u',
   'TSAMC',
-  'https://barv2.vercel.app/uploads/vip/loveicon.png',
+  'https://barv3.vercel.app/uploads/vip/loveicon.png',
   'https://lihi.cc/jl7Pw',
   0,
   '我在呈璽',
   '#000000',
   '我在呈璽，欣賞美好幸福！我在呈璽，喝茶喝咖啡很悠閒！！我不在呈璽，就是在前往呈璽的路上！！！',
   '#000000',
-  'https://barv2.vercel.app/uploads/vip/TS-LOGO.png',
+  'https://barv3.vercel.app/uploads/vip/TS-LOGO.png',
   'https://secure.smore.com/n/td1qc',
   '呈璽',
   '#A4924C',
@@ -137,11 +137,11 @@ INSERT INTO member_cards (
             "size": "full",
             "aspectRatio": "1:1",
             "aspectMode": "cover",
-            "url": "https://barv2.vercel.app/uploads/vip/TS-B1.png"
+            "url": "https://barv3.vercel.app/uploads/vip/TS-B1.png"
           },
           {
             "type": "image",
-            "url": "https://barv2.vercel.app/uploads/vip/APNG1.png",
+            "url": "https://barv3.vercel.app/uploads/vip/APNG1.png",
             "size": "full",
             "aspectRatio": "1:1",
             "animated": true,
@@ -169,7 +169,7 @@ INSERT INTO member_cards (
                 "layout": "vertical",
                 "contents": [
                   {
-                    "url": "https://barv2.vercel.app/uploads/vip/icon_calendar.png",
+                    "url": "https://barv3.vercel.app/uploads/vip/icon_calendar.png",
                     "type": "image",
                     "action": {
                       "uri": "https://lihi3.cc/ZWV2u",
@@ -203,7 +203,7 @@ INSERT INTO member_cards (
                 "layout": "vertical",
                 "contents": [
                   {
-                    "url": "https://barv2.vercel.app/uploads/vip/loveicon.png",
+                    "url": "https://barv3.vercel.app/uploads/vip/loveicon.png",
                     "type": "image",
                     "action": {
                       "uri": "https://lihi.cc/jl7Pw",
@@ -275,7 +275,7 @@ INSERT INTO member_cards (
                 "layout": "vertical",
                 "contents": [
                   {
-                    "url": "https://barv2.vercel.app/uploads/vip/TS-LOGO.png",
+                    "url": "https://barv3.vercel.app/uploads/vip/TS-LOGO.png",
                     "type": "image",
                     "action": {
                       "uri": "https://secure.smore.com/n/td1qc",

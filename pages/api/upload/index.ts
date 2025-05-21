@@ -28,6 +28,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { file, fileName, fileType } = req.body;
     
+    if (!file || !fileName || !fileType) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '缺少必要參數' 
+      });
+    }
+
     // 驗證檔案類型
     if (!ALLOWED_FILE_TYPES.includes(fileType)) {
       return res.status(400).json({ 
@@ -52,6 +59,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const timestamp = Date.now();
     const uniqueFileName = `${timestamp}-${fileName}`;
 
+    console.log('開始上傳檔案到 Supabase Storage:', uniqueFileName);
+
     // 上傳到 Supabase Storage
     const { data, error } = await supabase.storage
       .from('member-cards')
@@ -68,10 +77,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    console.log('檔案上傳成功，取得公開 URL');
+
     // 取得公開 URL
     const { data: { publicUrl } } = supabase.storage
       .from('member-cards')
       .getPublicUrl(data.path);
+
+    console.log('成功取得公開 URL:', publicUrl);
 
     return res.status(200).json({ 
       success: true,

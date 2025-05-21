@@ -47,6 +47,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     // 上傳圖片
     setLoading(true);
     try {
+      console.log('開始上傳圖片:', file.name);
+      
       const response = await fetch('/api/upload', {
         method: 'POST',
         headers: {
@@ -66,7 +68,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       }
 
       if (data.data?.url) {
+        console.log('圖片上傳成功:', data.data.url);
         onUploadComplete(data.data.url);
+      } else {
+        throw new Error('未收到上傳 URL');
       }
     } catch (error) {
       console.error('Upload failed:', error);
