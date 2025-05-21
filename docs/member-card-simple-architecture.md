@@ -146,71 +146,6 @@
 - 監控 API 效能
 - 備份重要資源
 
-## [2025-05-15] 最新檢查與補充
-
-### 1. member-card-simple.html 結構
-- 採用單欄設計，最大寬度800px。
-- 主要分為「表單區塊」與「預覽區塊」。
-- 表單欄位涵蓋主圖、雪花動畫、行事曆、愛心、標題、會員資訊、按鈕、分享等，與架構文件一致。
-- 每個圖片欄位皆有 file input 與上傳按鈕，並有預覽圖。
-- 預覽區塊以 flex2html 技術即時渲染卡片，並顯示即將分享的 Flex Message JSON。
-- 右上角顯示 LINE 用戶資訊。
-- 引用 js/flex2html.min.js、js/flex2html.css、js/member-card-simple.js 及 css/style.css。
-
-### 2. member-card-simple.js 功能
-- 預設卡片資料與欄位初始化，支援自動填入 LINE 用戶頭像與名稱。
-- 監聽所有 input 欄位，變更時即時更新預覽與 JSON。
-- getMainBubble() 依 LINE Flex 官方格式產生 bubble 結構。
-- renderPreview() 以 flex2html 預覽卡片。
-- renderShareJsonBox() 顯示即將分享的 Flex Message JSON，並提供一鍵複製。
-- shareToLine() 使用 liff.shareTargetPicker 分享卡片，格式正確（bubble/carousel）。
-- 儲存功能目前僅為示意，尚未串接 API。
-- 初始化時自動登入 LIFF，並填入預設值與用戶資訊。
-- 分享按鈕與分享連結欄位皆有設計。
-
-### 3. 資源檔案現況
-- public/uploads/vip/ 目錄下有：
-  - TS-B1.png（主圖）
-  - TS-LOGO.png（會員圖片）
-  - APNG1.png（雪花動畫）
-  - icon_calendar.png（行事曆圖示）
-  - loveicon.png（愛心圖示）
-- public/js/ 目錄下有：
-  - member-card-simple.js（主邏輯）
-  - flex2html.min.js（Flex 預覽技術）
-  - flex2html.css（Flex 預覽樣式）
-- public/css/ 目錄下有：
-  - style.css（主樣式）
-  - flex2html.css（Flex 預覽樣式，與 js 目錄重複）
-- public/member-card-simple.html 為主頁面，已與上述結構一致。
-
-### 如何回復到本版本（Git 操作說明）
-
-1. **查詢本次提交的 commit id**
-   
-   ```bash
-   git log --oneline -- docs/member-card-simple-architecture.md
-   ```
-   
-   找到對應「2025-05-15」這次更新的 commit id（如：`abc1234`）。
-
-2. **回復到此版本**
-   
-   - 若只回復此檔案：
-     ```bash
-     git checkout abc1234 -- docs/member-card-simple-architecture.md
-     ```
-   - 若要整個專案回復到此 commit：
-     ```bash
-     git reset --hard abc1234
-     ```
-
-3. **推送到遠端（如需同步 GitHub）**
-   ```bash
-   git push origin main --force
-   ```
-
-> 建議回復前先備份目前檔案，避免資料遺失。 
 
 ## 8. 部署與測試標準作業流程
 
@@ -218,17 +153,17 @@
 1. 程式碼修改完成後，確保所有變更已提交到 Git
 2. 部署到 Vercel 正式網域
    - 使用 `vercel --prod` 指令
-   - 確認部署到正式網域：https://barv2.vercel.app
-   - 測試頁面連結：https://barv2.vercel.app/member-card-simple.html
+   - 確認部署到正式網域：https://barv3.vercel.app
+   - 測試頁面連結：https://barv3.vercel.app/member-card-simple.html
 3. 確認部署狀態和網域設定
 4. 提供測試連結給使用者：
    ```
-   正式網域：https://barv2.vercel.app
-   測試頁面：https://barv2.vercel.app/member-card-simple.html
+   正式網域：https://barv3.vercel.app
+   測試頁面：https://barv3.vercel.app/member-card-simple.html
    ```
 
 ### 8.2 測試流程
-1. 測試頁面連結格式：`https://barv2.vercel.app/member-card-simple.html`
+1. 測試頁面連結格式：`https://barv3.vercel.app/member-card-simple.html`
 2. 測試項目：
    - 基本功能測試
      - 表單欄位輸入與預覽
@@ -261,45 +196,7 @@
 3. 追蹤使用者回饋
 4. 定期更新依賴套件
 
-### 8.6 正式網域部署步驟
-1. 確保 Vercel CLI 已安裝並登入
-2. 執行部署指令：
-   ```bash
-   vercel --prod
-   ```
-3. 確認部署到正式網域：https://barv2.vercel.app
-4. 提供測試連結：https://barv2.vercel.app/member-card-simple.html
-5. 驗證所有功能正常運作
 
-### 8.7 每次修改後的標準作業流程
-1. 修改程式碼
-2. 提交變更到 Git
-3. 部署到正式網域：
-   ```bash
-   vercel --prod
-   ```
-4. 提供以下連結給使用者：
-   ```
-   正式網域：https://barv2.vercel.app
-   測試頁面：https://barv2.vercel.app/member-card-simple.html
-   ```
-5. 等待使用者確認功能正常 
-
-## [2025-05-16-1] 功能穩定版本
-### 1. 分享功能設定
-- 分享按鈕連結：基本 LIFF 網址
-- 分享按鈕功能：使用 `shareToLine()` 函數
-- 分享按鈕連結格式：`https://liff.line.me/${liffId}`
-
-### 2. 如何回復到此版本
-1. 使用 Git 回復：
-   ```bash
-   git checkout 2025-05-16-1
-   ```
-2. 重新部署：
-   ```bash
-   vercel --prod
-   ``` 
 
 ## [2025-05-17] Flex 分享優化與自動分享機制
 
@@ -326,27 +223,7 @@
 - Flex Message 內的按鈕（type: uri）**無法直接觸發 shareTargetPicker**，只能導向 LIFF 頁面，由 JS 觸發分享。
 - 目前無法直接將卡片一鍵分享到「按卡片時的對話視窗」；用戶需在分享視窗中選擇對象。
 
-### 5. 2025-05-17 版本更新
-- Flex 卡片分享按鈕帶 userId 參數
-- LIFF 頁面自動觸發分享
-- 頁面分享連結欄位顯示正確
-- 架構文件同步更新 
 
-## [2025-05-16-1S] 穩定版本時間截點
-- 本版為 2025-05-16-1S 穩定版本，已完成：
-  - Flex 卡片分享按鈕帶 userId 參數
-  - LIFF 頁面自動觸發分享
-  - 頁面分享連結欄位顯示正確
-  - 架構文件同步更新
-- 回復方式：
-  1. 使用 Git 回復：
-     ```bash
-     git checkout 2025-05-16-1S
-     ```
-  2. 重新部署：
-     ```bash
-     vercel --prod
-     ```
 
 ## Q&A 與最佳實務建議
 
@@ -409,187 +286,14 @@
 - 分享連結、FLEX 內按鈕 action.uri 必須同時帶 pageId 與 userId。
 - 圖片上傳、欄位編輯、預覽、FLEX JSON 顯示等功能需與資料庫欄位同步。
 
-### 5. 版本回復方式
-- 使用 Git 回復：
-  ```bash
-  git checkout 2025-05-16-f
-  ```
-- 重新部署：
-  ```bash
-  vercel --prod
-  ```
 
-## 會員卡欄位對照表（2025-05-18 更新）
-
-| 頁面標題               | 欄位名稱              | 會員卡位置說明         | 初始值（defaultCard）                                   |
-|------------------------|----------------------|------------------------|--------------------------------------------------------|
-| 主圖連結               | main_image_url       | 卡片主圖               | https://barv2.vercel.app/uploads/vip/TS-B1.png         |
-| 主圖前雪花動畫         | snow_image_url       | 主圖上動畫圖層         | https://barv2.vercel.app/uploads/vip/APNG1.png         |
-| 主圖後連結             | main_image_link      | 點主圖/雪花動畫連結    | https://secure.smore.com/n/td1qc                       |
-| 行事曆圖片             | calendar_image_url   | 左下角行事曆圖         | https://barv2.vercel.app/uploads/vip/icon_calendar.png |
-| 行事曆圖片後連結       | calendar_image_link  | 左下角行事曆圖後連結    | https://lihi3.cc/ZWV2u                                 |
-| 行事曆下會員編號       | amember_id           | 行事曆下方會員編號     | TSAMC                                                  |
-| 愛心圖片               | love_icon_url        | 右下角愛心圖           | https://barv2.vercel.app/uploads/vip/loveicon.png      |
-| 愛心圖片後連結         | love_icon_link       | 右下角愛心圖後連結      | https://lihi.cc/jl7Pw                                  |
-| 愛心圖片下號碼         | pageview             | 愛心下方瀏覽數         | 0000                                                   |
-| 主標題                 | main_title_1         | 卡片中央主標題         | 我在呈璽                                                |
-| 主標題顏色             | main_title_1_color   | 主標題字色             | #000000                                                |
-| 副標題                 | main_title_2         | 主標題下方副標題       | 我在呈璽，欣賞美好幸福！我在呈璽，喝茶喝咖啡很悠閒！！我不在呈璽，就是在前往呈璽的路上！！！ |
-| 副標題顏色             | main_title_2_color   | 副標題字色             | #000000                                                |
-| 會員圖片               | member_image_url     | 右下角會員頭像         | https://barv2.vercel.app/uploads/vip/TS-LOGO.png       |
-| 會員圖片後連結         | mem_url              | 點會員頭像連結         | https://secure.smore.com/n/td1qc                       |
-| 會員名字               | display_name         | 會員頭像下方名字       | 呈璽                                                   |
-| 會員名字顏色           | name_color1          | 會員名字字色           | #A4924C                                                |
-| 按鈕文字               | button_1             | 左側主按鈕文字         | 加呈璽好友                                              |
-| 按鈕後連結             | button_1_url         | 左側主按鈕連結         | https://lin.ee/JLLIBlP                                 |
-| 按鈕顏色               | button_1_color       | 左側主按鈕顏色         | #A4924A                                                |
-| 分享按鈕文字           | s_button             | 右側分享按鈕文字       | 分享給好友                                              |
-| 分享按鈕後連結         | s_button_url         | 右側分享按鈕連結       | https://liff.line.me/2007327814-BdWpj70m?pageId=M01001 |
-| 分享按鈕顏色           | s_button_color       | 右側分享按鈕顏色       | #A4924B                                                |
 
 ### FLEX 對應欄位補充
 - 行事曆圖片後連結：`calendar_image_link` → FLEX bubble 行事曆區塊 action.uri
 - 愛心圖片後連結：`love_icon_link` → FLEX bubble 愛心區塊 action.uri
 - 分享按鈕後連結：`s_button_url` → FLEX bubble 右側分享按鈕 action.uri 
 
-## [2025-05-19] 資料庫與 API 規劃更新
 
-### 1. 資料庫結構
-```sql
--- 建立 users 會員資料表
-create table if not exists users (
-  id uuid primary key default gen_random_uuid(),
-  line_user_id text not null unique,
-  email text,
-  display_name text,
-  avatar_url text,
-  created_at timestamp with time zone default now(),
-  updated_at timestamp with time zone default now()
-);
-
--- 建立 member_cards 會員卡片表
-create table if not exists member_cards (
-  id uuid primary key default gen_random_uuid(),
-  page_id text not null,
-  line_user_id text,
-  user_id uuid references users(id),
-  card_title text,
-  main_image_url text,
-  main_image_link text,
-  snow_image_url text,
-  calendar_image_url text,
-  amember_id text,
-  pageview int default 0,
-  main_title_1 text,
-  main_title_1_color text,
-  main_title_2 text,
-  main_title_2_color text,
-  member_image_url text,
-  member_image_link text,
-  display_name text,
-  name_color1 text,
-  name_color2 text,
-  button_1_text text,
-  button_1_url text,
-  button_1_color text,
-  s_button_text text,
-  s_button_url text,
-  s_button_color text,
-  flex_json jsonb,
-  created_at timestamp with time zone default now(),
-  updated_at timestamp with time zone default now(),
-  CONSTRAINT unique_page_user UNIQUE (page_id, line_user_id)
-);
-
--- 建立 promo_cards 宣傳卡片表
-create table if not exists promo_cards (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references users(id),
-  card_id uuid references member_cards(id),
-  json_content jsonb,
-  sort_order int,
-  created_at timestamp with time zone default now(),
-  updated_at timestamp with time zone default now()
-);
-```
-
-### 2. API 端點規劃
-```
-/api
-  /cards
-    GET /?pageId={pageId}&userId={userId}  # 取得卡片（支援未登入和已登入）
-    POST /                                 # 新增卡片
-    PUT /{cardId}                          # 更新卡片
-    DELETE /{cardId}                       # 刪除卡片
-    GET /types                             # 取得卡片類型列表
-
-  /promo-cards
-    GET /?cardId={cardId}                  # 取得宣傳卡片列表
-    POST /                                 # 新增宣傳卡片
-    PUT /{id}                              # 更新宣傳卡片
-    DELETE /{id}                           # 刪除宣傳卡片
-```
-
-### 3. 資料查詢邏輯
-1. **未登入狀態**：
-   - 使用 `pageId` 查詢預設卡片
-   - SQL: `SELECT * FROM member_cards WHERE page_id = $1 AND line_user_id IS NULL`
-
-2. **已登入狀態**：
-   - 使用 `pageId` 和 `line_user_id` 查詢個人化卡片
-   - SQL: `SELECT * FROM member_cards WHERE page_id = $1 AND line_user_id = $2`
-
-### 4. 初始資料
-```sql
--- 插入預設卡片資料
-INSERT INTO member_cards (
-  page_id,
-  card_title,
-  main_image_url,
-  main_image_link,
-  snow_image_url,
-  calendar_image_url,
-  amember_id,
-  pageview,
-  main_title_1,
-  main_title_1_color,
-  main_title_2,
-  main_title_2_color,
-  member_image_url,
-  member_image_link,
-  display_name,
-  name_color1,
-  button_1_text,
-  button_1_url,
-  button_1_color,
-  s_button_text,
-  s_button_url,
-  s_button_color
-) VALUES (
-  'M01001',
-  '我在呈璽',
-  'https://barv2.vercel.app/uploads/vip/TS-B1.png',
-  'https://secure.smore.com/n/td1qc',
-  'https://barv2.vercel.app/uploads/vip/APNG1.png',
-  'https://barv2.vercel.app/uploads/vip/icon_calendar.png',
-  'TSAMC',
-  0,
-  '我在呈璽',
-  '#000000',
-  '我在呈璽，欣賞美好幸福！我在呈璽，喝茶喝咖啡很悠閒！！我不在呈璽，就是在前往呈璽的路上！！！',
-  '#000000',
-  'https://barv2.vercel.app/uploads/vip/TS-LOGO.png',
-  'https://secure.smore.com/n/td1qc',
-  '呈璽',
-  '#A4924C',
-  '加呈璽好友',
-  'https://lin.ee/JLLIBlP',
-  '#A4924A',
-  '分享給好友',
-  'https://liff.line.me/2007327814-BdWpj70m?pageId=M01001',
-  '#A4924B'
-);
-``` 
 
 # 會員卡頁面 onload 流程與關鍵點（2025-05-18）
 
@@ -644,36 +348,6 @@ INSERT INTO member_cards (
 - 資料庫操作
 
 ## 資料結構
-
-### 會員卡資料
-```json
-{
-  "pageId": "string",
-  "userId": "string",
-  "cardTitle": "string",
-  "cardSubtitle": "string",
-  "cardImage": "string",
-  "cardColor": "string",
-  "flexJson": "object"
-}
-```
-
-### Flex Message 結構
-```json
-{
-  "type": "bubble",
-  "body": {
-    "type": "box",
-    "layout": "vertical",
-    "contents": [
-      {
-        "type": "text",
-        "text": "會員卡標題"
-      }
-    ]
-  }
-}
-```
 
 ## API 端點
 
