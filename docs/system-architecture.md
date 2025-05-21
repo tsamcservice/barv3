@@ -377,3 +377,19 @@ const defaultCards = {
 ## 專案型態說明
 - 本專案為 Next.js 專案，所有 API 路由請放在 pages/api 目錄下，首頁與靜態頁面請以 Next.js 標準結構為主。
 - 請勿隨意加入 vercel.json 或更改專案型態，以免影響 Vercel 部署與 API 運作。 
+
+## 圖片儲存與讀取說明
+- 所有圖片上傳後會儲存在 Supabase Storage 的 member-cards bucket。
+- 管理員可在 Supabase 後台直接查看所有圖片。
+- 會員端僅能取得自己上傳時回傳的圖片連結，無法直接瀏覽 bucket 內所有圖片。
+
+## TODO
+- 未來可開發「會員只看到自己圖片」功能：
+  - 上傳時以 userId 作為路徑前綴（如 user-12345/xxx.jpg）。
+  - 設計 API 查詢該會員的所有圖片，前端顯示。
+  - Storage Policy 可進一步限制只有本人能讀取/刪除自己檔案。
+
+## 2025-05-21 圖片上傳 API 與資料庫設定
+- Storage bucket 名稱：member-cards
+- Policy：允許 public INSERT（上傳），條件為 true（測試用，正式建議加強）
+- API /api/upload 會將圖片上傳至 member-cards bucket，回傳公開網址。 
