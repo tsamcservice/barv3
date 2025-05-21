@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flex2HTML 測試頁面</title>
+    <script src="/js/flex2html.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .preview-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 4px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Flex2HTML 測試頁面</h1>
+        <div class="preview-container" id="preview"></div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        // 官方範例 Flex Message
+        const flexMessage = {
+            "type": "bubble",
+            "hero": {
+                "type": "image",
+                "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png",
+                "size": "full",
+                "aspectRatio": "20:13",
+                "aspectMode": "cover"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "Brown Cafe",
+                        "weight": "bold",
+                        "size": "xl"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "baseline",
+                        "margin": "md",
+                        "contents": [
+                            {
+                                "type": "icon",
+                                "size": "sm",
+                                "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_gold_star_28.png"
+                            },
+                            {
+                                "type": "text",
+                                "text": "4.0",
+                                "size": "sm",
+                                "color": "#999999",
+                                "margin": "md",
+                                "flex": 0
+                            },
+                            {
+                                "type": "text",
+                                "text": "(2,000+)",
+                                "color": "#999999",
+                                "size": "sm",
+                                "align": "end"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "margin": "lg",
+                        "spacing": "sm",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "baseline",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": "營業時間",
+                                        "color": "#aaaaaa",
+                                        "size": "sm",
+                                        "flex": 1
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": "10:00 - 23:00",
+                                        "wrap": true,
+                                        "color": "#666666",
+                                        "size": "sm",
+                                        "flex": 5
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri",
+                            "label": "查看地圖",
+                            "uri": "https://linecorp.com"
+                        }
+                    }
+                ],
+                "flex": 0
+            }
+        };
+
+        // 渲染 Flex Message 並加上錯誤提示
+        window.onload = function() {
+            const preview = document.getElementById('preview');
+            const errorDiv = document.getElementById('error');
+            try {
+                if (typeof flex2html === 'undefined') {
+                    throw new Error('flex2html 未正確載入，請檢查本地 js 檔案');
+                }
+                flex2html.render(flexMessage, preview);
+            } catch (e) {
+                errorDiv.textContent = '渲染失敗：' + e.message;
+            }
+        };
+    </script>
+</body>
+</html> 
