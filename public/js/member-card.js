@@ -680,6 +680,9 @@ function bindImageUpload(inputId, btnId, previewId, urlId, type, userProfile) {
   const input = document.getElementById(inputId);
   const btn = document.getElementById(btnId);
   const preview = document.getElementById(previewId);
+  const urlInput = document.getElementById(urlId);
+
+  // 檔案選擇事件
   input.addEventListener('change', function() {
     if (input.files && input.files[0]) {
       const reader = new FileReader();
@@ -690,15 +693,51 @@ function bindImageUpload(inputId, btnId, previewId, urlId, type, userProfile) {
       reader.readAsDataURL(input.files[0]);
     }
   });
-  btn.addEventListener('click', function() {
-    if (!input.files || !input.files[0]) return alert('請選擇圖片');
+
+  // 上傳按鈕點擊事件
+  btn.addEventListener('click', async function() {
+    if (!input.files || !input.files[0]) {
+      alert('請選擇圖片');
+      return;
+    }
+
+    const file = input.files[0];
     const reader = new FileReader();
-    reader.onload = function(e) {
-      document.getElementById(urlId).value = e.target.result;
-      preview.src = e.target.result;
-      preview.style.display = 'block';
-      renderPreview();
+
+    reader.onload = async function(e) {
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            file: e.target.result,
+            fileName: file.name,
+            fileType: file.type,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || '上傳失敗');
+        }
+
+        if (data.data?.url) {
+          urlInput.value = data.data.url;
+          preview.src = data.data.url;
+          preview.style.display = 'block';
+          renderPreview();
+        } else {
+          throw new Error('未收到上傳 URL');
+        }
+      } catch (error) {
+        console.error('Upload failed:', error);
+        alert(error.message || '上傳失敗，請重試');
+      }
     };
-    reader.readAsDataURL(input.files[0]);
+
+    reader.readAsDataURL(file);
   });
 } 

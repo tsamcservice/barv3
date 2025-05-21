@@ -1,5 +1,55 @@
 # 部署流程文件
 
+## 部署資訊
+- 平台：Vercel
+- 專案名稱：barv3
+- 自動部署：已啟用
+- 環境變數：已設定
+- 監控：Vercel Dashboard
+
+## 部署連結
+- GitHub 專案：https://github.com/tsamcservice/barv3
+- Vercel 部署：https://barv3.vercel.app
+- 測試頁面：https://barv3.vercel.app/member-card-simple.html
+
+## 環境需求
+- Node.js 18+
+- Vercel CLI
+- Supabase 專案（barv3）
+
+## 環境變數設定
+在 Vercel 專案設定中設定以下環境變數：
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- NODE_ENV=production
+
+## 部署流程
+1. 程式碼推送到 GitHub
+2. Vercel 自動偵測變更
+3. 執行建置流程
+4. 部署到 Vercel CDN
+5. 提供部署 URL
+
+## 測試項目
+1. 基本功能測試
+   - 表單欄位輸入與預覽
+   - 圖片上傳功能
+   - 顏色選擇器
+2. 分享功能測試
+   - 分享按鈕點擊
+   - 分享到 LINE 功能
+   - Flex Message 格式驗證
+3. LIFF 整合測試
+   - 登入狀態
+   - 用戶資訊顯示
+   - 權限驗證
+
+## 監控與維護
+- 定期檢查部署狀態
+- 監控錯誤日誌
+- 更新環境變數
+- 備份資料庫
+
 ## 1. 環境需求
 - Node.js 18+
 - Vercel CLI
