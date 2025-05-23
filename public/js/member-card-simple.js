@@ -74,11 +74,15 @@ function setInputDefaultStyle(input, defaultValue) {
       input.style.color = '#222';
     } else {
       input.style.color = '#bbb';
+      if (input.value === '') {
+        input.value = input.getAttribute('data-default');
+      }
     }
   }
   input.addEventListener('input', updateColor);
   input.addEventListener('blur', updateColor);
   input.addEventListener('focus', updateColor);
+  input.updateColor = updateColor;
   updateColor();
 }
 
@@ -468,6 +472,16 @@ function renderShareJsonBox() {
   box.appendChild(copyBtn);
 }
 
+function closeOrRedirect() {
+  if (window.liff && typeof liff.closeWindow === 'function') {
+    liff.closeWindow();
+  } else if (window.close) {
+    window.close();
+  } else {
+    window.location.href = '/member-card-simple.html';
+  }
+}
+
 // 修改欄位填入流程，API查詢/預設值都呼叫 setInputDefaultStyle
 window.onload = async function() {
   const userIdParam = getQueryParam('userId');
@@ -498,18 +512,12 @@ window.onload = async function() {
       await liff.init({ liffId });
       await liff.shareTargetPicker([flexJson])
         .then(() => {
-          if (liff.closeWindow) {
-            liff.closeWindow();
-          } else {
-            window.location.href = '/member-card-simple.html';
-          }
+          loadingDiv.remove();
+          closeOrRedirect();
         })
         .catch(() => {
-          if (liff.closeWindow) {
-            liff.closeWindow();
-          } else {
-            window.location.href = '/member-card-simple.html';
-          }
+          loadingDiv.remove();
+          closeOrRedirect();
         });
     } catch (e) {
       loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">自動分享失敗：' + (e.message || e) + '</div>';
@@ -544,6 +552,7 @@ window.onload = async function() {
         Object.keys(defaultCard).forEach(key => {
           if (document.getElementById(key) && card[key] !== undefined && card[key] !== null) {
             setInputDefaultStyle(document.getElementById(key), card[key]);
+            if (document.getElementById(key).updateColor) document.getElementById(key).updateColor();
           }
         });
         cardLoaded = true;
@@ -551,6 +560,12 @@ window.onload = async function() {
     } catch (e) {}
     // 4. 若沒資料則用 fillAllFieldsWithProfile
     if (!cardLoaded) {
+      Object.keys(defaultCard).forEach(key => {
+        if(document.getElementById(key)){
+          setInputDefaultStyle(document.getElementById(key), defaultCard[key]);
+          if (document.getElementById(key).updateColor) document.getElementById(key).updateColor();
+        }
+      });
       await fillAllFieldsWithProfile();
     }
     // 5. 掛 input 監聽
@@ -617,20 +632,8 @@ async function shareToLine() {
       throw new Error(errorData.message || '儲存失敗');
     }
     await liff.shareTargetPicker([flexJson])
-      .then(() => {
-        if (liff.closeWindow) {
-          liff.closeWindow();
-        } else {
-          window.location.href = '/member-card-simple.html';
-        }
-      })
-      .catch(() => {
-        if (liff.closeWindow) {
-          liff.closeWindow();
-        } else {
-          window.location.href = '/member-card-simple.html';
-        }
-      });
+      .then(() => closeOrRedirect())
+      .catch(() => closeOrRedirect());
   } catch (err) {
     alert('儲存或分享失敗: ' + err.message);
   }
@@ -751,6 +754,7 @@ function bindImageUpload(inputId, btnId, previewId, urlId) {
         if (data.data?.url) {
           urlInput.value = data.data.url;
           setImageUserStyle(preview, data.data.url);
+          if (urlInput.updateColor) urlInput.updateColor(); // 圖片欄位變黑
           renderPreview();
         } else {
           throw new Error('未收到上傳 URL');
