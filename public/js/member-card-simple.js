@@ -1,19 +1,19 @@
 // 會員卡初始資料
 const defaultCard = {
-  main_image_url: 'https://barv2.vercel.app/uploads/vip/TS-B1.png',
-  snow_image_url: 'https://barv2.vercel.app/uploads/vip/APNG1.png',
+  main_image_url: 'https://barv3.vercel.app/uploads/vip/TS-B1.png',
+  snow_image_url: 'https://barv3.vercel.app/uploads/vip/APNG1.png',
   main_image_link: 'https://secure.smore.com/n/td1qc',
-  calendar_image_url: 'https://barv2.vercel.app/uploads/vip/icon_calendar.png',
+  calendar_image_url: 'https://barv3.vercel.app/uploads/vip/icon_calendar.png',
   calendar_image_link: 'https://lihi3.cc/ZWV2u',
   amember_id: 'TSAMC',
-  love_icon_url: 'https://barv2.vercel.app/uploads/vip/loveicon.png',
+  love_icon_url: 'https://barv3.vercel.app/uploads/vip/loveicon.png',
   love_icon_link: 'https://lihi.cc/jl7Pw',
   pageview: '0000',
   main_title_1: '我在呈璽',
   main_title_1_color: '#000000',
   main_title_2: '我在呈璽，欣賞美好幸福！我在呈璽，喝茶喝咖啡很悠閒！！我不在呈璽，就是在前往呈璽的路上！！！',
   main_title_2_color: '#000000',
-  member_image_url: 'https://barv2.vercel.app/uploads/vip/TS-LOGO.png',
+  member_image_url: 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png',
   member_image_link: 'https://secure.smore.com/n/td1qc',
   display_name: '呈璽',
   name_color1: '#A4924C', // 名字顏色 
@@ -616,6 +616,47 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // 初始化
 window.onload = async function() {
+  const userIdParam = getQueryParam('userId');
+  if (userIdParam) {
+    // 分享跳板模式
+    // 1. 隱藏表單與預覽
+    const cardForm = document.getElementById('cardForm');
+    if (cardForm) cardForm.style.display = 'none';
+    const previewSection = document.querySelector('.preview-section');
+    if (previewSection) previewSection.style.display = 'none';
+    // 2. 顯示 loading
+    let loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+    loadingDiv.innerHTML = '<div style="font-size:20px;color:#4caf50;margin-top:60px;">正在自動分享...</div>';
+    document.body.appendChild(loadingDiv);
+    // 3. 查詢卡片資料
+    let flexJson = null;
+    try {
+      const res = await fetch(`/api/cards?pageId=M01001&userId=${userIdParam}`);
+      const result = await res.json();
+      flexJson = result?.data?.[0]?.flex_json;
+      if (!flexJson) {
+        // 查無資料，取預設
+        const defRes = await fetch('/api/cards/default?pageId=M01001');
+        const defResult = await defRes.json();
+        flexJson = defResult?.data?.flex_json;
+      }
+      if (!flexJson) {
+        loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
+        return;
+      }
+      // 4. 自動分享
+      await liff.init({ liffId });
+      await liff.shareTargetPicker([flexJson]);
+      // 5. 分享完成後自動導向首頁
+      setTimeout(() => {
+        window.location.href = '/member-card-simple.html';
+      }, 500);
+    } catch (e) {
+      loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">自動分享失敗：' + (e.message || e) + '</div>';
+    }
+    return;
+  }
   // 1. 先初始化 LIFF 並登入
   const ok = await initLiffAndLogin();
   if (ok) {
@@ -681,10 +722,5 @@ window.onload = async function() {
       window.open(liffUrl, '_blank');
     };
     sBtnUrlInput.style.cursor = 'pointer';
-  }
-  // 若網址有 userId 參數，自動觸發分享
-  const urlUserId = getQueryParam('userId');
-  if (urlUserId) {
-    setTimeout(shareToLine, 500);
   }
 }; 
