@@ -59,7 +59,13 @@ function getQueryParam(name) {
   return url.searchParams.get(name);
 }
 
-// 工具函數：設置 input 預設值與顏色
+// 加強 input 預設樣式
+const style = document.createElement('style');
+style.innerHTML = `
+  input[data-default] { color: #bbb !important; }
+`;
+document.head.appendChild(style);
+
 function setInputDefaultStyle(input, defaultValue) {
   input.value = defaultValue;
   input.style.color = '#bbb';
@@ -460,7 +466,115 @@ function renderShareJsonBox() {
   box.appendChild(copyBtn);
 }
 
-// 分享到 LINE
+// 修改欄位填入流程，API查詢/預設值都呼叫 setInputDefaultStyle
+window.onload = async function() {
+  const userIdParam = getQueryParam('userId');
+  if (userIdParam) {
+    // 分享跳板模式
+    const cardForm = document.getElementById('cardForm');
+    if (cardForm) cardForm.style.display = 'none';
+    const previewSection = document.querySelector('.preview-section');
+    if (previewSection) previewSection.style.display = 'none';
+    let loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+    loadingDiv.innerHTML = '<div style="font-size:20px;color:#4caf50;margin-top:60px;">正在自動分享...</div>';
+    document.body.appendChild(loadingDiv);
+    let flexJson = null;
+    try {
+      const res = await fetch(`/api/cards?pageId=M01001&userId=${userIdParam}`);
+      const result = await res.json();
+      flexJson = result?.data?.[0]?.flex_json;
+      if (!flexJson) {
+        const defRes = await fetch('/api/cards/default?pageId=M01001');
+        const defResult = await defRes.json();
+        flexJson = defResult?.data?.flex_json;
+      }
+      if (!flexJson) {
+        loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
+        return;
+      }
+      await liff.init({ liffId });
+      let redirectTimer = setTimeout(() => {
+        window.location.href = '/member-card-simple.html';
+      }, 3000);
+      await liff.shareTargetPicker([flexJson])
+        .then(() => window.location.href = '/member-card-simple.html')
+        .catch(() => window.location.href = '/member-card-simple.html')
+        .finally(() => clearTimeout(redirectTimer));
+    } catch (e) {
+      loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">自動分享失敗：' + (e.message || e) + '</div>';
+    }
+    return;
+  }
+  // 1. 先初始化 LIFF 並登入
+  const ok = await initLiffAndLogin();
+  if (ok) {
+    // 2. 取得 profile，確保 userId 可用
+    let profile = null;
+    if (window.liff && liff.getProfile) {
+      try {
+        profile = await liff.getProfile();
+        liffProfile.displayName = profile.displayName;
+        liffProfile.pictureUrl = profile.pictureUrl;
+        liffProfile.userId = profile.userId;
+        renderLiffUserInfo(profile);
+      } catch (e) {}
+    }
+    // 3. 用 userId 查詢 API
+    let userId = liffProfile.userId || getQueryParam('userId');
+    let pageId = 'M01001';
+    let apiUrl = `/api/cards?pageId=${pageId}`;
+    if (userId) apiUrl += `&userId=${userId}`;
+    let cardLoaded = false;
+    try {
+      const res = await fetch(apiUrl);
+      const result = await res.json();
+      if (result.success && result.data && result.data.length > 0) {
+        const card = result.data[0];
+        Object.keys(defaultCard).forEach(key => {
+          if (document.getElementById(key) && card[key] !== undefined && card[key] !== null) {
+            setInputDefaultStyle(document.getElementById(key), card[key]);
+          }
+        });
+        cardLoaded = true;
+      }
+    } catch (e) {}
+    // 4. 若沒資料則用 fillAllFieldsWithProfile
+    if (!cardLoaded) {
+      await fillAllFieldsWithProfile();
+    }
+    // 5. 掛 input 監聽
+    if(document.getElementById('display_name'))
+      document.getElementById('display_name').addEventListener('input', updateCardAltTitle);
+    if(document.getElementById('main_title_1'))
+      document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
+    // 6. 渲染預覽與 JSON
+    renderPreview();
+    renderShareJsonBox();
+  }
+  // 顯示分享按鈕後連結欄位（可複製）
+  const sBtnUrlInput = document.getElementById('s_button_url');
+  if(sBtnUrlInput && sBtnUrlInput.parentNode) {
+    sBtnUrlInput.style.display = '';
+    let shareBtn = document.createElement('button');
+    shareBtn.type = 'button';
+    shareBtn.textContent = '分享到LINE';
+    shareBtn.style = 'margin-top:12px;background:#06C755;color:#fff;padding:10px 18px;border:none;border-radius:4px;font-size:16px;cursor:pointer;display:block;width:100%';
+    shareBtn.onclick = shareToLine;
+    sBtnUrlInput.parentNode.appendChild(shareBtn);
+    // 設定分享按鈕連結為帶 pageId 和 userId 的 LIFF 連結
+    const pageId = 'M01001';
+    const userIdParam = liffProfile.userId || getQueryParam('userId');
+    const liffUrl = `https://liff.line.me/${liffId}?pageId=${pageId}${userIdParam ? `&userId=${userIdParam}` : ''}`;
+    sBtnUrlInput.value = liffUrl;
+    sBtnUrlInput.onclick = function() {
+      window.open(liffUrl, '_blank');
+    };
+    sBtnUrlInput.style.cursor = 'pointer';
+  }
+};
+
+// 修改分享按鈕，保底導向首頁
 async function shareToLine() {
   if (!window.liff) return alert('LIFF 未載入');
   try {
@@ -469,7 +583,6 @@ async function shareToLine() {
       liff.login();
       return;
     }
-    // 先儲存
     const formData = getFormData();
     const bubble = getMainBubble(formData);
     const flexJson = {
@@ -493,10 +606,13 @@ async function shareToLine() {
       const errorData = await response.json();
       throw new Error(errorData.message || '儲存失敗');
     }
-    // 儲存成功後分享
+    let redirectTimer = setTimeout(() => {
+      window.location.href = '/member-card-simple.html';
+    }, 3000);
     await liff.shareTargetPicker([flexJson])
       .then(() => window.location.href = '/member-card-simple.html')
-      .catch(() => window.location.href = '/member-card-simple.html');
+      .catch(() => window.location.href = '/member-card-simple.html')
+      .finally(() => clearTimeout(redirectTimer));
   } catch (err) {
     alert('儲存或分享失敗: ' + err.message);
   }
@@ -640,113 +756,4 @@ window.addEventListener('DOMContentLoaded', function() {
   bindImageUpload('calendar_image_upload', 'calendar_image_upload_btn', 'calendar_image_preview', 'calendar_image_url');
   bindImageUpload('love_icon_upload', 'love_icon_upload_btn', 'love_icon_preview', 'love_icon_url');
   bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url');
-});
-
-// 初始化
-window.onload = async function() {
-  const userIdParam = getQueryParam('userId');
-  if (userIdParam) {
-    // 分享跳板模式
-    // 1. 隱藏表單與預覽
-    const cardForm = document.getElementById('cardForm');
-    if (cardForm) cardForm.style.display = 'none';
-    const previewSection = document.querySelector('.preview-section');
-    if (previewSection) previewSection.style.display = 'none';
-    // 2. 顯示 loading
-    let loadingDiv = document.createElement('div');
-    loadingDiv.className = 'loading';
-    loadingDiv.innerHTML = '<div style="font-size:20px;color:#4caf50;margin-top:60px;">正在自動分享...</div>';
-    document.body.appendChild(loadingDiv);
-    // 3. 查詢卡片資料
-    let flexJson = null;
-    try {
-      const res = await fetch(`/api/cards?pageId=M01001&userId=${userIdParam}`);
-      const result = await res.json();
-      flexJson = result?.data?.[0]?.flex_json;
-      if (!flexJson) {
-        // 查無資料，取預設
-        const defRes = await fetch('/api/cards/default?pageId=M01001');
-        const defResult = await defRes.json();
-        flexJson = defResult?.data?.flex_json;
-      }
-      if (!flexJson) {
-        loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
-        return;
-      }
-      // 4. 自動分享
-      await liff.init({ liffId });
-      await liff.shareTargetPicker([flexJson])
-        .then(() => window.location.href = '/member-card-simple.html')
-        .catch(() => window.location.href = '/member-card-simple.html');
-    } catch (e) {
-      loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">自動分享失敗：' + (e.message || e) + '</div>';
-    }
-    return;
-  }
-  // 1. 先初始化 LIFF 並登入
-  const ok = await initLiffAndLogin();
-  if (ok) {
-    // 2. 取得 profile，確保 userId 可用
-    let profile = null;
-    if (window.liff && liff.getProfile) {
-      try {
-        profile = await liff.getProfile();
-        liffProfile.displayName = profile.displayName;
-        liffProfile.pictureUrl = profile.pictureUrl;
-        liffProfile.userId = profile.userId;
-        renderLiffUserInfo(profile);
-      } catch (e) {}
-    }
-    // 3. 用 userId 查詢 API
-    let userId = liffProfile.userId || getQueryParam('userId');
-    let pageId = 'M01001';
-    let apiUrl = `/api/cards?pageId=${pageId}`;
-    if (userId) apiUrl += `&userId=${userId}`;
-    let cardLoaded = false;
-    try {
-      const res = await fetch(apiUrl);
-      const result = await res.json();
-      if (result.success && result.data && result.data.length > 0) {
-        const card = result.data[0];
-        Object.keys(defaultCard).forEach(key => {
-          if (document.getElementById(key) && card[key] !== undefined && card[key] !== null) {
-            document.getElementById(key).value = card[key];
-          }
-        });
-        cardLoaded = true;
-      }
-    } catch (e) {}
-    // 4. 若沒資料則用 fillAllFieldsWithProfile
-    if (!cardLoaded) {
-      await fillAllFieldsWithProfile();
-    }
-    // 5. 掛 input 監聽
-    if(document.getElementById('display_name'))
-      document.getElementById('display_name').addEventListener('input', updateCardAltTitle);
-    if(document.getElementById('main_title_1'))
-      document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
-    // 6. 渲染預覽與 JSON
-    renderPreview();
-    renderShareJsonBox();
-  }
-  // 顯示分享按鈕後連結欄位（可複製）
-  const sBtnUrlInput = document.getElementById('s_button_url');
-  if(sBtnUrlInput && sBtnUrlInput.parentNode) {
-    sBtnUrlInput.style.display = '';
-    let shareBtn = document.createElement('button');
-    shareBtn.type = 'button';
-    shareBtn.textContent = '分享到LINE';
-    shareBtn.style = 'margin-top:12px;background:#06C755;color:#fff;padding:10px 18px;border:none;border-radius:4px;font-size:16px;cursor:pointer;display:block;width:100%';
-    shareBtn.onclick = shareToLine;
-    sBtnUrlInput.parentNode.appendChild(shareBtn);
-    // 設定分享按鈕連結為帶 pageId 和 userId 的 LIFF 連結
-    const pageId = 'M01001';
-    const userIdParam = liffProfile.userId || getQueryParam('userId');
-    const liffUrl = `https://liff.line.me/${liffId}?pageId=${pageId}${userIdParam ? `&userId=${userIdParam}` : ''}`;
-    sBtnUrlInput.value = liffUrl;
-    sBtnUrlInput.onclick = function() {
-      window.open(liffUrl, '_blank');
-    };
-    sBtnUrlInput.style.cursor = 'pointer';
-  }
-}; 
+}); 
