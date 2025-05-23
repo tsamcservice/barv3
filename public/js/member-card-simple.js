@@ -501,8 +501,14 @@ window.onload = async function() {
       }
       await liff.init({ liffId });
       await liff.shareTargetPicker([flexJson])
-        .then(closeOrRedirect)
-        .catch(closeOrRedirect);
+        .then(() => {
+          loadingDiv.remove();
+          closeOrRedirect();
+        })
+        .catch(() => {
+          loadingDiv.remove();
+          closeOrRedirect();
+        });
     } catch (e) {
       loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">自動分享失敗：' + (e.message || e) + '</div>';
     }
