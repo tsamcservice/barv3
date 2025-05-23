@@ -59,12 +59,39 @@ function getQueryParam(name) {
   return url.searchParams.get(name);
 }
 
-// 取得 LINE 頭像與名字，並自動填入所有欄位
+// 工具函數：設置 input 預設值與顏色
+function setInputDefaultStyle(input, defaultValue) {
+  input.value = defaultValue;
+  input.style.color = '#bbb';
+  input.setAttribute('data-default', defaultValue);
+  input.addEventListener('input', function() {
+    if (input.value !== input.getAttribute('data-default') && input.value !== '') {
+      input.style.color = '#222';
+    } else {
+      input.style.color = '#bbb';
+      if (input.value === '') input.value = input.getAttribute('data-default');
+    }
+  });
+}
+
+// 工具函數：設置圖片預設樣式
+function setImageDefaultStyle(img, defaultUrl) {
+  img.src = defaultUrl;
+  img.style.border = '2px solid #bbb';
+  img.style.display = 'block';
+}
+function setImageUserStyle(img, url) {
+  img.src = url;
+  img.style.border = '2px solid #4caf50';
+  img.style.display = 'block';
+}
+
+// 修改 fillAllFieldsWithProfile 與卡片資料填入流程
 async function fillAllFieldsWithProfile() {
   // 先填入預設值
   Object.keys(defaultCard).forEach(key => {
     if(document.getElementById(key)){
-      document.getElementById(key).value = defaultCard[key];
+      setInputDefaultStyle(document.getElementById(key), defaultCard[key]);
     }
   });
   // 再用 LINE 資訊覆蓋會員圖片與名字（不動 card_alt_title）
@@ -74,8 +101,8 @@ async function fillAllFieldsWithProfile() {
       liffProfile.displayName = profile.displayName;
       liffProfile.pictureUrl = profile.pictureUrl;
       liffProfile.userId = profile.userId;
-      if(document.getElementById('display_name')) document.getElementById('display_name').value = profile.displayName;
-      if(document.getElementById('member_image_url')) document.getElementById('member_image_url').value = profile.pictureUrl;
+      if(document.getElementById('display_name')) setInputDefaultStyle(document.getElementById('display_name'), profile.displayName);
+      if(document.getElementById('member_image_url')) setInputDefaultStyle(document.getElementById('member_image_url'), profile.pictureUrl);
       renderLiffUserInfo(profile);
     } catch (e) {}
   }
@@ -85,7 +112,7 @@ async function fillAllFieldsWithProfile() {
   const userIdParam = liffProfile.userId || getQueryParam('userId');
   if(userIdParam) liffShareUrl += `&userId=${userIdParam}`;
   if(document.getElementById('s_button_url')){
-    document.getElementById('s_button_url').value = liffShareUrl;
+    setInputDefaultStyle(document.getElementById('s_button_url'), liffShareUrl);
   }
   renderPreview();
   renderShareJsonBox();
@@ -442,27 +469,36 @@ async function shareToLine() {
       liff.login();
       return;
     }
-    // 直接使用 LIFF 分享功能
+    // 先儲存
     const formData = getFormData();
-    const shareMsg = {
+    const bubble = getMainBubble(formData);
+    const flexJson = {
       type: 'flex',
-      altText: `${formData.main_title_1 || defaultCard.main_title_1}/${formData.display_name || defaultCard.display_name}`,
-      contents: getMainBubble(formData)
+      altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1 || '我的會員卡',
+      contents: bubble
     };
-    
-    await liff.shareTargetPicker([shareMsg])
-    .then(function (res) {
-      if (res) {
-        alert(`[${res.status}] 已成功分享！`);
-      } else {
-        alert('已取消分享');
-      }
-    })
-    .catch(function (error) {
-      alert('分享失敗: ' + error.message);
+    const response = await fetch('/api/cards', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        page_id: 'M01001',
+        line_user_id: liffProfile.userId,
+        ...formData,
+        flex_json: flexJson
+      })
     });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || '儲存失敗');
+    }
+    // 儲存成功後分享
+    await liff.shareTargetPicker([flexJson])
+      .then(() => window.location.href = '/member-card-simple.html')
+      .catch(() => window.location.href = '/member-card-simple.html');
   } catch (err) {
-    alert('分享失敗: ' + err.message);
+    alert('儲存或分享失敗: ' + err.message);
   }
 }
 
@@ -541,29 +577,26 @@ function bindImageUpload(inputId, btnId, previewId, urlId) {
   const btn = document.getElementById(btnId);
   const preview = document.getElementById(previewId);
   const urlInput = document.getElementById(urlId);
-
+  // 預設圖
+  setImageDefaultStyle(preview, urlInput.value || preview.src);
   // 檔案選擇事件
   input.addEventListener('change', function() {
     if (input.files && input.files[0]) {
       const reader = new FileReader();
       reader.onload = function(e) {
-        preview.src = e.target.result;
-        preview.style.display = 'block';
+        setImageUserStyle(preview, e.target.result);
       };
       reader.readAsDataURL(input.files[0]);
     }
   });
-
   // 上傳按鈕點擊事件
   btn.addEventListener('click', async function() {
     if (!input.files || !input.files[0]) {
       alert('請選擇圖片');
       return;
     }
-
     const file = input.files[0];
     const reader = new FileReader();
-
     reader.onload = async function(e) {
       try {
         const response = await fetch('/api/upload', {
@@ -577,17 +610,13 @@ function bindImageUpload(inputId, btnId, previewId, urlId) {
             fileType: file.type,
           }),
         });
-
         const data = await response.json();
-        
         if (!data.success) {
           throw new Error(data.error || '上傳失敗');
         }
-
         if (data.data?.url) {
           urlInput.value = data.data.url;
-          preview.src = data.data.url;
-          preview.style.display = 'block';
+          setImageUserStyle(preview, data.data.url);
           renderPreview();
         } else {
           throw new Error('未收到上傳 URL');
@@ -597,7 +626,6 @@ function bindImageUpload(inputId, btnId, previewId, urlId) {
         alert(error.message || '上傳失敗，請重試');
       }
     };
-
     reader.readAsDataURL(file);
   });
 }
@@ -647,11 +675,9 @@ window.onload = async function() {
       }
       // 4. 自動分享
       await liff.init({ liffId });
-      await liff.shareTargetPicker([flexJson]);
-      // 5. 分享完成後自動導向首頁
-      setTimeout(() => {
-        window.location.href = '/member-card-simple.html';
-      }, 500);
+      await liff.shareTargetPicker([flexJson])
+        .then(() => window.location.href = '/member-card-simple.html')
+        .catch(() => window.location.href = '/member-card-simple.html');
     } catch (e) {
       loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">自動分享失敗：' + (e.message || e) + '</div>';
     }
