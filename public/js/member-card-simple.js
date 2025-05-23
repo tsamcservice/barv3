@@ -68,16 +68,18 @@ document.head.appendChild(style);
 
 function setInputDefaultStyle(input, defaultValue) {
   input.value = defaultValue;
-  input.style.color = '#bbb';
   input.setAttribute('data-default', defaultValue);
-  input.addEventListener('input', function() {
+  function updateColor() {
     if (input.value !== input.getAttribute('data-default') && input.value !== '') {
       input.style.color = '#222';
     } else {
       input.style.color = '#bbb';
-      if (input.value === '') input.value = input.getAttribute('data-default');
     }
-  });
+  }
+  input.addEventListener('input', updateColor);
+  input.addEventListener('blur', updateColor);
+  input.addEventListener('focus', updateColor);
+  updateColor();
 }
 
 // 工具函數：設置圖片預設樣式
@@ -494,13 +496,21 @@ window.onload = async function() {
         return;
       }
       await liff.init({ liffId });
-      let redirectTimer = setTimeout(() => {
-        window.location.href = '/member-card-simple.html';
-      }, 3000);
       await liff.shareTargetPicker([flexJson])
-        .then(() => window.location.href = '/member-card-simple.html')
-        .catch(() => window.location.href = '/member-card-simple.html')
-        .finally(() => clearTimeout(redirectTimer));
+        .then(() => {
+          if (liff.closeWindow) {
+            liff.closeWindow();
+          } else {
+            window.location.href = '/member-card-simple.html';
+          }
+        })
+        .catch(() => {
+          if (liff.closeWindow) {
+            liff.closeWindow();
+          } else {
+            window.location.href = '/member-card-simple.html';
+          }
+        });
     } catch (e) {
       loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">自動分享失敗：' + (e.message || e) + '</div>';
     }
@@ -606,13 +616,21 @@ async function shareToLine() {
       const errorData = await response.json();
       throw new Error(errorData.message || '儲存失敗');
     }
-    let redirectTimer = setTimeout(() => {
-      window.location.href = '/member-card-simple.html';
-    }, 3000);
     await liff.shareTargetPicker([flexJson])
-      .then(() => window.location.href = '/member-card-simple.html')
-      .catch(() => window.location.href = '/member-card-simple.html')
-      .finally(() => clearTimeout(redirectTimer));
+      .then(() => {
+        if (liff.closeWindow) {
+          liff.closeWindow();
+        } else {
+          window.location.href = '/member-card-simple.html';
+        }
+      })
+      .catch(() => {
+        if (liff.closeWindow) {
+          liff.closeWindow();
+        } else {
+          window.location.href = '/member-card-simple.html';
+        }
+      });
   } catch (err) {
     alert('儲存或分享失敗: ' + err.message);
   }
