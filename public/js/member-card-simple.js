@@ -468,12 +468,21 @@ function closeOrRedirect() {
   if (window.liff && typeof liff.closeWindow === 'function') {
     liff.closeWindow();
   } else {
-    window.location.href = '/member-card-simple.html';
+    window.location.replace('/member-card-simple.html');
   }
 }
 
 // 修改欄位填入流程，API查詢/預設值都呼叫 setInputDefaultStyle
 window.onload = async function() {
+  // 強制所有 input 一律黑字，移除殘留 CSS
+  document.querySelectorAll('input').forEach(input => {
+    input.style.color = '#222';
+    input.className = '';
+  });
+  document.querySelectorAll('style').forEach(style => {
+    if (style.innerHTML.includes('data-default')) style.remove();
+  });
+
   const userIdParam = getQueryParam('userId');
   if (userIdParam) {
     // 分享跳板模式
