@@ -563,6 +563,7 @@ window.onload = async function() {
     let apiUrl = `/api/cards?pageId=${pageId}`;
     if (userId) apiUrl += `&userId=${userId}`;
     let cardLoaded = false;
+    let loadedFlexJson = null;
     try {
       const res = await fetch(apiUrl);
       const result = await res.json();
@@ -574,6 +575,7 @@ window.onload = async function() {
           }
         });
         cardLoaded = true;
+        loadedFlexJson = card.flex_json;
       }
     } catch (e) {}
     // 4. 若沒資料則用 fillAllFieldsWithProfile
@@ -593,6 +595,33 @@ window.onload = async function() {
     // 6. 渲染預覽與 JSON
     renderPreview();
     renderShareJsonBoxWithPromo();
+    // 若有儲存的carousel，還原排序
+    if (loadedFlexJson && loadedFlexJson.contents && loadedFlexJson.contents.type === 'carousel') {
+      // 取得主卡與宣傳卡 id 順序
+      const flexArr = loadedFlexJson.contents.contents;
+      // 取得主卡與宣傳卡的唯一key（主卡用main，宣傳卡用id）
+      let newAllCards = [];
+      let newSelectedPromo = [];
+      flexArr.forEach(flex => {
+        // 判斷是主卡還是宣傳卡
+        if (flex.body && flex.body.contents && flex.body.contents.some && flex.body.contents.some(c => c.type === 'box' && c.contents && c.contents.some && c.contents.some(cc => cc.text === '主卡片'))) {
+          // 主卡
+          newAllCards.push({ type: 'main', id: 'main', flex_json: flex, img: getFormData().main_image_url || defaultCard.main_image_url });
+        } else {
+          // 宣傳卡
+          const found = promoCardList.find(c => JSON.stringify(c.flex_json) === JSON.stringify(flex));
+          if (found) {
+            newAllCards.push({ type: 'promo', id: found.id, flex_json: found.flex_json, img: found.flex_json.body.contents[0].url });
+            newSelectedPromo.push(found.id);
+          }
+        }
+      });
+      if (newAllCards.length > 0) {
+        allCardsSortable = newAllCards;
+        selectedPromoCards = newSelectedPromo;
+      }
+    }
+    renderPromoCardListSortable();
   }
   // 顯示分享按鈕後連結欄位（可複製）
   const sBtnUrlInput = document.getElementById('s_button_url');
@@ -652,7 +681,7 @@ function initAllCardsSortable() {
   }
 }
 
-// renderPromoCardListSortable 只渲染，不重建 allCardsSortable
+// renderPromoCardListSortable 箭頭寬度縮小，padding減少
 function renderPromoCardListSortable() {
   const container = document.getElementById('promo-cards');
   if (!container) return;
@@ -672,9 +701,9 @@ function renderPromoCardListSortable() {
         <div class="sort-num" style="position:absolute;top:4px;left:4px;background:#A4924B;color:#fff;font-size:17px;font-weight:bold;padding:2px 10px;border-radius:50%;">${idx + 1}</div>
         ${card.type === 'main' ? '<div class="main-label" style="position:absolute;right:4px;top:4px;background:#4caf50;color:#fff;padding:2px 8px;border-radius:4px;font-size:15px;z-index:2;">主卡片</div>' : ''}
       </div>
-      <div style="width:120px;text-align:center;margin-top:8px;">
-        <button type="button" style="margin:0 6px;padding:6px 16px;font-size:22px;font-weight:bold;background:#A4924B;color:#fff;border:none;border-radius:6px;box-shadow:0 2px 8px #0002;cursor:pointer;" onclick="moveCardLeft(${idx})">←</button>
-        <button type="button" style="margin:0 6px;padding:6px 16px;font-size:22px;font-weight:bold;background:#A4924B;color:#fff;border:none;border-radius:6px;box-shadow:0 2px 8px #0002;cursor:pointer;" onclick="moveCardRight(${idx})">→</button>
+      <div style="width:120px;text-align:center;margin-top:8px;display:flex;justify-content:center;gap:8px;">
+        <button type="button" style="padding:4px 10px;font-size:20px;font-weight:bold;background:#A4924B;color:#fff;border:none;border-radius:6px;box-shadow:0 2px 8px #0002;cursor:pointer;min-width:36px;" onclick="moveCardLeft(${idx})">←</button>
+        <button type="button" style="padding:4px 10px;font-size:20px;font-weight:bold;background:#A4924B;color:#fff;border:none;border-radius:6px;box-shadow:0 2px 8px #0002;cursor:pointer;min-width:36px;" onclick="moveCardRight(${idx})">→</button>
       </div>
     `;
     container.appendChild(div);
@@ -741,7 +770,7 @@ window.moveCardRight = function(idx) {
   renderPromoCardListSortable();
 };
 
-// 分享前主卡片內容即時更新
+// 分享後不自動刷新排序區
 async function shareToLine() {
   if (!window.liff) return alert('LIFF 未載入');
   try {
@@ -813,11 +842,7 @@ async function shareToLine() {
       });
     }
     await liff.shareTargetPicker([flexJson])
-      .then(async () => {
-        // 分享後自動刷新卡片資料
-        await loadPromoCards();
-        closeOrRedirect();
-      })
+      .then(closeOrRedirect)
       .catch(closeOrRedirect);
   } catch (err) {
     alert('儲存或分享失敗: ' + err.message);
