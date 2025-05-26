@@ -480,7 +480,7 @@ function closeOrRedirect() {
   }
 }
 
-// 修改欄位填入流程，API查詢/預設值都呼叫 setInputDefaultStyle
+// 修改 window.onload 函數
 window.onload = async function() {
   // 強制所有 input 一律黑字，移除殘留 CSS
   document.querySelectorAll('input').forEach(input => {
@@ -491,8 +491,11 @@ window.onload = async function() {
     if (style.innerHTML.includes('data-default')) style.remove();
   });
 
+  // 檢查是否為分享模式
+  const pageId = getQueryParam('pageId');
   const userIdParam = getQueryParam('userId');
-  if (userIdParam) {
+  
+  if (pageId) {
     // 分享跳板模式
     const cardForm = document.getElementById('cardForm');
     if (cardForm) cardForm.style.display = 'none';
@@ -504,11 +507,19 @@ window.onload = async function() {
     document.body.appendChild(loadingDiv);
     let flexJson = null;
     try {
-      const res = await fetch(`/api/cards?pageId=M01001&userId=${userIdParam}`);
+      // 初始化 LIFF
+      await liff.init({ liffId });
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+      // 取得卡片資料
+      const apiUrl = `/api/cards?pageId=${pageId}${userIdParam ? `&userId=${userIdParam}` : ''}`;
+      const res = await fetch(apiUrl);
       const result = await res.json();
       flexJson = result?.data?.[0]?.flex_json;
       if (!flexJson) {
-        const defRes = await fetch('/api/cards/default?pageId=M01001');
+        const defRes = await fetch('/api/cards/default?pageId=' + pageId);
         const defResult = await defRes.json();
         flexJson = defResult?.data?.flex_json;
       }
@@ -516,7 +527,7 @@ window.onload = async function() {
         loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
         return;
       }
-      await liff.init({ liffId });
+      // 自動分享
       await liff.shareTargetPicker([flexJson])
         .then(() => {
           loadingDiv.remove();
@@ -531,7 +542,8 @@ window.onload = async function() {
     }
     return;
   }
-  // 1. 先初始化 LIFF 並登入
+
+  // 一般編輯模式
   const ok = await initLiffAndLogin();
   if (ok) {
     // 2. 取得 profile，確保 userId 可用
@@ -633,18 +645,18 @@ function renderPromoCardSelector() {
     const thumb = document.createElement('div');
     thumb.className = 'promo-card-thumb-select' + (selectedPromoCards.includes(card.id) ? ' selected' : '');
     thumb.style.width = '120px';
-    thumb.style.height = '150px';
+    thumb.style.height = '180px';  // 增加高度
     thumb.style.display = 'inline-block';
     thumb.style.margin = '0 8px 8px 0';
     thumb.innerHTML = `
-      <div style="width:120px;text-align:center;margin-bottom:2px;">
+      <div style="width:120px;text-align:center;margin-bottom:8px;">
         <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
       </div>
-      <div style="position:relative;width:120px;height:120px;">
+      <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;">
         <img src="${card.flex_json.body.contents[0].url}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
         <div style="position:absolute;bottom:2px;right:2px;background:#fff2;color:#d00308;font-size:13px;font-weight:bold;padding:2px 6px;border-radius:4px;">👁️${card.pageview || 0}</div>
       </div>
-      <div class="select-label" style="text-align:center;margin-top:2px;font-size:13px;color:#4caf50;">${selectedPromoCards.includes(card.id) ? '已加入' : '點選加入'}</div>
+      <div class="select-label" style="text-align:center;margin-top:8px;font-size:13px;color:#4caf50;">${selectedPromoCards.includes(card.id) ? '已加入' : '點選加入'}</div>
     `;
     thumb.onclick = () => {
       const idx = selectedPromoCards.indexOf(card.id);
@@ -677,14 +689,14 @@ function renderPromoCardListSortable() {
     div.className = 'promo-card-thumb' + (card.type === 'main' ? ' main-card-thumb' : '');
     div.setAttribute('data-id', card.id);
     div.style.width = '120px';
-    div.style.height = '150px';
+    div.style.height = '180px';  // 增加高度
     div.style.display = 'inline-block';
     div.style.margin = '0 8px 8px 0';
     div.innerHTML = `
-      <div style="width:120px;text-align:center;margin-bottom:2px;">
+      <div style="width:120px;text-align:center;margin-bottom:8px;">
         <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
       </div>
-      <div style="position:relative;width:120px;height:120px;">
+      <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;">
         <img src="${card.type === 'main' ? (getFormData().main_image_url || defaultCard.main_image_url) : card.flex_json.body.contents[0].url}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
         <div class="sort-btn" style="font-size:2em;font-weight:bold;color:#fff;background:#A4924B;box-shadow:0 0 8px #0008;">${idx + 1}</div>
         <div style="position:absolute;bottom:2px;right:2px;background:#fff2;color:#d00308;font-size:13px;font-weight:bold;padding:2px 6px;border-radius:4px;">👁️${card.pageview || 0}</div>
@@ -706,6 +718,8 @@ function renderPromoCardListSortable() {
       });
       // 更新 selectedPromoCards 順序
       selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
+      // 重新渲染以更新排序數字
+      renderPromoCardListSortable();
       updatePreviewWithPromoSortable();
     }
   });

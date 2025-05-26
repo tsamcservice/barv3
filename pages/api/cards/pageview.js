@@ -13,18 +13,23 @@ export default async function handler(req, res) {
   let error = null;
   for (const { id, type } of cardIdTypeArr) {
     if (!id) continue;
-    if (type === 'main') {
-      const { error: updateError } = await supabase
-        .from('member_cards')
-        .update({ pageview: supabase.raw('pageview + 1') })
-        .eq('id', id);
-      if (updateError) error = updateError;
-    } else {
-      const { error: updateError } = await supabase
-        .from('promo_cards')
-        .update({ pageview: supabase.raw('pageview + 1') })
-        .eq('id', id);
-      if (updateError) error = updateError;
+    try {
+      if (type === 'main') {
+        const { error: updateError } = await supabase
+          .from('member_cards')
+          .update({ pageview: supabase.raw('COALESCE(pageview, 0) + 1') })
+          .eq('id', id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: updateError } = await supabase
+          .from('promo_cards')
+          .update({ pageview: supabase.raw('COALESCE(pageview, 0) + 1') })
+          .eq('id', id);
+        if (updateError) throw updateError;
+      }
+    } catch (e) {
+      error = e;
+      console.error('Update pageview error:', e);
     }
   }
   if (error) {
