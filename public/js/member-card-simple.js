@@ -663,18 +663,18 @@ function renderPromoCardListSortable() {
     div.className = 'promo-card-thumb' + (card.type === 'main' ? ' main-card-thumb' : '');
     div.setAttribute('data-id', card.id);
     div.style.width = '120px';
-    div.style.height = '150px';
+    div.style.height = '180px';
     div.style.display = 'inline-block';
     div.style.margin = '0 8px 8px 0';
     div.innerHTML = `
-      <div style="position:relative;width:120px;height:90px;display:flex;align-items:center;justify-content:center;">
-        <img src="${card.img}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;">
-        <div class="sort-num" style="position:absolute;top:4px;left:4px;background:#A4924B;color:#fff;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:50%;">${idx + 1}</div>
-        ${card.type === 'main' ? '<div class="main-label" style="position:absolute;right:4px;top:4px;background:#4caf50;color:#fff;padding:2px 8px;border-radius:4px;font-size:14px;z-index:2;">主卡片</div>' : ''}
+      <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;">
+        <img src="${card.img}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
+        <div class="sort-num" style="position:absolute;top:4px;left:4px;background:#A4924B;color:#fff;font-size:17px;font-weight:bold;padding:2px 10px;border-radius:50%;">${idx + 1}</div>
+        ${card.type === 'main' ? '<div class="main-label" style="position:absolute;right:4px;top:4px;background:#4caf50;color:#fff;padding:2px 8px;border-radius:4px;font-size:15px;z-index:2;">主卡片</div>' : ''}
       </div>
-      <div style="width:120px;text-align:center;margin-top:4px;">
-        <button type="button" style="margin:0 2px;padding:2px 8px;font-size:15px;" onclick="moveCardLeft(${idx})">←</button>
-        <button type="button" style="margin:0 2px;padding:2px 8px;font-size:15px;" onclick="moveCardRight(${idx})">→</button>
+      <div style="width:120px;text-align:center;margin-top:8px;">
+        <button type="button" style="margin:0 6px;padding:6px 16px;font-size:22px;font-weight:bold;background:#A4924B;color:#fff;border:none;border-radius:6px;box-shadow:0 2px 8px #0002;cursor:pointer;" onclick="moveCardLeft(${idx})">←</button>
+        <button type="button" style="margin:0 6px;padding:6px 16px;font-size:22px;font-weight:bold;background:#A4924B;color:#fff;border:none;border-radius:6px;box-shadow:0 2px 8px #0002;cursor:pointer;" onclick="moveCardRight(${idx})">→</button>
       </div>
     `;
     container.appendChild(div);
@@ -691,15 +691,15 @@ function renderPromoCardSelector() {
     const thumb = document.createElement('div');
     thumb.className = 'promo-card-thumb-select' + (selectedPromoCards.includes(card.id) ? ' selected' : '');
     thumb.style.width = '120px';
-    thumb.style.height = '150px';
+    thumb.style.height = '180px';
     thumb.style.display = 'inline-block';
     thumb.style.margin = '0 8px 8px 0';
     thumb.innerHTML = `
       <div style="width:120px;text-align:center;margin-bottom:8px;">
         <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
       </div>
-      <div style="position:relative;width:120px;height:90px;display:flex;align-items:center;justify-content:center;">
-        <img src="${card.flex_json.body.contents[0].url}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;">
+      <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;">
+        <img src="${card.flex_json.body.contents[0].url}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
       </div>
       <div style="width:120px;text-align:center;margin-top:2px;">
         <span style="display:inline-block;background:#222;color:#fff;font-size:13px;font-weight:bold;padding:2px 10px;border-radius:4px;">👁️${card.pageview || 0}</span>
