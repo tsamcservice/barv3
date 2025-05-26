@@ -6,17 +6,26 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
-  const { cardIds } = req.body;
-  if (!Array.isArray(cardIds) || cardIds.length === 0) {
-    return res.status(400).json({ success: false, error: 'No cardIds provided' });
+  const { cardIdTypeArr } = req.body;
+  if (!Array.isArray(cardIdTypeArr) || cardIdTypeArr.length === 0) {
+    return res.status(400).json({ success: false, error: 'No cardIdTypeArr provided' });
   }
   let error = null;
-  for (const id of cardIds) {
-    const { error: updateError } = await supabase
-      .from('promo_cards')
-      .update({ pageview: supabase.raw('pageview + 1') })
-      .eq('id', id);
-    if (updateError) error = updateError;
+  for (const { id, type } of cardIdTypeArr) {
+    if (!id) continue;
+    if (type === 'main') {
+      const { error: updateError } = await supabase
+        .from('member_cards')
+        .update({ pageview: supabase.raw('pageview + 1') })
+        .eq('id', id);
+      if (updateError) error = updateError;
+    } else {
+      const { error: updateError } = await supabase
+        .from('promo_cards')
+        .update({ pageview: supabase.raw('pageview + 1') })
+        .eq('id', id);
+      if (updateError) error = updateError;
+    }
   }
   if (error) {
     return res.status(500).json({ success: false, error: error.message });
