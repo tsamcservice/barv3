@@ -636,7 +636,53 @@ window.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// 宣傳卡片選擇區塊下方顯示所有可選宣傳卡片，主標題+pageview，卡片120x150px
+// 初始化排序區卡片陣列
+function initAllCardsSortable() {
+  allCardsSortable = [
+    { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), img: getFormData().main_image_url || defaultCard.main_image_url }
+  ];
+  if (selectedPromoCards.length > 0) {
+    allCardsSortable = [
+      { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), img: getFormData().main_image_url || defaultCard.main_image_url },
+      ...selectedPromoCards.map(id => {
+        const card = promoCardList.find(c => c.id === id);
+        return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, img: card.flex_json.body.contents[0].url } : null;
+      }).filter(Boolean)
+    ];
+  }
+}
+
+// renderPromoCardListSortable 只渲染，不重建 allCardsSortable
+function renderPromoCardListSortable() {
+  const container = document.getElementById('promo-cards');
+  if (!container) return;
+  if (allCardsSortable.length === 0) initAllCardsSortable();
+  container.innerHTML = '';
+  allCardsSortable.forEach((card, idx) => {
+    const div = document.createElement('div');
+    div.className = 'promo-card-thumb' + (card.type === 'main' ? ' main-card-thumb' : '');
+    div.setAttribute('data-id', card.id);
+    div.style.width = '120px';
+    div.style.height = '150px';
+    div.style.display = 'inline-block';
+    div.style.margin = '0 8px 8px 0';
+    div.innerHTML = `
+      <div style="position:relative;width:120px;height:90px;display:flex;align-items:center;justify-content:center;">
+        <img src="${card.img}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;">
+        <div class="sort-num" style="position:absolute;top:4px;left:4px;background:#A4924B;color:#fff;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:50%;">${idx + 1}</div>
+        ${card.type === 'main' ? '<div class="main-label" style="position:absolute;right:4px;top:4px;background:#4caf50;color:#fff;padding:2px 8px;border-radius:4px;font-size:14px;z-index:2;">主卡片</div>' : ''}
+      </div>
+      <div style="width:120px;text-align:center;margin-top:4px;">
+        <button type="button" style="margin:0 2px;padding:2px 8px;font-size:15px;" onclick="moveCardLeft(${idx})">←</button>
+        <button type="button" style="margin:0 2px;padding:2px 8px;font-size:15px;" onclick="moveCardRight(${idx})">→</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+  updatePreviewWithPromoSortable();
+}
+
+// 宣傳卡片選擇時初始化 allCardsSortable
 function renderPromoCardSelector() {
   const selector = document.getElementById('promo-card-selector');
   if (!selector) return;
@@ -667,6 +713,7 @@ function renderPromoCardSelector() {
       } else {
         selectedPromoCards.splice(idx, 1);
       }
+      initAllCardsSortable();
       renderPromoCardSelector();
       renderPromoCardListSortable();
     };
@@ -674,99 +721,27 @@ function renderPromoCardSelector() {
   });
 }
 
-// 排序區每張卡片顯示縮圖、順序數字、左右箭頭，主卡片也能左右排序，卡片120x150px，不顯示主標題
-function renderPromoCardListSortable() {
-  const container = document.getElementById('promo-cards');
-  if (!container) return;
-  // 一開始只顯示主卡，選了附加卡片才出現其他卡片
-  allCardsSortable = [
-    { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), img: getFormData().main_image_url || defaultCard.main_image_url }
-  ];
-  if (selectedPromoCards.length > 0) {
-    allCardsSortable = [
-      { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), img: getFormData().main_image_url || defaultCard.main_image_url },
-      ...selectedPromoCards.map(id => {
-        const card = promoCardList.find(c => c.id === id);
-        return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, img: card.flex_json.body.contents[0].url } : null;
-      }).filter(Boolean)
-    ];
-  }
-  container.innerHTML = '';
-  allCardsSortable.forEach((card, idx) => {
-    const div = document.createElement('div');
-    div.className = 'promo-card-thumb' + (card.type === 'main' ? ' main-card-thumb' : '');
-    div.setAttribute('data-id', card.id);
-    div.style.width = '120px';
-    div.style.height = '150px';
-    div.style.display = 'inline-block';
-    div.style.margin = '0 8px 8px 0';
-    div.innerHTML = `
-      <div style="position:relative;width:120px;height:90px;display:flex;align-items:center;justify-content:center;">
-        <img src="${card.img}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;">
-        <div class="sort-num" style="position:absolute;top:4px;left:4px;background:#A4924B;color:#fff;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:50%;">${idx + 1}</div>
-        ${card.type === 'main' ? '<div class="main-label" style="position:absolute;right:4px;top:4px;background:#4caf50;color:#fff;padding:2px 8px;border-radius:4px;font-size:14px;z-index:2;">主卡片</div>' : ''}
-      </div>
-      <div style="width:120px;text-align:center;margin-top:4px;">
-        <button type="button" style="margin:0 2px;padding:2px 8px;font-size:15px;" onclick="moveCardLeft(${idx})">←</button>
-        <button type="button" style="margin:0 2px;padding:2px 8px;font-size:15px;" onclick="moveCardRight(${idx})">→</button>
-      </div>
-    `;
-    container.appendChild(div);
-  });
-  updatePreviewWithPromoSortable();
-}
+// 左右移動排序函數
+window.moveCardLeft = function(idx) {
+  if (idx <= 0) return;
+  const tmp = allCardsSortable[idx];
+  allCardsSortable[idx] = allCardsSortable[idx - 1];
+  allCardsSortable[idx - 1] = tmp;
+  // 更新 selectedPromoCards 順序
+  selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
+  renderPromoCardListSortable();
+};
+window.moveCardRight = function(idx) {
+  if (idx >= allCardsSortable.length - 1) return;
+  const tmp = allCardsSortable[idx];
+  allCardsSortable[idx] = allCardsSortable[idx + 1];
+  allCardsSortable[idx + 1] = tmp;
+  // 更新 selectedPromoCards 順序
+  selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
+  renderPromoCardListSortable();
+};
 
-function updatePreviewWithPromoSortable() {
-  // 依照排序後的 allCardsSortable 組合 carousel
-  const flexArr = allCardsSortable.map(c => c.flex_json);
-  let flexJson;
-  if (flexArr.length === 1) {
-    flexJson = {
-      type: 'flex',
-      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-      contents: flexArr[0]
-    };
-  } else {
-    flexJson = {
-      type: 'flex',
-      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-      contents: {
-        type: 'carousel',
-        contents: flexArr
-      }
-    };
-  }
-  const preview = document.getElementById('main-card-preview');
-  preview.innerHTML = '';
-  flex2html('main-card-preview', flexJson);
-  renderShareJsonBoxWithPromoSortable(flexJson);
-}
-
-function renderShareJsonBoxWithPromoSortable(flexJson) {
-  const box = document.getElementById('shareJsonBox');
-  if (!box) return;
-  box.innerHTML = '';
-  const title = document.createElement('div');
-  title.textContent = '即將分享的 Flex Message JSON（可複製）';
-  title.style.cssText = 'font-weight:bold;font-size:16px;margin-bottom:8px;';
-  box.appendChild(title);
-  const pre = document.createElement('pre');
-  pre.textContent = JSON.stringify(flexJson, null, 2);
-  pre.style.cssText = 'font-size:14px;line-height:1.5;user-select:text;white-space:pre-wrap;word-break:break-all;background:#fff;padding:10px;border-radius:4px;max-height:300px;overflow:auto;';
-  box.appendChild(pre);
-  const copyBtn = document.createElement('button');
-  copyBtn.textContent = '一鍵複製';
-  copyBtn.style.cssText = 'margin:8px 0 0 0;padding:6px 16px;background:#4CAF50;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:15px;';
-  copyBtn.onclick = () => {
-    navigator.clipboard.writeText(pre.textContent).then(() => {
-      copyBtn.textContent = '已複製!';
-      setTimeout(()=>{copyBtn.textContent='一鍵複製';},1200);
-    });
-  };
-  box.appendChild(copyBtn);
-}
-
-// 修正分享時取最新預覽內容（即時JSON），確保標題與預覽一致
+// 分享前主卡片內容即時更新
 async function shareToLine() {
   if (!window.liff) return alert('LIFF 未載入');
   try {
@@ -774,6 +749,12 @@ async function shareToLine() {
     if (!liff.isLoggedIn()) {
       liff.login();
       return;
+    }
+    // 分享前主卡片內容即時更新
+    const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
+    if (mainIdx !== -1) {
+      allCardsSortable[mainIdx].flex_json = getMainBubble(getFormData());
+      allCardsSortable[mainIdx].img = getFormData().main_image_url || defaultCard.main_image_url;
     }
     // 依照排序後的 allCardsSortable 組合 carousel，取最新內容
     const flexArr = allCardsSortable.map(c => c.flex_json);
@@ -995,6 +976,7 @@ async function loadPromoCards() {
     if (result.success && Array.isArray(result.data)) {
       promoCardList = result.data;
       renderPromoCardSelector();
+      initAllCardsSortable();
       renderPromoCardListSortable();
     }
   } catch (e) {
@@ -1007,22 +989,52 @@ window.addEventListener('DOMContentLoaded', function() {
   loadPromoCards();
 });
 
-// 左右移動排序函數
-window.moveCardLeft = function(idx) {
-  if (idx <= 0) return;
-  const tmp = allCardsSortable[idx];
-  allCardsSortable[idx] = allCardsSortable[idx - 1];
-  allCardsSortable[idx - 1] = tmp;
-  // 更新 selectedPromoCards 順序
-  selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
-  renderPromoCardListSortable();
-};
-window.moveCardRight = function(idx) {
-  if (idx >= allCardsSortable.length - 1) return;
-  const tmp = allCardsSortable[idx];
-  allCardsSortable[idx] = allCardsSortable[idx + 1];
-  allCardsSortable[idx + 1] = tmp;
-  // 更新 selectedPromoCards 順序
-  selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
-  renderPromoCardListSortable();
-}; 
+function updatePreviewWithPromoSortable() {
+  // 依照排序後的 allCardsSortable 組合 carousel
+  const flexArr = allCardsSortable.map(c => c.flex_json);
+  let flexJson;
+  if (flexArr.length === 1) {
+    flexJson = {
+      type: 'flex',
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+      contents: flexArr[0]
+    };
+  } else {
+    flexJson = {
+      type: 'flex',
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+      contents: {
+        type: 'carousel',
+        contents: flexArr
+      }
+    };
+  }
+  const preview = document.getElementById('main-card-preview');
+  preview.innerHTML = '';
+  flex2html('main-card-preview', flexJson);
+  renderShareJsonBoxWithPromoSortable(flexJson);
+}
+
+function renderShareJsonBoxWithPromoSortable(flexJson) {
+  const box = document.getElementById('shareJsonBox');
+  if (!box) return;
+  box.innerHTML = '';
+  const title = document.createElement('div');
+  title.textContent = '即將分享的 Flex Message JSON（可複製）';
+  title.style.cssText = 'font-weight:bold;font-size:16px;margin-bottom:8px;';
+  box.appendChild(title);
+  const pre = document.createElement('pre');
+  pre.textContent = JSON.stringify(flexJson, null, 2);
+  pre.style.cssText = 'font-size:14px;line-height:1.5;user-select:text;white-space:pre-wrap;word-break:break-all;background:#fff;padding:10px;border-radius:4px;max-height:300px;overflow:auto;';
+  box.appendChild(pre);
+  const copyBtn = document.createElement('button');
+  copyBtn.textContent = '一鍵複製';
+  copyBtn.style.cssText = 'margin:8px 0 0 0;padding:6px 16px;background:#4CAF50;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:15px;';
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(pre.textContent).then(() => {
+      copyBtn.textContent = '已複製!';
+      setTimeout(()=>{copyBtn.textContent='一鍵複製';},1200);
+    });
+  };
+  box.appendChild(copyBtn);
+} 
