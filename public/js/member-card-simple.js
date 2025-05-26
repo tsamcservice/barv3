@@ -607,7 +607,24 @@ window.onload = async function() {
 // 主卡片與宣傳卡片拖曳排序功能
 let allCardsSortable = [];
 
-// 宣傳卡片選擇區塊下方顯示所有可選宣傳卡片
+// 展開/收合宣傳卡片選擇區塊
+window.addEventListener('DOMContentLoaded', function() {
+  const toggleBtn = document.getElementById('toggle-promo-selector');
+  const selector = document.getElementById('promo-card-selector');
+  if (toggleBtn && selector) {
+    toggleBtn.onclick = function() {
+      if (selector.style.display === 'none') {
+        selector.style.display = '';
+        toggleBtn.textContent = '收合 <<';
+      } else {
+        selector.style.display = 'none';
+        toggleBtn.textContent = '點選加入 >>';
+      }
+    };
+  }
+});
+
+// 宣傳卡片選擇區塊下方顯示所有可選宣傳卡片，並顯示 pageview 與 main_title_1
 function renderPromoCardSelector() {
   const selector = document.getElementById('promo-card-selector');
   if (!selector) return;
@@ -616,8 +633,12 @@ function renderPromoCardSelector() {
     const thumb = document.createElement('div');
     thumb.className = 'promo-card-thumb-select' + (selectedPromoCards.includes(card.id) ? ' selected' : '');
     thumb.innerHTML = `
-      <img src="${card.flex_json.body.contents[0].url}" style="width:100%;height:100%;object-fit:cover;">
-      <div class="select-label" style="position:absolute;bottom:4px;left:4px;background:#fff;color:#4caf50;padding:2px 8px;border-radius:4px;font-size:13px;z-index:2;">${selectedPromoCards.includes(card.id) ? '已加入' : '點選加入'}</div>
+      <div style="position:relative;width:80px;height:80px;">
+        <img src="${card.flex_json.body.contents[0].url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+        <div style="position:absolute;top:2px;left:2px;background:#fff2;color:#A4924B;font-size:12px;font-weight:bold;padding:2px 6px;border-radius:4px;">${card.main_title_1 || ''}</div>
+        <div style="position:absolute;bottom:2px;right:2px;background:#fff2;color:#d00308;font-size:12px;font-weight:bold;padding:2px 6px;border-radius:4px;">👁️${card.pageview || 0}</div>
+      </div>
+      <div class="select-label" style="text-align:center;margin-top:2px;font-size:13px;color:#4caf50;">${selectedPromoCards.includes(card.id) ? '已加入' : '點選加入'}</div>
     `;
     thumb.onclick = () => {
       const idx = selectedPromoCards.indexOf(card.id);
@@ -633,15 +654,15 @@ function renderPromoCardSelector() {
   });
 }
 
-// 修改 renderPromoCardListSortable，讓拖曳排序區只顯示主卡片+已選宣傳卡片
+// 拖曳排序區顯示主卡片與已選宣傳卡片，卡片上顯示 pageview 與 main_title_1
 function renderPromoCardListSortable() {
   const container = document.getElementById('promo-cards');
   if (!container) return;
   allCardsSortable = [
-    { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()) },
+    { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), main_title_1: getFormData().main_title_1, pageview: getFormData().pageview },
     ...selectedPromoCards.map(id => {
       const card = promoCardList.find(c => c.id === id);
-      return card ? { type: 'promo', id: card.id, flex_json: card.flex_json } : null;
+      return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, main_title_1: card.main_title_1, pageview: card.pageview } : null;
     }).filter(Boolean)
   ];
   container.innerHTML = '';
@@ -650,8 +671,10 @@ function renderPromoCardListSortable() {
     div.className = 'promo-card-thumb' + (card.type === 'main' ? ' main-card-thumb' : '');
     div.setAttribute('data-id', card.id);
     div.innerHTML = `
-      <img src="${card.type === 'main' ? (getFormData().main_image_url || defaultCard.main_image_url) : card.flex_json.body.contents[0].url}" style="width:100%;height:100%;object-fit:cover;">
+      <img src="${card.type === 'main' ? (getFormData().main_image_url || defaultCard.main_image_url) : card.flex_json.body.contents[0].url}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
       <div class="sort-btn" style="font-size:2em;font-weight:bold;color:#fff;background:#A4924B;box-shadow:0 0 8px #0008;">${idx + 1}</div>
+      <div style="position:absolute;top:2px;left:2px;background:#fff2;color:#A4924B;font-size:13px;font-weight:bold;padding:2px 6px;border-radius:4px;">${card.main_title_1 || ''}</div>
+      <div style="position:absolute;bottom:2px;right:2px;background:#fff2;color:#d00308;font-size:13px;font-weight:bold;padding:2px 6px;border-radius:4px;">👁️${card.pageview || 0}</div>
       ${card.type === 'main' ? '<div class="main-label" style="position:absolute;left:8px;top:8px;background:#4caf50;color:#fff;padding:2px 8px;border-radius:4px;font-size:14px;z-index:2;">主卡片</div>' : ''}
     `;
     container.appendChild(div);
