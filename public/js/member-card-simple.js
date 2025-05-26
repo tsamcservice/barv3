@@ -672,7 +672,7 @@ function renderPromoCardSelector() {
   });
 }
 
-// 拖曳排序區顯示主卡片與已選宣傳卡片，主標題置於卡片上方、圖片外，卡片120x120px
+// 拖曳排序區顯示主卡片與已選宣傳卡片，主標題置於卡片上方、圖片外，卡片120x150px，PAGEVIEW移到圖片下方
 function renderPromoCardListSortable() {
   const container = document.getElementById('promo-cards');
   if (!container) return;
@@ -689,39 +689,27 @@ function renderPromoCardListSortable() {
     div.className = 'promo-card-thumb' + (card.type === 'main' ? ' main-card-thumb' : '');
     div.setAttribute('data-id', card.id);
     div.style.width = '120px';
-    div.style.height = '180px';  // 增加高度
+    div.style.height = '150px'; // 高度調整
     div.style.display = 'inline-block';
     div.style.margin = '0 8px 8px 0';
     div.innerHTML = `
       <div style="width:120px;text-align:center;margin-bottom:8px;">
         <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
       </div>
-      <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;">
-        <img src="${card.type === 'main' ? (getFormData().main_image_url || defaultCard.main_image_url) : card.flex_json.body.contents[0].url}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
-        <div class="sort-btn" style="font-size:2em;font-weight:bold;color:#fff;background:#A4924B;box-shadow:0 0 8px #0008;">${idx + 1}</div>
-        <div style="position:absolute;bottom:2px;right:2px;background:#fff2;color:#d00308;font-size:13px;font-weight:bold;padding:2px 6px;border-radius:4px;">👁️${card.pageview || 0}</div>
+      <div style="position:relative;width:120px;height:90px;display:flex;align-items:center;justify-content:center;">
+        <img src="${card.type === 'main' ? (getFormData().main_image_url || defaultCard.main_image_url) : card.flex_json.body.contents[0].url}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;">
+        <div class="sort-btn" style="font-size:1.2em;font-weight:bold;color:#fff;background:#A4924B;box-shadow:0 0 8px #0008;position:absolute;top:4px;right:4px;">${idx + 1}</div>
         ${card.type === 'main' ? '<div class="main-label" style="position:absolute;left:8px;top:8px;background:#4caf50;color:#fff;padding:2px 8px;border-radius:4px;font-size:14px;z-index:2;">主卡片</div>' : ''}
+      </div>
+      <div style="width:120px;text-align:center;margin-top:2px;">
+        <span style="display:inline-block;background:#222;color:#fff;font-size:13px;font-weight:bold;padding:2px 10px;border-radius:4px;">👁️${card.pageview || 0}</span>
+      </div>
+      <div style="width:120px;text-align:center;margin-top:4px;">
+        <button type="button" style="margin:0 2px;padding:2px 8px;font-size:15px;" onclick="moveCardLeft(${idx})">←</button>
+        <button type="button" style="margin:0 2px;padding:2px 8px;font-size:15px;" onclick="moveCardRight(${idx})">→</button>
       </div>
     `;
     container.appendChild(div);
-  });
-  // 初始化 SortableJS
-  Sortable.create(container, {
-    animation: 150,
-    onEnd: function (evt) {
-      const newOrder = Array.from(container.children).map(div => div.getAttribute('data-id'));
-      const mainCard = allCardsSortable.find(c => c.id === 'main');
-      const promoCards = allCardsSortable.filter(c => c.type === 'promo');
-      allCardsSortable = newOrder.map(id => {
-        if (id === 'main') return mainCard;
-        return promoCards.find(c => c.id === id);
-      });
-      // 更新 selectedPromoCards 順序
-      selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
-      // 重新渲染以更新排序數字
-      renderPromoCardListSortable();
-      updatePreviewWithPromoSortable();
-    }
   });
   updatePreviewWithPromoSortable();
 }
@@ -1011,4 +999,24 @@ async function loadPromoCards() {
 // DOMContentLoaded 時初始化宣傳卡片功能
 window.addEventListener('DOMContentLoaded', function() {
   loadPromoCards();
-}); 
+});
+
+// 左右移動排序函數
+window.moveCardLeft = function(idx) {
+  if (idx <= 0) return;
+  const tmp = allCardsSortable[idx];
+  allCardsSortable[idx] = allCardsSortable[idx - 1];
+  allCardsSortable[idx - 1] = tmp;
+  // 更新 selectedPromoCards 順序
+  selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
+  renderPromoCardListSortable();
+};
+window.moveCardRight = function(idx) {
+  if (idx >= allCardsSortable.length - 1) return;
+  const tmp = allCardsSortable[idx];
+  allCardsSortable[idx] = allCardsSortable[idx + 1];
+  allCardsSortable[idx + 1] = tmp;
+  // 更新 selectedPromoCards 順序
+  selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
+  renderPromoCardListSortable();
+}; 

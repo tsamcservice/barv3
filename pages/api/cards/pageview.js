@@ -15,16 +15,18 @@ export default async function handler(req, res) {
     if (!id) continue;
     try {
       if (type === 'main') {
-        const { error: updateError } = await supabase
+        const { data, error: updateError } = await supabase
           .from('member_cards')
           .update({ pageview: supabase.raw('COALESCE(pageview, 0) + 1') })
-          .eq('id', id);
+          .eq('id', id)
+          .select();
         if (updateError) throw updateError;
       } else {
-        const { error: updateError } = await supabase
+        const { data, error: updateError } = await supabase
           .from('promo_cards')
           .update({ pageview: supabase.raw('COALESCE(pageview, 0) + 1') })
-          .eq('id', id);
+          .eq('id', id)
+          .select();
         if (updateError) throw updateError;
       }
     } catch (e) {
