@@ -422,25 +422,33 @@ function renderPreview() {
   const preview = document.getElementById('main-card-preview');
   preview.innerHTML = '';
   flex2html('main-card-preview', flexJson);
+  renderShareJsonBoxWithPromo();
 }
 
 // 分享按鈕上方顯示即將分享的Flex Message JSON
-function renderShareJsonBox() {
+function renderShareJsonBoxWithPromo() {
   const box = document.getElementById('shareJsonBox');
   if (!box) return;
-  const bubbles = getShareBubbles();
+  const mainCard = getMainBubble(getFormData());
+  const promoCards = selectedPromoCards.map(id => {
+    const card = promoCardList.find(c => c.id === id);
+    return card ? card.flex_json : null;
+  }).filter(Boolean);
   let shareMsg;
-  if (bubbles.length === 1) {
+  if (promoCards.length === 0) {
     shareMsg = {
       type: 'flex',
-      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
-      contents: bubbles[0]
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+      contents: mainCard
     };
   } else {
     shareMsg = {
       type: 'flex',
-      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
-      contents: { type: 'carousel', contents: bubbles }
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+      contents: {
+        type: 'carousel',
+        contents: [mainCard, ...promoCards]
+      }
     };
   }
   box.innerHTML = '';
@@ -572,7 +580,7 @@ window.onload = async function() {
       document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
     // 6. 渲染預覽與 JSON
     renderPreview();
-    renderShareJsonBox();
+    renderShareJsonBoxWithPromo();
   }
   // 顯示分享按鈕後連結欄位（可複製）
   const sBtnUrlInput = document.getElementById('s_button_url');
@@ -606,12 +614,29 @@ async function shareToLine() {
       return;
     }
     const formData = getFormData();
-    const bubble = getMainBubble(formData);
-    const flexJson = {
-      type: 'flex',
-      altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1 || '我的會員卡',
-      contents: bubble
-    };
+    const mainCard = getMainBubble(formData);
+    const promoCards = selectedPromoCards.map(id => {
+      const card = promoCardList.find(c => c.id === id);
+      return card ? card.flex_json : null;
+    }).filter(Boolean);
+    let flexJson;
+    if (promoCards.length === 0) {
+      flexJson = {
+        type: 'flex',
+        altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
+        contents: mainCard
+      };
+    } else {
+      flexJson = {
+        type: 'flex',
+        altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
+        contents: {
+          type: 'carousel',
+          contents: [mainCard, ...promoCards]
+        }
+      };
+    }
+    // 儲存主卡片
     const response = await fetch('/api/cards', {
       method: 'POST',
       headers: {
@@ -628,6 +653,25 @@ async function shareToLine() {
       const errorData = await response.json();
       throw new Error(errorData.message || '儲存失敗');
     }
+    // 分享時批次更新 pageview
+    const cardIds = [/*主卡片id*/].concat(selectedPromoCards);
+    // 取得主卡片 id
+    let mainCardId = null;
+    try {
+      const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
+      const result = await res.json();
+      if (result.success && result.data && result.data.length > 0) {
+        mainCardId = result.data[0].id;
+        cardIds[0] = mainCardId;
+      }
+    } catch (e) {}
+    if (cardIds.length > 0) {
+      await fetch('/api/cards/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cardIds })
+      });
+    }
     await liff.shareTargetPicker([flexJson])
       .then(closeOrRedirect)
       .catch(closeOrRedirect);
@@ -643,7 +687,7 @@ function updateCardAltTitle() {
   if(document.getElementById('card_alt_title'))
     document.getElementById('card_alt_title').value = mainTitle + '/' + displayName;
   renderPreview();
-  renderShareJsonBox();
+  renderShareJsonBoxWithPromo();
 }
 window.addEventListener('DOMContentLoaded', function() {
   if(document.getElementById('display_name'))
@@ -656,7 +700,7 @@ window.addEventListener('DOMContentLoaded', function() {
 Array.from(document.querySelectorAll('#cardForm input')).forEach(input => {
   input.addEventListener('input', function(e) {
     renderPreview();
-    renderShareJsonBox();
+    renderShareJsonBoxWithPromo();
   });
 });
 
@@ -829,28 +873,27 @@ function updatePreviewWithPromo() {
     const card = promoCardList.find(c => c.id === id);
     return card ? card.flex_json : null;
   }).filter(Boolean);
-
-  const carousel = {
-    type: 'flex',
-    altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-    contents: {
-      type: 'carousel',
-      contents: [mainCard, ...promoCards]
-    }
-  };
-
+  let flexJson;
+  if (promoCards.length === 0) {
+    flexJson = {
+      type: 'flex',
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+      contents: mainCard
+    };
+  } else {
+    flexJson = {
+      type: 'flex',
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+      contents: {
+        type: 'carousel',
+        contents: [mainCard, ...promoCards]
+      }
+    };
+  }
   const preview = document.getElementById('main-card-preview');
   preview.innerHTML = '';
-  flex2html('main-card-preview', carousel);
-
-  // 更新 JSON 顯示
-  const shareJsonBox = document.getElementById('shareJsonBox');
-  if (shareJsonBox) {
-    shareJsonBox.innerHTML = '';
-    const pre = document.createElement('pre');
-    pre.textContent = JSON.stringify(carousel, null, 2);
-    shareJsonBox.appendChild(pre);
-  }
+  flex2html('main-card-preview', flexJson);
+  renderShareJsonBoxWithPromo();
 }
 
 // DOMContentLoaded 時初始化宣傳卡片功能
