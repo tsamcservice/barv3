@@ -674,20 +674,20 @@ function renderPromoCardSelector() {
   });
 }
 
-// 排序區每張卡片顯示縮圖、主標題、順序數字，主卡片也能左右排序，卡片120x150px
+// 排序區每張卡片顯示縮圖、順序數字、左右箭頭，主卡片也能左右排序，卡片120x150px，不顯示主標題
 function renderPromoCardListSortable() {
   const container = document.getElementById('promo-cards');
   if (!container) return;
   // 一開始只顯示主卡，選了附加卡片才出現其他卡片
   allCardsSortable = [
-    { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), main_title_1: getFormData().main_title_1, img: getFormData().main_image_url || defaultCard.main_image_url }
+    { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), img: getFormData().main_image_url || defaultCard.main_image_url }
   ];
   if (selectedPromoCards.length > 0) {
     allCardsSortable = [
-      { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), main_title_1: getFormData().main_title_1, img: getFormData().main_image_url || defaultCard.main_image_url },
+      { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), img: getFormData().main_image_url || defaultCard.main_image_url },
       ...selectedPromoCards.map(id => {
         const card = promoCardList.find(c => c.id === id);
-        return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, main_title_1: card.main_title_1, img: card.flex_json.body.contents[0].url } : null;
+        return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, img: card.flex_json.body.contents[0].url } : null;
       }).filter(Boolean)
     ];
   }
@@ -701,9 +701,6 @@ function renderPromoCardListSortable() {
     div.style.display = 'inline-block';
     div.style.margin = '0 8px 8px 0';
     div.innerHTML = `
-      <div style="width:120px;text-align:center;margin-bottom:4px;">
-        <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
-      </div>
       <div style="position:relative;width:120px;height:90px;display:flex;align-items:center;justify-content:center;">
         <img src="${card.img}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;">
         <div class="sort-num" style="position:absolute;top:4px;left:4px;background:#A4924B;color:#fff;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:50%;">${idx + 1}</div>
@@ -769,7 +766,7 @@ function renderShareJsonBoxWithPromoSortable(flexJson) {
   box.appendChild(copyBtn);
 }
 
-// 修正分享時 cardIdTypeArr 組合，主卡片 id 正確取得，分享後自動刷新卡片資料
+// 修正分享時取最新預覽內容（即時JSON），確保標題與預覽一致
 async function shareToLine() {
   if (!window.liff) return alert('LIFF 未載入');
   try {
@@ -778,7 +775,7 @@ async function shareToLine() {
       liff.login();
       return;
     }
-    // 依照排序後的 allCardsSortable 組合 carousel
+    // 依照排序後的 allCardsSortable 組合 carousel，取最新內容
     const flexArr = allCardsSortable.map(c => c.flex_json);
     let flexJson;
     if (flexArr.length === 1) {
@@ -797,7 +794,7 @@ async function shareToLine() {
         }
       };
     }
-    // 儲存主卡片
+    // 儲存主卡片（用最新內容）
     const formData = getFormData();
     const response = await fetch('/api/cards', {
       method: 'POST',
