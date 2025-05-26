@@ -636,7 +636,7 @@ window.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// 宣傳卡片選擇區塊下方顯示所有可選宣傳卡片，主標題+pageview
+// 宣傳卡片選擇區塊下方顯示所有可選宣傳卡片，主標題+pageview，卡片120x150px
 function renderPromoCardSelector() {
   const selector = document.getElementById('promo-card-selector');
   if (!selector) return;
@@ -645,15 +645,15 @@ function renderPromoCardSelector() {
     const thumb = document.createElement('div');
     thumb.className = 'promo-card-thumb-select' + (selectedPromoCards.includes(card.id) ? ' selected' : '');
     thumb.style.width = '120px';
-    thumb.style.height = '120px';
+    thumb.style.height = '150px';
     thumb.style.display = 'inline-block';
     thumb.style.margin = '0 8px 8px 0';
     thumb.innerHTML = `
       <div style="width:120px;text-align:center;margin-bottom:8px;">
         <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
       </div>
-      <div style="position:relative;width:120px;height:70px;display:flex;align-items:center;justify-content:center;">
-        <img src="${card.flex_json.body.contents[0].url}" style="width:120px;height:70px;object-fit:cover;border-radius:8px;">
+      <div style="position:relative;width:120px;height:90px;display:flex;align-items:center;justify-content:center;">
+        <img src="${card.flex_json.body.contents[0].url}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;">
       </div>
       <div style="width:120px;text-align:center;margin-top:2px;">
         <span style="display:inline-block;background:#222;color:#fff;font-size:13px;font-weight:bold;padding:2px 10px;border-radius:4px;">👁️${card.pageview || 0}</span>
@@ -674,29 +674,40 @@ function renderPromoCardSelector() {
   });
 }
 
-// 排序區只顯示主標題，卡片下方有←→箭頭
+// 排序區每張卡片顯示縮圖、主標題、順序數字，主卡片也能左右排序，卡片120x150px
 function renderPromoCardListSortable() {
   const container = document.getElementById('promo-cards');
   if (!container) return;
+  // 一開始只顯示主卡，選了附加卡片才出現其他卡片
   allCardsSortable = [
-    { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), main_title_1: getFormData().main_title_1 },
-    ...selectedPromoCards.map(id => {
-      const card = promoCardList.find(c => c.id === id);
-      return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, main_title_1: card.main_title_1 } : null;
-    }).filter(Boolean)
+    { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), main_title_1: getFormData().main_title_1, img: getFormData().main_image_url || defaultCard.main_image_url }
   ];
+  if (selectedPromoCards.length > 0) {
+    allCardsSortable = [
+      { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), main_title_1: getFormData().main_title_1, img: getFormData().main_image_url || defaultCard.main_image_url },
+      ...selectedPromoCards.map(id => {
+        const card = promoCardList.find(c => c.id === id);
+        return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, main_title_1: card.main_title_1, img: card.flex_json.body.contents[0].url } : null;
+      }).filter(Boolean)
+    ];
+  }
   container.innerHTML = '';
   allCardsSortable.forEach((card, idx) => {
     const div = document.createElement('div');
     div.className = 'promo-card-thumb' + (card.type === 'main' ? ' main-card-thumb' : '');
     div.setAttribute('data-id', card.id);
     div.style.width = '120px';
-    div.style.height = '90px';
+    div.style.height = '150px';
     div.style.display = 'inline-block';
     div.style.margin = '0 8px 8px 0';
     div.innerHTML = `
-      <div style="width:120px;text-align:center;margin-bottom:8px;">
+      <div style="width:120px;text-align:center;margin-bottom:4px;">
         <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
+      </div>
+      <div style="position:relative;width:120px;height:90px;display:flex;align-items:center;justify-content:center;">
+        <img src="${card.img}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;">
+        <div class="sort-num" style="position:absolute;top:4px;left:4px;background:#A4924B;color:#fff;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:50%;">${idx + 1}</div>
+        ${card.type === 'main' ? '<div class="main-label" style="position:absolute;right:4px;top:4px;background:#4caf50;color:#fff;padding:2px 8px;border-radius:4px;font-size:14px;z-index:2;">主卡片</div>' : ''}
       </div>
       <div style="width:120px;text-align:center;margin-top:4px;">
         <button type="button" style="margin:0 2px;padding:2px 8px;font-size:15px;" onclick="moveCardLeft(${idx})">←</button>
@@ -758,7 +769,7 @@ function renderShareJsonBoxWithPromoSortable(flexJson) {
   box.appendChild(copyBtn);
 }
 
-// 修正分享時 cardIdTypeArr 組合，主卡片 id 正確取得
+// 修正分享時 cardIdTypeArr 組合，主卡片 id 正確取得，分享後自動刷新卡片資料
 async function shareToLine() {
   if (!window.liff) return alert('LIFF 未載入');
   try {
@@ -824,7 +835,11 @@ async function shareToLine() {
       });
     }
     await liff.shareTargetPicker([flexJson])
-      .then(closeOrRedirect)
+      .then(async () => {
+        // 分享後自動刷新卡片資料
+        await loadPromoCards();
+        closeOrRedirect();
+      })
       .catch(closeOrRedirect);
   } catch (err) {
     alert('儲存或分享失敗: ' + err.message);
