@@ -774,4 +774,86 @@ window.addEventListener('DOMContentLoaded', function() {
   bindImageUpload('calendar_image_upload', 'calendar_image_upload_btn', 'calendar_image_preview', 'calendar_image_url');
   bindImageUpload('love_icon_upload', 'love_icon_upload_btn', 'love_icon_preview', 'love_icon_url');
   bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url');
+});
+
+// 宣傳卡片功能
+let promoCardList = [];
+let selectedPromoCards = [];
+
+// 載入宣傳卡片
+async function loadPromoCards() {
+  try {
+    const res = await fetch('/api/promo-cards');
+    const result = await res.json();
+    if (result.success && Array.isArray(result.data)) {
+      promoCardList = result.data;
+      renderPromoCardList();
+    }
+  } catch (e) {
+    console.error('載入宣傳卡片失敗', e);
+  }
+}
+
+// 渲染宣傳卡片選擇
+function renderPromoCardList() {
+  const container = document.getElementById('promo-cards');
+  if (!container) return;
+  container.innerHTML = '';
+  promoCardList.forEach(card => {
+    const div = document.createElement('div');
+    div.className = 'promo-card-thumb' + (selectedPromoCards.includes(card.id) ? ' selected' : '');
+    div.innerHTML = `
+      <img src="${card.flex_json.body.contents[0].url}" style="width:100%;height:100%;object-fit:cover;">
+      <div class="sort-btn" style="display:${selectedPromoCards.includes(card.id) ? 'block' : 'none'};">
+        ${selectedPromoCards.indexOf(card.id) + 1}
+      </div>
+    `;
+    div.onclick = () => {
+      const idx = selectedPromoCards.indexOf(card.id);
+      if (idx === -1) {
+        selectedPromoCards.push(card.id);
+      } else {
+        selectedPromoCards.splice(idx, 1);
+      }
+      renderPromoCardList();
+      updatePreviewWithPromo();
+    };
+    container.appendChild(div);
+  });
+}
+
+// 更新預覽（含宣傳卡片）
+function updatePreviewWithPromo() {
+  const mainCard = getMainBubble(getFormData());
+  const promoCards = selectedPromoCards.map(id => {
+    const card = promoCardList.find(c => c.id === id);
+    return card ? card.flex_json : null;
+  }).filter(Boolean);
+
+  const carousel = {
+    type: 'flex',
+    altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+    contents: {
+      type: 'carousel',
+      contents: [mainCard, ...promoCards]
+    }
+  };
+
+  const preview = document.getElementById('main-card-preview');
+  preview.innerHTML = '';
+  flex2html('main-card-preview', carousel);
+
+  // 更新 JSON 顯示
+  const shareJsonBox = document.getElementById('shareJsonBox');
+  if (shareJsonBox) {
+    shareJsonBox.innerHTML = '';
+    const pre = document.createElement('pre');
+    pre.textContent = JSON.stringify(carousel, null, 2);
+    shareJsonBox.appendChild(pre);
+  }
+}
+
+// DOMContentLoaded 時初始化宣傳卡片功能
+window.addEventListener('DOMContentLoaded', function() {
+  loadPromoCards();
 }); 
