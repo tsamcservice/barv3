@@ -607,10 +607,36 @@ window.onload = async function() {
 // 主卡片與宣傳卡片拖曳排序功能
 let allCardsSortable = [];
 
+// 宣傳卡片選擇區塊下方顯示所有可選宣傳卡片
+function renderPromoCardSelector() {
+  const selector = document.getElementById('promo-card-selector');
+  if (!selector) return;
+  selector.innerHTML = '';
+  promoCardList.forEach(card => {
+    const thumb = document.createElement('div');
+    thumb.className = 'promo-card-thumb-select' + (selectedPromoCards.includes(card.id) ? ' selected' : '');
+    thumb.innerHTML = `
+      <img src="${card.flex_json.body.contents[0].url}" style="width:100%;height:100%;object-fit:cover;">
+      <div class="select-label" style="position:absolute;bottom:4px;left:4px;background:#fff;color:#4caf50;padding:2px 8px;border-radius:4px;font-size:13px;z-index:2;">${selectedPromoCards.includes(card.id) ? '已加入' : '點選加入'}</div>
+    `;
+    thumb.onclick = () => {
+      const idx = selectedPromoCards.indexOf(card.id);
+      if (idx === -1) {
+        selectedPromoCards.push(card.id);
+      } else {
+        selectedPromoCards.splice(idx, 1);
+      }
+      renderPromoCardSelector();
+      renderPromoCardListSortable();
+    };
+    selector.appendChild(thumb);
+  });
+}
+
+// 修改 renderPromoCardListSortable，讓拖曳排序區只顯示主卡片+已選宣傳卡片
 function renderPromoCardListSortable() {
   const container = document.getElementById('promo-cards');
   if (!container) return;
-  // 合併主卡片與宣傳卡片
   allCardsSortable = [
     { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()) },
     ...selectedPromoCards.map(id => {
@@ -634,9 +660,7 @@ function renderPromoCardListSortable() {
   Sortable.create(container, {
     animation: 150,
     onEnd: function (evt) {
-      // 依照新順序重建 allCardsSortable
       const newOrder = Array.from(container.children).map(div => div.getAttribute('data-id'));
-      // 主卡片永遠在 allCardsSortable 裡 id 為 'main'
       const mainCard = allCardsSortable.find(c => c.id === 'main');
       const promoCards = allCardsSortable.filter(c => c.type === 'promo');
       allCardsSortable = newOrder.map(id => {
@@ -918,13 +942,14 @@ window.addEventListener('DOMContentLoaded', function() {
 let promoCardList = [];
 let selectedPromoCards = [];
 
-// 載入宣傳卡片
+// 載入宣傳卡片時同時渲染 selector
 async function loadPromoCards() {
   try {
     const res = await fetch('/api/promo-cards');
     const result = await res.json();
     if (result.success && Array.isArray(result.data)) {
       promoCardList = result.data;
+      renderPromoCardSelector();
       renderPromoCardListSortable();
     }
   } catch (e) {
