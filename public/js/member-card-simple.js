@@ -667,17 +667,26 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // 初始化排序區卡片陣列
 function initAllCardsSortable() {
-  allCardsSortable = [
-    { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), img: getFormData().main_image_url || defaultCard.main_image_url }
-  ];
+  // 先建立主卡片
+  const mainCard = {
+    type: 'main',
+    id: 'main',
+    flex_json: getMainBubble(getFormData()),
+    img: getFormData().main_image_url || defaultCard.main_image_url
+  };
+
+  // 如果有宣傳卡片，則加入主卡片和宣傳卡片
   if (selectedPromoCards.length > 0) {
     allCardsSortable = [
-      { type: 'main', id: 'main', flex_json: getMainBubble(getFormData()), img: getFormData().main_image_url || defaultCard.main_image_url },
+      mainCard,
       ...selectedPromoCards.map(id => {
         const card = promoCardList.find(c => c.id === id);
         return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, img: card.flex_json.body.contents[0].url } : null;
       }).filter(Boolean)
     ];
+  } else {
+    // 如果沒有宣傳卡片，只加入主卡片
+    allCardsSortable = [mainCard];
   }
 }
 
@@ -685,7 +694,12 @@ function initAllCardsSortable() {
 function renderPromoCardListSortable() {
   const container = document.getElementById('promo-cards');
   if (!container) return;
-  if (allCardsSortable.length === 0) initAllCardsSortable();
+  
+  // 檢查是否需要初始化
+  if (allCardsSortable.length === 0 || !allCardsSortable.some(card => card.type === 'main')) {
+    initAllCardsSortable();
+  }
+  
   container.innerHTML = '';
   allCardsSortable.forEach((card, idx) => {
     const div = document.createElement('div');
