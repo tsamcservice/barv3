@@ -241,7 +241,7 @@ function getMainBubble(cardData) {
                   position: 'absolute',
                   offsetTop: '30px',
                   offsetStart: '12px',
-                  text: String(cardData.pageview || defaultCard.pageview),
+                  text: formatPageview(cardData.pageview || defaultCard.pageview),
                   color: '#FFFFFF'
                 }
               ],
