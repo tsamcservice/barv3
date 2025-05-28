@@ -203,7 +203,7 @@ function getMainBubble(cardData) {
                 },
                 {
                   type: 'text',
-                  text: cardData.amember_id || defaultCard.amember_id,
+                  text: String(cardData.amember_id || defaultCard.amember_id),
                   size: '10px',
                   align: 'center',
                   gravity: 'center',
@@ -241,7 +241,7 @@ function getMainBubble(cardData) {
                   position: 'absolute',
                   offsetTop: '30px',
                   offsetStart: '12px',
-                  text: cardData.pageview || defaultCard.pageview,
+                  text: String(cardData.pageview || defaultCard.pageview),
                   color: '#FFFFFF'
                 }
               ],
@@ -257,7 +257,7 @@ function getMainBubble(cardData) {
         // 主標題
         {
           size: '20px',
-          text: cardData.main_title_1 || defaultCard.main_title_1,
+          text: String(cardData.main_title_1 || defaultCard.main_title_1),
           type: 'text',
           align: 'center',
           color: cardData.main_title_1_color || defaultCard.main_title_1_color,
@@ -271,7 +271,7 @@ function getMainBubble(cardData) {
           contents: [
             {
               type: 'text',
-              text: cardData.main_title_2 || defaultCard.main_title_2,
+              text: String(cardData.main_title_2 || defaultCard.main_title_2),
               wrap: true,
               size: '16px',
               margin: 'sm',
@@ -318,7 +318,7 @@ function getMainBubble(cardData) {
                 {
                   type: 'text',
                   size: '14px',
-                  text: cardData.display_name || defaultCard.display_name,
+                  text: String(cardData.display_name || defaultCard.display_name),
                   style: 'italic',
                   color: cardData.name_color1 || defaultCard.name_color1,
                   align: 'center',
