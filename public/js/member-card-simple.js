@@ -67,7 +67,11 @@ style.innerHTML = `
 document.head.appendChild(style);
 
 function setInputDefaultStyle(input, defaultValue) {
-  input.value = defaultValue;
+  if (input.id === 'pageview') {
+    input.value = formatPageview(defaultValue);
+  } else {
+    input.value = defaultValue;
+  }
   input.setAttribute('data-default', defaultValue);
   function updateValue() {
     if (input.value === '') {
@@ -125,7 +129,11 @@ async function fillAllFieldsWithProfile() {
 function getFormData() {
   const data = {};
   Object.keys(defaultCard).forEach(key => {
-    data[key] = document.getElementById(key).value;
+    if (key === 'pageview') {
+      data[key] = parseInt(document.getElementById(key).value, 10) || 0;
+    } else {
+      data[key] = document.getElementById(key).value;
+    }
   });
   return data;
 }
@@ -510,12 +518,13 @@ window.onload = async function() {
     document.body.appendChild(loadingDiv);
     let flexJson = null;
     try {
-      // 取得初始卡片資料
-      const defRes = await fetch('/api/cards/default?pageId=' + pageId);
-      const defResult = await defRes.json();
-      flexJson = defResult?.data?.flex_json;
-      if (!flexJson) {
-        loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
+      // 取代原本 fetch('/api/cards/default?pageId=' + pageId) 的用法：
+      // const defRes = await fetch('/api/cards/default?pageId=' + pageId);
+      // const defResult = await defRes.json();
+      // 改為：
+      const defResult = await safeFetchJson('/api/cards/default?pageId=' + pageId);
+      if (!defResult.success) {
+        loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料或API錯誤，無法分享</div>';
         return;
       }
       // 先呼叫 pageview API +1
@@ -527,7 +536,7 @@ window.onload = async function() {
         });
       } catch (e) { /* 忽略錯誤 */ }
       // 自動分享
-      await liff.shareTargetPicker([flexJson])
+      await liff.shareTargetPicker([defResult?.data?.flex_json])
         .then(() => {
           loadingDiv.remove();
           closeOrRedirect();
@@ -1086,4 +1095,15 @@ function renderShareJsonBoxWithPromoSortable(flexJson) {
 // 在所有顯示 pageview 的地方補零
 function formatPageview(val) {
   return String(val || 0).padStart(4, '0');
+}
+
+// 新增 safeFetchJson 函數
+async function safeFetchJson(url) {
+  const res = await fetch(url);
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return { success: false, error: 'API 回傳非 JSON', raw: text };
+  }
 } 
