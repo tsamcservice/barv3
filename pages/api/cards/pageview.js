@@ -14,21 +14,23 @@ export default async function handler(req, res) {
   for (const { id, type } of cardIdTypeArr) {
     if (!id) continue;
     try {
+      let data, updateError;
       if (type === 'main') {
-        const { data, error: updateError } = await supabase
+        ({ data, error: updateError } = await supabase
           .from('member_cards')
           .update({ pageview: supabase.raw('COALESCE(pageview, 0) + 1') })
           .eq('id', id)
-          .select();
-        if (updateError) throw updateError;
+          .select());
       } else {
-        const { data, error: updateError } = await supabase
+        ({ data, error: updateError } = await supabase
           .from('promo_cards')
           .update({ pageview: supabase.raw('COALESCE(pageview, 0) + 1') })
           .eq('id', id)
-          .select();
-        if (updateError) throw updateError;
+          .select());
       }
+      console.log(`[pageview] id=${id}, type=${type}, updatedRows=${data ? data.length : 0}`);
+      if (updateError) throw updateError;
+      if (!data || data.length === 0) throw new Error('No row updated for id: ' + id);
     } catch (e) {
       error = e;
       console.error('Update pageview error:', e);

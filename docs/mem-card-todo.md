@@ -16,6 +16,7 @@
   - POST `/api/cards/save`（儲存/更新卡片）
   - GET `/api/cards/types`（查詢所有卡片分類）
 - [ ] API 回傳格式、錯誤處理、權限驗證（如需）
+- [ ] 新增 member_card_promo_map 關聯表，記錄會員卡與宣傳卡的對應與排序（page_id, user_id, promo_card_id, sort_order）
 
 ## 2. 前端欄位與圖片上傳
 - [ ] 確認所有欄位（含 calendar_image_link、love_icon_link）在表單正確顯示、可編輯
