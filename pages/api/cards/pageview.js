@@ -14,21 +14,22 @@ export default async function handler(req, res) {
   for (const { id, type } of cardIdTypeArr) {
     if (!id) continue;
     try {
-      let data, updateError;
-      if (type === 'main') {
-        ({ data, error: updateError } = await supabase
-          .from('member_cards')
-          .update({ pageview: supabase.raw('COALESCE(pageview, 0) + 1') })
-          .eq('id', id)
-          .select());
-      } else {
-        ({ data, error: updateError } = await supabase
-          .from('promo_cards')
-          .update({ pageview: supabase.raw('COALESCE(pageview, 0) + 1') })
-          .eq('id', id)
-          .select());
-      }
-      console.log(`[pageview] id=${id}, type=${type}, updatedRows=${data ? data.length : 0}`);
+      let table = type === 'main' ? 'member_cards' : 'promo_cards';
+      // 1. 先查詢目前 pageview
+      const { data: current, error: getError } = await supabase
+        .from(table)
+        .select('pageview')
+        .eq('id', id)
+        .single();
+      if (getError) throw getError;
+      const newPageview = (current?.pageview || 0) + 1;
+      // 2. 更新 pageview
+      const { data, error: updateError } = await supabase
+        .from(table)
+        .update({ pageview: newPageview })
+        .eq('id', id)
+        .select();
+      console.log(`[pageview] id=${id}, type=${type}, old=${current?.pageview || 0}, new=${newPageview}, updatedRows=${data ? data.length : 0}`);
       if (updateError) throw updateError;
       if (!data || data.length === 0) throw new Error('No row updated for id: ' + id);
     } catch (e) {
