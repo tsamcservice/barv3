@@ -753,7 +753,7 @@ function renderPromoCardSelector() {
         <img src="${card.flex_json.body.contents[0].url}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
       </div>
       <div style="width:120px;text-align:center;margin-top:2px;">
-        <span style="display:inline-block;background:#222;color:#fff;font-size:13px;font-weight:bold;padding:2px 10px;border-radius:4px;">👁️${card.pageview || 0}</span>
+        <span style="display:inline-block;background:#222;color:#fff;font-size:13px;font-weight:bold;padding:2px 10px;border-radius:4px;">👁️${formatPageview(card.pageview)}</span>
       </div>
       <div class="select-label" style="text-align:center;margin-top:8px;font-size:13px;color:#4caf50;">${selectedPromoCards.includes(card.id) ? '已加入' : '點選加入'}</div>
     `;
@@ -1086,4 +1086,9 @@ function renderShareJsonBoxWithPromoSortable(flexJson) {
     });
   };
   box.appendChild(copyBtn);
+}
+
+// 在所有顯示 pageview 的地方補零
+function formatPageview(val) {
+  return String(val || 0).padStart(4, '0');
 } 
