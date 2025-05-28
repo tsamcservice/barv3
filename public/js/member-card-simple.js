@@ -854,6 +854,10 @@ async function shareToLine() {
         body: JSON.stringify({ cardIdTypeArr })
       });
     }
+    if (!flexJson || typeof flexJson !== 'object') {
+      loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料或格式錯誤，無法分享</div>';
+      return;
+    }
     await liff.shareTargetPicker([flexJson])
       .then(closeOrRedirect)
       .catch(closeOrRedirect);
