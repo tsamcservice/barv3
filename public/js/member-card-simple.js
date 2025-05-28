@@ -417,7 +417,8 @@ function renderPreview() {
   const flexJson = {
     type: 'flex',
     altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
-    contents: bubble
+    contents: bubble,
+    pageview: formatPageview(getFormData().pageview)
   };
   const preview = document.getElementById('main-card-preview');
   preview.innerHTML = '';
@@ -439,7 +440,8 @@ function renderShareJsonBoxWithPromo() {
     shareMsg = {
       type: 'flex',
       altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-      contents: mainCard
+      contents: mainCard,
+      pageview: formatPageview(getFormData().pageview)
     };
   } else {
     shareMsg = {
@@ -448,7 +450,8 @@ function renderShareJsonBoxWithPromo() {
       contents: {
         type: 'carousel',
         contents: [mainCard, ...promoCards]
-      }
+      },
+      pageview: formatPageview(getFormData().pageview)
     };
   }
   box.innerHTML = '';
@@ -495,8 +498,8 @@ window.onload = async function() {
   const pageId = getQueryParam('pageId');
   const userIdParam = getQueryParam('userId');
   
-  if (pageId) {
-    // 分享跳板模式
+  if (pageId && !userIdParam) {
+    // DEMO模式：僅有 pageId，強制只查詢初始卡片，不登入 LIFF
     const cardForm = document.getElementById('cardForm');
     if (cardForm) cardForm.style.display = 'none';
     const previewSection = document.querySelector('.preview-section');
@@ -507,22 +510,10 @@ window.onload = async function() {
     document.body.appendChild(loadingDiv);
     let flexJson = null;
     try {
-      // 初始化 LIFF
-      await liff.init({ liffId });
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
-      // 取得卡片資料
-      const apiUrl = `/api/cards?pageId=${pageId}${userIdParam ? `&userId=${userIdParam}` : ''}`;
-      const res = await fetch(apiUrl);
-      const result = await res.json();
-      flexJson = result?.data?.[0]?.flex_json;
-      if (!flexJson) {
-        const defRes = await fetch('/api/cards/default?pageId=' + pageId);
-        const defResult = await defRes.json();
-        flexJson = defResult?.data?.flex_json;
-      }
+      // 取得初始卡片資料
+      const defRes = await fetch('/api/cards/default?pageId=' + pageId);
+      const defResult = await defRes.json();
+      flexJson = defResult?.data?.flex_json;
       if (!flexJson) {
         loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
         return;
@@ -532,7 +523,7 @@ window.onload = async function() {
         await fetch('/api/cards/pageview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cardIdTypeArr: [{ id: result?.data?.[0]?.id, type: 'main' }] })
+          body: JSON.stringify({ cardIdTypeArr: [{ id: defResult?.data?.id, type: 'main' }] })
         });
       } catch (e) { /* 忽略錯誤 */ }
       // 自動分享
