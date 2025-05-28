@@ -527,6 +527,14 @@ window.onload = async function() {
         loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
         return;
       }
+      // 先呼叫 pageview API +1
+      try {
+        await fetch('/api/cards/pageview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cardIdTypeArr: [{ id: result?.data?.[0]?.id, type: 'main' }] })
+        });
+      } catch (e) { /* 忽略錯誤 */ }
       // 自動分享
       await liff.shareTargetPicker([flexJson])
         .then(() => {
@@ -900,6 +908,8 @@ document.getElementById('cardForm').onsubmit = async function(e) {
     }
 
     const formData = getFormData();
+    // 移除 pageview 欄位，避免覆蓋
+    const { pageview, ...formDataWithoutPageview } = formData;
     // 取得 FLEX JSON
     const bubble = getMainBubble(formData);
     const flexJson = {
@@ -915,7 +925,7 @@ document.getElementById('cardForm').onsubmit = async function(e) {
       body: JSON.stringify({
         page_id: 'M01001',
         line_user_id: liffProfile.userId,
-        ...formData,
+        ...formDataWithoutPageview,
         flex_json: flexJson
       })
     });
