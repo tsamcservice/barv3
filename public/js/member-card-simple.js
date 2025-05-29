@@ -493,21 +493,10 @@ function closeOrRedirect() {
 
 // 修改 window.onload 函數
 window.onload = async function() {
-  // 強制所有 input 一律黑字，移除殘留 CSS
-  document.querySelectorAll('input').forEach(input => {
-    input.style.color = '#222';
-    input.className = '';
-  });
-  document.querySelectorAll('style').forEach(style => {
-    if (style.innerHTML.includes('data-default')) style.remove();
-  });
-
-  // 檢查是否為分享模式
   const pageId = getQueryParam('pageId');
   const userIdParam = getQueryParam('userId');
-  
-  if (pageId && !userIdParam) {
-    // DEMO模式：僅有 pageId，強制只查詢初始卡片，不登入 LIFF
+  if (pageId) {
+    // 自動分享模式
     const cardForm = document.getElementById('cardForm');
     if (cardForm) cardForm.style.display = 'none';
     const previewSection = document.querySelector('.preview-section');
@@ -517,26 +506,39 @@ window.onload = async function() {
     loadingDiv.innerHTML = '<div style="font-size:20px;color:#4caf50;margin-top:60px;">正在自動分享...</div>';
     document.body.appendChild(loadingDiv);
     let flexJson = null;
+    let cardId = null;
     try {
-      // 取代原本 fetch('/api/cards/default?pageId=' + pageId) 的用法：
-      // const defRes = await fetch('/api/cards/default?pageId=' + pageId);
-      // const defResult = await defRes.json();
-      // 改為：
-      const defResult = await safeFetchJson('/api/cards/default?pageId=' + pageId);
-      if (!defResult.success) {
-        loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料或API錯誤，無法分享</div>';
+      await liff.init({ liffId });
+      if (!liff.isLoggedIn()) {
+        liff.login();
         return;
       }
-      // 先呼叫 pageview API +1
+      if (userIdParam) {
+        // 1. pageId+userId：查詢個人卡片
+        const apiUrl = `/api/cards?pageId=${pageId}&userId=${userIdParam}`;
+        const result = await safeFetchJson(apiUrl);
+        flexJson = result?.data?.[0]?.flex_json;
+        cardId = result?.data?.[0]?.id;
+      } else {
+        // 2. 只有 pageId：查詢初始卡片
+        const defResult = await safeFetchJson('/api/cards/default?pageId=' + pageId);
+        flexJson = defResult?.data?.flex_json;
+        cardId = defResult?.data?.id;
+      }
+      if (!flexJson) {
+        loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
+        return;
+      }
+      // pageview +1
       try {
         await fetch('/api/cards/pageview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cardIdTypeArr: [{ id: defResult?.data?.id, type: 'main' }] })
+          body: JSON.stringify({ cardIdTypeArr: [{ id: cardId, type: 'main' }] })
         });
       } catch (e) { /* 忽略錯誤 */ }
       // 自動分享
-      await liff.shareTargetPicker([defResult?.data?.flex_json])
+      await liff.shareTargetPicker([flexJson])
         .then(() => {
           loadingDiv.remove();
           closeOrRedirect();
@@ -550,8 +552,7 @@ window.onload = async function() {
     }
     return;
   }
-
-  // 一般編輯模式
+  // 3. 無 pageId/userId，進入登入與編修
   const ok = await initLiffAndLogin();
   if (ok) {
     // 2. 取得 profile，確保 userId 可用
