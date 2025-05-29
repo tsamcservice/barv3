@@ -541,14 +541,48 @@ window.onload = async function() {
           body: JSON.stringify({ cardIdTypeArr: [{ id: cardId, type: 'main' }] })
         });
         
-        // **修復問題1：自動分享模式下pageview更新後重新取得最新資料**
+        // **修復問題4：自動分享模式下pageview更新後重新生成最新的flexJson**
         if (userIdParam) {
+          // 重新取得最新的 pageview 數字
           const updatedResult = await safeFetchJson(`/api/cards?pageId=${pageId}&userId=${userIdParam}`);
-          if (updatedResult?.data?.[0]?.flex_json) {
-            flexJson = updatedResult.data[0].flex_json;
+          if (updatedResult?.data?.[0]) {
+            const latestPageview = updatedResult.data[0].pageview;
+            const updatedCardData = updatedResult.data[0];
+            console.log('自動分享模式：取得最新pageview', latestPageview);
+            
+            // **簡化處理：直接用最新的完整資料重新生成flexJson**
+            // 1. 先用最新的pageview生成主卡片
+            const updatedMainBubble = getMainBubble({ ...updatedCardData, pageview: latestPageview });
+            
+            // 2. 檢查原本是否為carousel（多卡片）
+            if (flexJson.contents && flexJson.contents.type === 'carousel') {
+              // 多卡片：保持原本結構，只更新主卡片（第一個）
+              const originalContents = flexJson.contents.contents;
+              originalContents[0] = updatedMainBubble; // 更新主卡片
+              
+              flexJson = {
+                type: 'flex',
+                altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
+                contents: {
+                  type: 'carousel',
+                  contents: originalContents
+                }
+              };
+            } else {
+              // 單卡片：直接替換
+              flexJson = {
+                type: 'flex',
+                altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
+                contents: updatedMainBubble
+              };
+            }
+            
+            console.log('自動分享模式：已重新生成最新flexJson，pageview:', latestPageview);
           }
         }
-      } catch (e) { /* 忽略錯誤 */ }
+      } catch (e) { 
+        console.error('自動分享模式pageview更新失敗:', e);
+      }
       // 自動分享
       await liff.shareTargetPicker([flexJson])
         .then(() => {
