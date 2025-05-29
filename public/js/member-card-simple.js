@@ -520,10 +520,14 @@ window.onload = async function() {
         flexJson = result?.data?.[0]?.flex_json;
         cardId = result?.data?.[0]?.id;
       } else {
-        // 2. 只有 pageId：查詢初始卡片
-        const defResult = await safeFetchJson('/api/cards/default?pageId=' + pageId);
-        flexJson = defResult?.data?.flex_json;
-        cardId = defResult?.data?.id;
+        // 2. 只有 pageId：查詢初始卡片（user_id 為 null）
+        const result = await safeFetchJson(`/api/cards?pageId=${pageId}`);
+        // 選出 user_id 為 null 的那一筆
+        const defaultCard = Array.isArray(result?.data)
+          ? result.data.find(card => !card.line_user_id)
+          : null;
+        flexJson = defaultCard?.flex_json;
+        cardId = defaultCard?.id;
       }
       if (!flexJson) {
         loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
