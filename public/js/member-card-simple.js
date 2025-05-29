@@ -421,16 +421,35 @@ function getShareBubbles() {
 
 // 預覽區渲染
 function renderPreview() {
-  const bubble = getMainBubble(getFormData());
-  const flexJson = {
-    type: 'flex',
-    altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
-    contents: bubble,
-    pageview: formatPageview(getFormData().pageview)
-  };
-  const preview = document.getElementById('main-card-preview');
-  preview.innerHTML = '';
-  flex2html('main-card-preview', flexJson);
+  // **修復問題1：使用allCardsSortable渲染多卡片預覽**
+  if (allCardsSortable && allCardsSortable.length > 1) {
+    // 多卡片：使用排序後的結果渲染carousel
+    const flexArr = allCardsSortable.map(c => c.flex_json);
+    const flexJson = {
+      type: 'flex',
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
+      contents: {
+        type: 'carousel',
+        contents: flexArr
+      },
+      pageview: formatPageview(getFormData().pageview)
+    };
+    const preview = document.getElementById('main-card-preview');
+    preview.innerHTML = '';
+    flex2html('main-card-preview', flexJson);
+  } else {
+    // 單卡片：只渲染主卡片
+    const bubble = getMainBubble(getFormData());
+    const flexJson = {
+      type: 'flex',
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
+      contents: bubble,
+      pageview: formatPageview(getFormData().pageview)
+    };
+    const preview = document.getElementById('main-card-preview');
+    preview.innerHTML = '';
+    flex2html('main-card-preview', flexJson);
+  }
   renderShareJsonBoxWithPromo();
 }
 
@@ -556,9 +575,30 @@ window.onload = async function() {
             
             // 2. 檢查原本是否為carousel（多卡片）
             if (flexJson.contents && flexJson.contents.type === 'carousel') {
-              // 多卡片：保持原本結構，只更新主卡片（第一個）
+              // **修復問題4：正確識別並更新主卡片位置**
               const originalContents = flexJson.contents.contents;
-              originalContents[0] = updatedMainBubble; // 更新主卡片
+              let mainCardIndex = -1;
+              
+              // 查找主卡片的位置（通過比對卡片結構特徵）
+              for (let i = 0; i < originalContents.length; i++) {
+                const content = originalContents[i];
+                // 檢查是否為主卡片（主卡片會有特定的footer結構）
+                if (content.footer && content.footer.contents && 
+                    content.footer.contents[0] && 
+                    content.footer.contents[0].text === '呈璽元宇宙3D展覽館') {
+                  mainCardIndex = i;
+                  break;
+                }
+              }
+              
+              // 如果找到主卡片，更新它；否則假設第一張是主卡片
+              if (mainCardIndex >= 0) {
+                originalContents[mainCardIndex] = updatedMainBubble;
+                console.log('自動分享模式：已更新主卡片位置', mainCardIndex);
+              } else {
+                originalContents[0] = updatedMainBubble; // 後備方案
+                console.log('自動分享模式：使用後備方案更新第一張卡片');
+              }
               
               flexJson = {
                 type: 'flex',
