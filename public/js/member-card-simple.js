@@ -1,3 +1,8 @@
+// 全域變數宣告
+let allCardsSortable = [];
+let promoCardList = [];
+let selectedPromoCards = [];
+
 // 會員卡初始資料
 const defaultCard = {
   main_image_url: 'https://barv3.vercel.app/uploads/vip/TS-B1.png',
@@ -32,13 +37,45 @@ const liffId = '2007327814-BdWpj70m';
 
 // LIFF 初始化與登入
 async function initLiffAndLogin() {
-  if (!window.liff) return;
-  await liff.init({ liffId });
-  if (!liff.isLoggedIn()) {
-    liff.login();
+  if (!window.liff) {
+    console.error('LIFF SDK not loaded');
     return false;
   }
-  return true;
+  
+  try {
+    // 初始化 LIFF
+    await liff.init({ liffId });
+    
+    // 檢查登入狀態
+    if (!liff.isLoggedIn()) {
+      // 儲存當前 URL 到 sessionStorage
+      sessionStorage.setItem('redirectUrl', window.location.href);
+      // 執行登入
+      liff.login();
+      return false;
+    }
+    
+    // 取得用戶資料
+    const profile = await liff.getProfile();
+    liffProfile = {
+      displayName: profile.displayName,
+      pictureUrl: profile.pictureUrl,
+      userId: profile.userId
+    };
+    
+    // 渲染用戶資訊
+    renderLiffUserInfo(profile);
+    
+    return true;
+  } catch (e) {
+    console.error('LIFF init failed:', e);
+    // 顯示錯誤訊息
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ffebee;color:#c62828;padding:12px;text-align:center;z-index:9999;';
+    errorDiv.textContent = '登入失敗，請重新整理頁面重試';
+    document.body.appendChild(errorDiv);
+    return false;
+  }
 }
 
 // 於右上角顯示LINE頭像、姓名與綠色LINE圖示
@@ -495,6 +532,26 @@ function closeOrRedirect() {
 window.onload = async function() {
   const pageId = getQueryParam('pageId');
   const userIdParam = getQueryParam('userId');
+  
+  // 初始化 LIFF
+  const isLoggedIn = await initLiffAndLogin();
+  if (!isLoggedIn) {
+    // 如果未登入，等待登入完成
+    return;
+  }
+
+  // 取得 LINE profile
+  try {
+    const profile = await liff.getProfile();
+    liffProfile.displayName = profile.displayName;
+    liffProfile.pictureUrl = profile.pictureUrl;
+    liffProfile.userId = profile.userId;
+    renderLiffUserInfo(profile);
+  } catch (e) {
+    console.error('Get profile failed:', e);
+    return;
+  }
+
   if (pageId) {
     // 自動分享模式
     const cardForm = document.getElementById('cardForm');
@@ -556,105 +613,61 @@ window.onload = async function() {
     }
     return;
   }
-  // 3. 無 pageId/userId，進入登入與編修
-  const ok = await initLiffAndLogin();
-  if (ok) {
-    // 2. 取得 profile，確保 userId 可用
-    let profile = null;
-    if (window.liff && liff.getProfile) {
-      try {
-        profile = await liff.getProfile();
-        liffProfile.displayName = profile.displayName;
-        liffProfile.pictureUrl = profile.pictureUrl;
-        liffProfile.userId = profile.userId;
-        renderLiffUserInfo(profile);
-      } catch (e) {}
-    }
-    // 3. 用 userId 查詢 API
-    let userId = liffProfile.userId || getQueryParam('userId');
-    let pageId = 'M01001';
-    let apiUrl = `/api/cards?pageId=${pageId}`;
-    if (userId) apiUrl += `&userId=${userId}`;
+  // 編輯模式
+  try {
+    // 用 userId 查詢 API
+    const apiUrl = `/api/cards?pageId=M01001&userId=${liffProfile.userId}`;
+    const result = await safeFetchJson(apiUrl);
     let cardLoaded = false;
-    let loadedFlexJson = null;
-    try {
-      const res = await fetch(apiUrl);
-      const result = await res.json();
-      if (result.success && result.data && result.data.length > 0) {
-        const card = result.data[0];
-        Object.keys(defaultCard).forEach(key => {
-          if (document.getElementById(key) && card[key] !== undefined && card[key] !== null) {
-            setInputDefaultStyle(document.getElementById(key), card[key]);
-          }
-        });
-        cardLoaded = true;
-        loadedFlexJson = card.flex_json;
-      }
-    } catch (e) {}
-    // 4. 若沒資料則用 fillAllFieldsWithProfile
-    if (!cardLoaded) {
+    
+    if (result.success && result.data && result.data.length > 0) {
+      const card = result.data[0];
       Object.keys(defaultCard).forEach(key => {
-        if(document.getElementById(key)){
-          setInputDefaultStyle(document.getElementById(key), defaultCard[key]);
+        if (document.getElementById(key) && card[key] !== undefined && card[key] !== null) {
+          setInputDefaultStyle(document.getElementById(key), card[key]);
         }
       });
+      cardLoaded = true;
+    }
+    
+    // 若沒資料則用預設值
+    if (!cardLoaded) {
       await fillAllFieldsWithProfile();
     }
-    // 5. 掛 input 監聽
+    
+    // 掛 input 監聽
     if(document.getElementById('display_name'))
       document.getElementById('display_name').addEventListener('input', updateCardAltTitle);
     if(document.getElementById('main_title_1'))
       document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
-    // 6. 渲染預覽與 JSON
+    
+    // 渲染預覽與 JSON
     renderPreview();
     renderShareJsonBoxWithPromo();
-    // 若有儲存的carousel，還原排序
-    if (loadedFlexJson && loadedFlexJson.contents && loadedFlexJson.contents.type === 'carousel') {
-      // 取得主卡與宣傳卡 id 順序
-      const flexArr = loadedFlexJson.contents.contents;
-      // 取得主卡與宣傳卡的唯一key（主卡用main，宣傳卡用id）
-      let newAllCards = [];
-      let newSelectedPromo = [];
-      flexArr.forEach(flex => {
-        // 判斷是主卡還是宣傳卡
-        if (flex.body && flex.body.contents && flex.body.contents.some && flex.body.contents.some(c => c.type === 'box' && c.contents && c.contents.some && c.contents.some(cc => cc.text === '主卡片'))) {
-          // 主卡
-          newAllCards.push({ type: 'main', id: 'main', flex_json: flex, img: getFormData().main_image_url || defaultCard.main_image_url });
-        } else {
-          // 宣傳卡
-          const found = promoCardList.find(c => JSON.stringify(c.flex_json) === JSON.stringify(flex));
-          if (found) {
-            newAllCards.push({ type: 'promo', id: found.id, flex_json: found.flex_json, img: found.flex_json.body.contents[0].url });
-            newSelectedPromo.push(found.id);
-          }
-        }
-      });
-      if (newAllCards.length > 0) {
-        allCardsSortable = newAllCards;
-        selectedPromoCards = newSelectedPromo;
-      }
+    
+    // 載入宣傳卡片
+    await loadPromoCards();
+    
+    // 顯示分享按鈕後連結欄位（可複製）
+    const sBtnUrlInput = document.getElementById('s_button_url');
+    if(sBtnUrlInput && sBtnUrlInput.parentNode) {
+      sBtnUrlInput.style.display = '';
+      let shareBtn = document.createElement('button');
+      shareBtn.type = 'button';
+      shareBtn.textContent = '分享到LINE';
+      shareBtn.style = 'margin-top:12px;background:#06C755;color:#fff;padding:10px 18px;border:none;border-radius:4px;font-size:16px;cursor:pointer;display:block;width:100%';
+      shareBtn.onclick = shareToLine;
+      sBtnUrlInput.parentNode.appendChild(shareBtn);
+      // 設定分享按鈕連結為帶 pageId 和 userId 的 LIFF 連結
+      const liffUrl = `https://liff.line.me/${liffId}?pageId=M01001&userId=${liffProfile.userId}`;
+      sBtnUrlInput.value = liffUrl;
+      sBtnUrlInput.onclick = function() {
+        window.open(liffUrl, '_blank');
+      };
+      sBtnUrlInput.style.cursor = 'pointer';
     }
-    renderPromoCardListSortable();
-  }
-  // 顯示分享按鈕後連結欄位（可複製）
-  const sBtnUrlInput = document.getElementById('s_button_url');
-  if(sBtnUrlInput && sBtnUrlInput.parentNode) {
-    sBtnUrlInput.style.display = '';
-    let shareBtn = document.createElement('button');
-    shareBtn.type = 'button';
-    shareBtn.textContent = '分享到LINE';
-    shareBtn.style = 'margin-top:12px;background:#06C755;color:#fff;padding:10px 18px;border:none;border-radius:4px;font-size:16px;cursor:pointer;display:block;width:100%';
-    shareBtn.onclick = shareToLine;
-    sBtnUrlInput.parentNode.appendChild(shareBtn);
-    // 設定分享按鈕連結為帶 pageId 和 userId 的 LIFF 連結
-    const pageId = 'M01001';
-    const userIdParam = liffProfile.userId || getQueryParam('userId');
-    const liffUrl = `https://liff.line.me/${liffId}?pageId=${pageId}${userIdParam ? `&userId=${userIdParam}` : ''}`;
-    sBtnUrlInput.value = liffUrl;
-    sBtnUrlInput.onclick = function() {
-      window.open(liffUrl, '_blank');
-    };
-    sBtnUrlInput.style.cursor = 'pointer';
+  } catch (e) {
+    console.error('Load data failed:', e);
   }
 };
 
