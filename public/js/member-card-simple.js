@@ -678,438 +678,6 @@ window.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// 1. 分享/儲存時 pageview +1 再組裝 FLEX JSON
-async function getAndIncrementPageview(pageId, userId) {
-  let latestPageview = 0;
-  let mainCardId = null;
-  try {
-    const res = await fetch(`/api/cards?pageId=${pageId}&userId=${userId}`);
-    const result = await res.json();
-    if (result.success && result.data && result.data.length > 0) {
-      latestPageview = (result.data[0].pageview || 0) + 1;
-      mainCardId = result.data[0].id;
-    }
-  } catch (e) {}
-  // 先 +1
-  if (mainCardId) {
-    await fetch('/api/cards/pageview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cardIdTypeArr: [{ id: mainCardId, type: 'main' }] })
-    });
-  }
-  return latestPageview;
-}
-
-// 修改 shareToLine
-async function shareToLine() {
-  if (!window.liff) return alert('LIFF 未載入');
-  try {
-    await liff.init({ liffId });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
-    // 取得最新 pageview 並 +1
-    const latestPageview = await getAndIncrementPageview('M01001', liffProfile.userId);
-    // 依照排序後的 allCardsSortable 組合 carousel，主卡片用最新 pageview
-    const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
-    if (mainIdx !== -1) {
-      allCardsSortable[mainIdx].flex_json = getMainBubble({ ...getFormData(), pageview: latestPageview });
-      allCardsSortable[mainIdx].img = getFormData().main_image_url || defaultCard.main_image_url;
-    }
-    const flexArr = allCardsSortable.map(c => c.flex_json);
-    let flexJson;
-    if (flexArr.length === 1) {
-      flexJson = {
-        type: 'flex',
-        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: flexArr[0]
-      };
-    } else {
-      flexJson = {
-        type: 'flex',
-        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: {
-          type: 'carousel',
-          contents: flexArr
-        }
-      };
-    }
-    // 儲存主卡片（用最新內容）
-    const formData = getFormData();
-    const { pageview, ...formDataWithoutPageview } = formData;
-    const response = await fetch('/api/cards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        page_id: 'M01001',
-        line_user_id: liffProfile.userId,
-        ...formDataWithoutPageview,
-        flex_json: flexJson,
-        card_order: allCardsSortable.map(c => c.id)
-      })
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || '儲存失敗');
-    }
-    await liff.shareTargetPicker([flexJson])
-      .then(closeOrRedirect)
-      .catch(closeOrRedirect);
-  } catch (err) {
-    alert('儲存或分享失敗: ' + err.message);
-  }
-}
-
-// 監聽 display_name、main_title_1 input 變動，自動更新 card_alt_title
-function updateCardAltTitle() {
-  const mainTitle = document.getElementById('main_title_1').value;
-  const displayName = document.getElementById('display_name').value;
-  if(document.getElementById('card_alt_title'))
-    document.getElementById('card_alt_title').value = mainTitle + '/' + displayName;
-  renderPreview();
-  renderShareJsonBoxWithPromo();
-}
-window.addEventListener('DOMContentLoaded', function() {
-  if(document.getElementById('display_name'))
-    document.getElementById('display_name').addEventListener('input', updateCardAltTitle);
-  if(document.getElementById('main_title_1'))
-    document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
-});
-
-// 欄位即時預覽
-Array.from(document.querySelectorAll('#cardForm input')).forEach(input => {
-  input.addEventListener('input', function(e) {
-    renderPreview();
-    renderShareJsonBoxWithPromo();
-  });
-});
-
-// 儲存功能
-document.getElementById('cardForm').onsubmit = async function(e) {
-  e.preventDefault();
-  if (!window.liff) return alert('LIFF 未載入');
-  try {
-    await liff.init({ liffId });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
-    // 取得最新 pageview 並 +1
-    const latestPageview = await getAndIncrementPageview('M01001', liffProfile.userId);
-    // 依照排序後的 allCardsSortable 組合 carousel，主卡片用最新 pageview
-    const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
-    if (mainIdx !== -1) {
-      allCardsSortable[mainIdx].flex_json = getMainBubble({ ...getFormData(), pageview: latestPageview });
-      allCardsSortable[mainIdx].img = getFormData().main_image_url || defaultCard.main_image_url;
-    }
-    const flexArr = allCardsSortable.map(c => c.flex_json);
-    let flexJson;
-    if (flexArr.length === 1) {
-      flexJson = {
-        type: 'flex',
-        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: flexArr[0]
-      };
-    } else {
-      flexJson = {
-        type: 'flex',
-        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: {
-          type: 'carousel',
-          contents: flexArr
-        }
-      };
-    }
-    const formData = getFormData();
-    const { pageview, ...formDataWithoutPageview } = formData;
-    const response = await fetch('/api/cards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        page_id: 'M01001',
-        line_user_id: liffProfile.userId,
-        ...formDataWithoutPageview,
-        flex_json: flexJson,
-        card_order: allCardsSortable.map(c => c.id)
-      })
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || '儲存失敗');
-    }
-    const result = await response.json();
-    alert('儲存成功！');
-  } catch (err) {
-    alert('儲存失敗: ' + err.message);
-  }
-};
-
-// 圖片上傳功能
-function bindImageUpload(inputId, btnId, previewId, urlId) {
-  const input = document.getElementById(inputId);
-  const btn = document.getElementById(btnId);
-  const preview = document.getElementById(previewId);
-  const urlInput = document.getElementById(urlId);
-  // 預設圖
-  setImageDefaultStyle(preview, urlInput.value || preview.src);
-  // 檔案選擇事件
-  input.addEventListener('change', function() {
-    if (input.files && input.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        setImageUserStyle(preview, e.target.result);
-      };
-      reader.readAsDataURL(input.files[0]);
-    }
-  });
-  // 上傳按鈕點擊事件
-  btn.addEventListener('click', async function() {
-    if (!input.files || !input.files[0]) {
-      alert('請選擇圖片');
-      return;
-    }
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      try {
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            file: e.target.result,
-            fileName: file.name,
-            fileType: file.type,
-          }),
-        });
-        const data = await response.json();
-        if (!data.success) {
-          throw new Error(data.error || '上傳失敗');
-        }
-        if (data.data?.url) {
-          urlInput.value = data.data.url;
-          setImageUserStyle(preview, data.data.url);
-          renderPreview();
-        } else {
-          throw new Error('未收到上傳 URL');
-        }
-      } catch (error) {
-        console.error('Upload failed:', error);
-        alert(error.message || '上傳失敗，請重試');
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-// 初始化圖片上傳功能
-window.addEventListener('DOMContentLoaded', function() {
-  // ... existing code ...
-  
-  // 綁定圖片上傳功能
-  bindImageUpload('main_image_upload', 'main_image_upload_btn', 'main_image_preview', 'main_image_url');
-  bindImageUpload('snow_image_upload', 'snow_image_upload_btn', 'snow_image_preview', 'snow_image_url');
-  bindImageUpload('calendar_image_upload', 'calendar_image_upload_btn', 'calendar_image_preview', 'calendar_image_url');
-  bindImageUpload('love_icon_upload', 'love_icon_upload_btn', 'love_icon_preview', 'love_icon_url');
-  bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url');
-});
-
-// 宣傳卡片功能
-let promoCardList = [];
-let selectedPromoCards = [];
-
-// 載入宣傳卡片時同時渲染 selector
-async function loadPromoCards() {
-  try {
-    const res = await fetch('/api/promo-cards');
-    const result = await res.json();
-    if (result.success && Array.isArray(result.data)) {
-      promoCardList = result.data;
-      renderPromoCardSelector();
-      initAllCardsSortable();
-      renderPromoCardListSortable();
-    }
-  } catch (e) {
-    console.error('載入宣傳卡片失敗', e);
-  }
-}
-
-// DOMContentLoaded 時初始化宣傳卡片功能
-window.addEventListener('DOMContentLoaded', function() {
-  loadPromoCards();
-});
-
-function updatePreviewWithPromoSortable() {
-  // 依照排序後的 allCardsSortable 組合 carousel
-  const flexArr = allCardsSortable.map(c => c.flex_json);
-  let flexJson;
-  if (flexArr.length === 1) {
-    flexJson = {
-      type: 'flex',
-      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-      contents: flexArr[0]
-    };
-  } else {
-    flexJson = {
-      type: 'flex',
-      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-      contents: {
-        type: 'carousel',
-        contents: flexArr
-      }
-    };
-  }
-  const preview = document.getElementById('main-card-preview');
-  preview.innerHTML = '';
-  flex2html('main-card-preview', flexJson);
-  renderShareJsonBoxWithPromoSortable(flexJson);
-}
-
-function renderShareJsonBoxWithPromoSortable(flexJson) {
-  const box = document.getElementById('shareJsonBox');
-  if (!box) return;
-  box.innerHTML = '';
-  const title = document.createElement('div');
-  title.textContent = '即將分享的 Flex Message JSON（可複製）';
-  title.style.cssText = 'font-weight:bold;font-size:16px;margin-bottom:8px;';
-  box.appendChild(title);
-  const pre = document.createElement('pre');
-  pre.textContent = JSON.stringify(flexJson, null, 2);
-  pre.style.cssText = 'font-size:14px;line-height:1.5;user-select:text;white-space:pre-wrap;word-break:break-all;background:#fff;padding:10px;border-radius:4px;max-height:300px;overflow:auto;';
-  box.appendChild(pre);
-  const copyBtn = document.createElement('button');
-  copyBtn.textContent = '一鍵複製';
-  copyBtn.style.cssText = 'margin:8px 0 0 0;padding:6px 16px;background:#4CAF50;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:15px;';
-  copyBtn.onclick = () => {
-    navigator.clipboard.writeText(pre.textContent).then(() => {
-      copyBtn.textContent = '已複製!';
-      setTimeout(()=>{copyBtn.textContent='一鍵複製';},1200);
-    });
-  };
-  box.appendChild(copyBtn);
-}
-
-// 在所有顯示 pageview 的地方補零
-function formatPageview(val) {
-  return String(val || 0).padStart(4, '0');
-}
-
-// 新增 safeFetchJson 函數
-async function safeFetchJson(url) {
-  const res = await fetch(url);
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    return { success: false, error: 'API 回傳非 JSON', raw: text };
-  }
-}
-
-// 2. 頁面初始化時根據 card_order 還原排序
-function initAllCardsSortable() {
-  // 先建立主卡片
-  const mainCard = {
-    type: 'main',
-    id: 'main',
-    flex_json: getMainBubble(getFormData()),
-    img: getFormData().main_image_url || defaultCard.main_image_url
-  };
-  // 若有 card_order，依 card_order 排序
-  if (window.cardOrder && Array.isArray(window.cardOrder)) {
-    const orderedCards = window.cardOrder.map(id => {
-      if (id === 'main') return mainCard;
-      const card = promoCardList.find(c => c.id === id);
-      return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, img: card.flex_json.body.contents[0].url } : null;
-    }).filter(Boolean);
-    allCardsSortable = orderedCards;
-  } else {
-    // 沒有 card_order，則用預設順序
-    if (selectedPromoCards.length > 0) {
-      allCardsSortable = [
-        mainCard,
-        ...selectedPromoCards.map(id => {
-          const card = promoCardList.find(c => c.id === id);
-          return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, img: card.flex_json.body.contents[0].url } : null;
-        }).filter(Boolean)
-      ];
-    } else {
-      allCardsSortable = [mainCard];
-    }
-  }
-  // 確保主卡片一定存在且在第一個位置
-  if (!allCardsSortable.some(card => card.type === 'main')) {
-    allCardsSortable.unshift(mainCard);
-  } else if (allCardsSortable[0].type !== 'main') {
-    const mainCardIndex = allCardsSortable.findIndex(card => card.type === 'main');
-    const mainCard = allCardsSortable[mainCardIndex];
-    allCardsSortable.splice(mainCardIndex, 1);
-    allCardsSortable.unshift(mainCard);
-  }
-}
-
-// 3. renderPromoCardSelector 嚴格同步 selectedPromoCards 狀態
-function renderPromoCardSelector() {
-  const selector = document.getElementById('promo-card-selector');
-  if (!selector) return;
-  selector.innerHTML = '';
-  promoCardList.forEach(card => {
-    const isSelected = selectedPromoCards.includes(card.id);
-    const thumb = document.createElement('div');
-    thumb.className = 'promo-card-thumb-select' + (isSelected ? ' selected' : '');
-    thumb.style.width = '120px';
-    thumb.style.height = '180px';
-    thumb.style.display = 'inline-block';
-    thumb.style.margin = '0 8px 8px 0';
-    thumb.innerHTML = `
-      <div style="width:120px;text-align:center;margin-bottom:8px;">
-        <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
-      </div>
-      <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;">
-        <img src="${card.flex_json.body.contents[0].url}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
-      </div>
-      <div style="width:120px;text-align:center;margin-top:2px;">
-        <span style="display:inline-block;background:#222;color:#fff;font-size:13px;font-weight:bold;padding:2px 10px;border-radius:4px;">👁️${formatPageview(card.pageview)}</span>
-      </div>
-      <div class="select-label" style="text-align:center;margin-top:8px;font-size:13px;color:#4caf50;">${isSelected ? '已加入' : '點選加入'}</div>
-    `;
-    thumb.onclick = () => {
-      const idx = selectedPromoCards.indexOf(card.id);
-      if (idx === -1) {
-        selectedPromoCards.push(card.id);
-      } else {
-        selectedPromoCards.splice(idx, 1);
-      }
-      initAllCardsSortable();
-      renderPromoCardSelector();
-      renderPromoCardListSortable();
-    };
-    selector.appendChild(thumb);
-  });
-}
-
-// 主卡片與宣傳卡片拖曳排序功能
-let allCardsSortable = [];
-
-// 展開/收合宣傳卡片選擇區塊
-window.addEventListener('DOMContentLoaded', function() {
-  const toggleBtn = document.getElementById('toggle-promo-selector');
-  const selector = document.getElementById('promo-card-selector');
-  if (toggleBtn && selector) {
-    toggleBtn.onclick = function() {
-      if (selector.style.display === 'none') {
-        selector.style.display = '';
-        toggleBtn.textContent = '收合 <<';
-      } else {
-        selector.style.display = 'none';
-        toggleBtn.textContent = '點選加入 >>';
-      }
-    };
-  }
-});
-
 // 初始化排序區卡片陣列
 function initAllCardsSortable() {
   // 先建立主卡片
@@ -1168,6 +736,45 @@ function renderPromoCardListSortable() {
     container.appendChild(div);
   });
   updatePreviewWithPromoSortable();
+}
+
+// 宣傳卡片選擇時初始化 allCardsSortable
+function renderPromoCardSelector() {
+  const selector = document.getElementById('promo-card-selector');
+  if (!selector) return;
+  selector.innerHTML = '';
+  promoCardList.forEach(card => {
+    const thumb = document.createElement('div');
+    thumb.className = 'promo-card-thumb-select' + (selectedPromoCards.includes(card.id) ? ' selected' : '');
+    thumb.style.width = '120px';
+    thumb.style.height = '180px';
+    thumb.style.display = 'inline-block';
+    thumb.style.margin = '0 8px 8px 0';
+    thumb.innerHTML = `
+      <div style="width:120px;text-align:center;margin-bottom:8px;">
+        <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
+      </div>
+      <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;">
+        <img src="${card.flex_json.body.contents[0].url}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
+      </div>
+      <div style="width:120px;text-align:center;margin-top:2px;">
+        <span style="display:inline-block;background:#222;color:#fff;font-size:13px;font-weight:bold;padding:2px 10px;border-radius:4px;">👁️${formatPageview(card.pageview)}</span>
+      </div>
+      <div class="select-label" style="text-align:center;margin-top:8px;font-size:13px;color:#4caf50;">${selectedPromoCards.includes(card.id) ? '已加入' : '點選加入'}</div>
+    `;
+    thumb.onclick = () => {
+      const idx = selectedPromoCards.indexOf(card.id);
+      if (idx === -1) {
+        selectedPromoCards.push(card.id);
+      } else {
+        selectedPromoCards.splice(idx, 1);
+      }
+      initAllCardsSortable();
+      renderPromoCardSelector();
+      renderPromoCardListSortable();
+    };
+    selector.appendChild(thumb);
+  });
 }
 
 // 左右移動排序函數
