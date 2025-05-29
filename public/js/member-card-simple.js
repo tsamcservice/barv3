@@ -450,37 +450,39 @@ function renderPreview() {
     preview.innerHTML = '';
     flex2html('main-card-preview', flexJson);
   }
-  renderShareJsonBoxWithPromo();
+  renderShareJsonBox();
 }
 
 // 分享按鈕上方顯示即將分享的Flex Message JSON
-function renderShareJsonBoxWithPromo() {
+function renderShareJsonBox() {
   const box = document.getElementById('shareJsonBox');
   if (!box) return;
-  const mainCard = getMainBubble(getFormData());
-  const promoCards = selectedPromoCards.map(id => {
-    const card = promoCardList.find(c => c.id === id);
-    return card ? card.flex_json : null;
-  }).filter(Boolean);
+  
+  // **修復問題1：使用allCardsSortable的排序結果生成JSON**
   let shareMsg;
-  if (promoCards.length === 0) {
+  if (allCardsSortable && allCardsSortable.length > 1) {
+    // 多卡片：按照排序後的結果組成carousel
+    const flexArr = allCardsSortable.map(c => c.flex_json);
+    shareMsg = {
+      type: 'flex',
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+      contents: {
+        type: 'carousel',
+        contents: flexArr
+      },
+      pageview: formatPageview(getFormData().pageview)
+    };
+  } else {
+    // 單卡片：只有主卡片
+    const mainCard = getMainBubble(getFormData());
     shareMsg = {
       type: 'flex',
       altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
       contents: mainCard,
       pageview: formatPageview(getFormData().pageview)
     };
-  } else {
-    shareMsg = {
-      type: 'flex',
-      altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-      contents: {
-        type: 'carousel',
-        contents: [mainCard, ...promoCards]
-      },
-      pageview: formatPageview(getFormData().pageview)
-    };
   }
+  
   box.innerHTML = '';
   const title = document.createElement('div');
   title.textContent = '即將分享的 Flex Message JSON（可複製）';
@@ -579,14 +581,26 @@ window.onload = async function() {
               const originalContents = flexJson.contents.contents;
               let mainCardIndex = -1;
               
-              // 查找主卡片的位置（通過比對卡片結構特徵）
+              // **改進主卡片識別邏輯**
               for (let i = 0; i < originalContents.length; i++) {
                 const content = originalContents[i];
-                // 檢查是否為主卡片（主卡片會有特定的footer結構）
-                if (content.footer && content.footer.contents && 
+                // 方法1：檢查是否有愛心圖標區塊（主卡片特有）
+                const hasLoveIcon = content.body && content.body.contents && 
+                  content.body.contents.some(item => 
+                    item.type === 'box' && item.contents && 
+                    item.contents.some(subItem => 
+                      subItem.url && subItem.url.includes('loveicon')
+                    )
+                  );
+                
+                // 方法2：檢查是否有footer（主卡片特有）
+                const hasMainFooter = content.footer && content.footer.contents && 
                     content.footer.contents[0] && 
-                    content.footer.contents[0].text === '呈璽元宇宙3D展覽館') {
+                    content.footer.contents[0].text === '呈璽元宇宙3D展覽館';
+                
+                if (hasLoveIcon || hasMainFooter) {
                   mainCardIndex = i;
+                  console.log('找到主卡片位置:', i, hasLoveIcon ? '(愛心圖標)' : '(footer)');
                   break;
                 }
               }
@@ -606,14 +620,16 @@ window.onload = async function() {
                 contents: {
                   type: 'carousel',
                   contents: originalContents
-                }
+                },
+                pageview: formatPageview(latestPageview) // **修復問題2：加入pageview**
               };
             } else {
               // 單卡片：直接替換
               flexJson = {
                 type: 'flex',
                 altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
-                contents: updatedMainBubble
+                contents: updatedMainBubble,
+                pageview: formatPageview(latestPageview) // **修復問題2：加入pageview**
               };
             }
             
@@ -690,7 +706,7 @@ window.onload = async function() {
       document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
     // 6. 渲染預覽與 JSON
     renderPreview();
-    renderShareJsonBoxWithPromo();
+    renderShareJsonBox();
     // **修復問題2：正確處理card_order排序**
     if (cardLoaded && result && result.data && result.data[0]) {
       const cardData = result.data[0];
@@ -975,7 +991,8 @@ async function shareToLine() {
       flexJson = {
         type: 'flex',
         altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: flexArr[0]
+        contents: flexArr[0],
+        pageview: formatPageview(latestPageview)
       };
     } else {
       flexJson = {
@@ -984,7 +1001,8 @@ async function shareToLine() {
         contents: {
           type: 'carousel',
           contents: flexArr
-        }
+        },
+        pageview: formatPageview(latestPageview)
       };
     }
     // 儲存主卡片（用最新內容）
@@ -1044,7 +1062,8 @@ async function shareToLine() {
           flexJson = {
             type: 'flex',
             altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-            contents: updatedFlexArr[0]
+            contents: updatedFlexArr[0],
+            pageview: formatPageview(updatedPageview)
           };
         } else {
           flexJson = {
@@ -1053,12 +1072,13 @@ async function shareToLine() {
             contents: {
               type: 'carousel',
               contents: updatedFlexArr
-            }
+            },
+            pageview: formatPageview(updatedPageview)
           };
         }
         // 重新渲染預覽與JSON
         renderPreview();
-        renderShareJsonBoxWithPromo();
+        renderShareJsonBox();
       }
     } catch (e) {
       console.error('Failed to refresh pageview after share:', e);
@@ -1079,7 +1099,7 @@ function updateCardAltTitle() {
   if(document.getElementById('card_alt_title'))
     document.getElementById('card_alt_title').value = mainTitle + '/' + displayName;
   renderPreview();
-  renderShareJsonBoxWithPromo();
+  renderShareJsonBox();
 }
 window.addEventListener('DOMContentLoaded', function() {
   if(document.getElementById('display_name'))
@@ -1092,7 +1112,7 @@ window.addEventListener('DOMContentLoaded', function() {
 Array.from(document.querySelectorAll('#cardForm input')).forEach(input => {
   input.addEventListener('input', function(e) {
     renderPreview();
-    renderShareJsonBoxWithPromo();
+    renderShareJsonBox();
   });
 });
 
@@ -1127,7 +1147,8 @@ document.getElementById('cardForm').onsubmit = async function(e) {
       flexJson = {
         type: 'flex',
         altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: flexArr[0]
+        contents: flexArr[0],
+        pageview: formatPageview(latestPageview)
       };
     } else {
       flexJson = {
@@ -1136,7 +1157,8 @@ document.getElementById('cardForm').onsubmit = async function(e) {
         contents: {
           type: 'carousel',
           contents: flexArr
-        }
+        },
+        pageview: formatPageview(latestPageview)
       };
     }
     const formData = getFormData();
@@ -1328,7 +1350,8 @@ function updatePreviewWithPromoSortable() {
     flexJson = {
       type: 'flex',
       altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-      contents: flexArr[0]
+      contents: flexArr[0],
+      pageview: formatPageview(getFormData().pageview)
     };
   } else {
     flexJson = {
@@ -1337,13 +1360,14 @@ function updatePreviewWithPromoSortable() {
       contents: {
         type: 'carousel',
         contents: flexArr
-      }
+      },
+      pageview: formatPageview(getFormData().pageview)
     };
   }
   const preview = document.getElementById('main-card-preview');
   preview.innerHTML = '';
   flex2html('main-card-preview', flexJson);
-  renderShareJsonBoxWithPromoSortable(flexJson);
+  renderShareJsonBox();
 }
 
 function renderShareJsonBoxWithPromoSortable(flexJson) {
