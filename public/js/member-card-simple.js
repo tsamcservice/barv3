@@ -540,6 +540,14 @@ window.onload = async function() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cardIdTypeArr: [{ id: cardId, type: 'main' }] })
         });
+        
+        // **修復問題1：自動分享模式下pageview更新後重新取得最新資料**
+        if (userIdParam) {
+          const updatedResult = await safeFetchJson(`/api/cards?pageId=${pageId}&userId=${userIdParam}`);
+          if (updatedResult?.data?.[0]?.flex_json) {
+            flexJson = updatedResult.data[0].flex_json;
+          }
+        }
       } catch (e) { /* 忽略錯誤 */ }
       // 自動分享
       await liff.shareTargetPicker([flexJson])
@@ -608,30 +616,75 @@ window.onload = async function() {
     // 6. 渲染預覽與 JSON
     renderPreview();
     renderShareJsonBoxWithPromo();
-    // 若有儲存的carousel，還原排序
-    if (loadedFlexJson && loadedFlexJson.contents && loadedFlexJson.contents.type === 'carousel') {
-      // 取得主卡與宣傳卡 id 順序
-      const flexArr = loadedFlexJson.contents.contents;
-      // 取得主卡與宣傳卡的唯一key（主卡用main，宣傳卡用id）
-      let newAllCards = [];
-      let newSelectedPromo = [];
-      flexArr.forEach(flex => {
-        // 判斷是主卡還是宣傳卡
-        if (flex.body && flex.body.contents && flex.body.contents.some && flex.body.contents.some(c => c.type === 'box' && c.contents && c.contents.some && c.contents.some(cc => cc.text === '主卡片'))) {
-          // 主卡
-          newAllCards.push({ type: 'main', id: 'main', flex_json: flex, img: getFormData().main_image_url || defaultCard.main_image_url });
-        } else {
-          // 宣傳卡
-          const found = promoCardList.find(c => JSON.stringify(c.flex_json) === JSON.stringify(flex));
-          if (found) {
-            newAllCards.push({ type: 'promo', id: found.id, flex_json: found.flex_json, img: found.flex_json.body.contents[0].url });
-            newSelectedPromo.push(found.id);
+    // **修復問題2：正確處理card_order排序**
+    if (cardLoaded && result.data && result.data[0]) {
+      const cardData = result.data[0];
+      
+      // **暫存卡片資料，等宣傳卡片載入完成後再處理排序**
+      window.pendingCardData = cardData;
+      
+      // 如果宣傳卡片已經載入完成，立即處理
+      if (promoCardList.length > 0) {
+        // 如果有儲存的card_order，按順序排列
+        if (cardData.card_order && Array.isArray(cardData.card_order)) {
+          const cardOrder = cardData.card_order;
+          let newAllCards = [];
+          let newSelectedPromo = [];
+          
+          // 按照card_order順序重建卡片陣列
+          cardOrder.forEach(cardId => {
+            if (cardId === 'main') {
+              // 主卡片
+              newAllCards.push({ 
+                type: 'main', 
+                id: 'main', 
+                flex_json: getMainBubble(getFormData()), 
+                img: getFormData().main_image_url || defaultCard.main_image_url 
+              });
+            } else {
+              // 宣傳卡片 - 從promoCardList中找到對應的卡片
+              const found = promoCardList.find(c => c.id === cardId);
+              if (found) {
+                newAllCards.push({ 
+                  type: 'promo', 
+                  id: found.id, 
+                  flex_json: found.flex_json, 
+                  img: found.flex_json.body.contents[0].url 
+                });
+                newSelectedPromo.push(found.id);
+              }
+            }
+          });
+          
+          if (newAllCards.length > 0) {
+            allCardsSortable = newAllCards;
+            selectedPromoCards = newSelectedPromo;
+          }
+        } else if (loadedFlexJson && loadedFlexJson.contents && loadedFlexJson.contents.type === 'carousel') {
+          // 若沒有card_order但有carousel，還原排序（舊邏輯保留）
+          const flexArr = loadedFlexJson.contents.contents;
+          let newAllCards = [];
+          let newSelectedPromo = [];
+          flexArr.forEach(flex => {
+            // 判斷是主卡還是宣傳卡
+            if (flex.body && flex.body.contents && flex.body.contents.some && flex.body.contents.some(c => c.type === 'box' && c.contents && c.contents.some && c.contents.some(cc => cc.text === '主卡片'))) {
+              // 主卡
+              newAllCards.push({ type: 'main', id: 'main', flex_json: flex, img: getFormData().main_image_url || defaultCard.main_image_url });
+            } else {
+              // 宣傳卡
+              const found = promoCardList.find(c => JSON.stringify(c.flex_json) === JSON.stringify(flex));
+              if (found) {
+                newAllCards.push({ type: 'promo', id: found.id, flex_json: found.flex_json, img: found.flex_json.body.contents[0].url });
+                newSelectedPromo.push(found.id);
+              }
+            }
+          });
+          if (newAllCards.length > 0) {
+            allCardsSortable = newAllCards;
+            selectedPromoCards = newSelectedPromo;
           }
         }
-      });
-      if (newAllCards.length > 0) {
-        allCardsSortable = newAllCards;
-        selectedPromoCards = newSelectedPromo;
+        delete window.pendingCardData; // 處理完成後清除暫存資料
       }
     }
     renderPromoCardListSortable();
@@ -874,6 +927,48 @@ async function shareToLine() {
         body: JSON.stringify({ cardIdTypeArr })
       });
     }
+    
+    // **修復問題1：分享後重新取得最新pageview並更新前端顯示**
+    try {
+      const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
+      const result = await res.json();
+      if (result.success && result.data && result.data.length > 0) {
+        const updatedPageview = result.data[0].pageview;
+        // 更新 pageview 輸入框
+        if (document.getElementById('pageview')) {
+          document.getElementById('pageview').value = formatPageview(updatedPageview);
+        }
+        // 重新渲染主卡片 flex_json 與預覽
+        const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
+        if (mainIdx !== -1) {
+          allCardsSortable[mainIdx].flex_json = getMainBubble({ ...getFormData(), pageview: updatedPageview });
+        }
+        // 重新組合最終分享的 flex
+        const updatedFlexArr = allCardsSortable.map(c => c.flex_json);
+        if (updatedFlexArr.length === 1) {
+          flexJson = {
+            type: 'flex',
+            altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+            contents: updatedFlexArr[0]
+          };
+        } else {
+          flexJson = {
+            type: 'flex',
+            altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+            contents: {
+              type: 'carousel',
+              contents: updatedFlexArr
+            }
+          };
+        }
+        // 重新渲染預覽與JSON
+        renderPreview();
+        renderShareJsonBoxWithPromo();
+      }
+    } catch (e) {
+      console.error('Failed to refresh pageview after share:', e);
+    }
+    
     await liff.shareTargetPicker([flexJson])
       .then(closeOrRedirect)
       .catch(closeOrRedirect);
@@ -1058,6 +1153,50 @@ async function loadPromoCards() {
       renderPromoCardSelector();
       initAllCardsSortable();
       renderPromoCardListSortable();
+      
+      // **修復問題2：在宣傳卡片載入完成後處理card_order排序**
+      if (window.pendingCardData) {
+        const cardData = window.pendingCardData;
+        // 處理已載入的卡片資料的排序
+        if (cardData.card_order && Array.isArray(cardData.card_order)) {
+          const cardOrder = cardData.card_order;
+          let newAllCards = [];
+          let newSelectedPromo = [];
+          
+          // 按照card_order順序重建卡片陣列
+          cardOrder.forEach(cardId => {
+            if (cardId === 'main') {
+              // 主卡片
+              newAllCards.push({ 
+                type: 'main', 
+                id: 'main', 
+                flex_json: getMainBubble(getFormData()), 
+                img: getFormData().main_image_url || defaultCard.main_image_url 
+              });
+            } else {
+              // 宣傳卡片 - 從promoCardList中找到對應的卡片
+              const found = promoCardList.find(c => c.id === cardId);
+              if (found) {
+                newAllCards.push({ 
+                  type: 'promo', 
+                  id: found.id, 
+                  flex_json: found.flex_json, 
+                  img: found.flex_json.body.contents[0].url 
+                });
+                newSelectedPromo.push(found.id);
+              }
+            }
+          });
+          
+          if (newAllCards.length > 0) {
+            allCardsSortable = newAllCards;
+            selectedPromoCards = newSelectedPromo;
+            renderPromoCardSelector(); // **修復問題2-2：重新渲染選擇器以正確顯示狀態**
+            renderPromoCardListSortable();
+          }
+        }
+        delete window.pendingCardData; // 清除暫存資料
+      }
     }
   } catch (e) {
     console.error('載入宣傳卡片失敗', e);
