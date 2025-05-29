@@ -584,12 +584,18 @@ window.onload = async function() {
               // **改進主卡片識別邏輯**
               for (let i = 0; i < originalContents.length; i++) {
                 const content = originalContents[i];
+                console.log(`檢查卡片 ${i}:`, {
+                  hasFooter: !!content.footer,
+                  footerText: content.footer?.contents?.[0]?.text,
+                  bodyContentsLength: content.body?.contents?.length
+                });
+                
                 // 方法1：檢查是否有愛心圖標區塊（主卡片特有）
                 const hasLoveIcon = content.body && content.body.contents && 
                   content.body.contents.some(item => 
                     item.type === 'box' && item.contents && 
                     item.contents.some(subItem => 
-                      subItem.url && subItem.url.includes('loveicon')
+                      subItem.url && (subItem.url.includes('loveicon') || subItem.url.includes('love'))
                     )
                   );
                 
@@ -598,9 +604,29 @@ window.onload = async function() {
                     content.footer.contents[0] && 
                     content.footer.contents[0].text === '呈璽元宇宙3D展覽館';
                 
-                if (hasLoveIcon || hasMainFooter) {
+                // 方法3：檢查是否有會員編號區塊（主卡片特有）
+                const hasAmemberArea = content.body && content.body.contents && 
+                  content.body.contents.some(item => 
+                    item.type === 'box' && item.contents && 
+                    item.contents.some(subItem => 
+                      subItem.url && (subItem.url.includes('calendar') || subItem.url.includes('icon_calendar'))
+                    )
+                  );
+                
+                console.log(`卡片 ${i} 檢查結果:`, {
+                  hasLoveIcon,
+                  hasMainFooter, 
+                  hasAmemberArea,
+                  isMainCard: hasLoveIcon || hasMainFooter || hasAmemberArea
+                });
+                
+                if (hasLoveIcon || hasMainFooter || hasAmemberArea) {
                   mainCardIndex = i;
-                  console.log('找到主卡片位置:', i, hasLoveIcon ? '(愛心圖標)' : '(footer)');
+                  console.log('🎯 找到主卡片位置:', i, {
+                    愛心圖標: hasLoveIcon,
+                    footer: hasMainFooter,
+                    會員編號區: hasAmemberArea
+                  });
                   break;
                 }
               }
@@ -970,60 +996,9 @@ async function shareToLine() {
       liff.login();
       return;
     }
-    // 取得最新 pageview
-    let latestPageview = getFormData().pageview;
-    try {
-      const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
-      const result = await res.json();
-      if (result.success && result.data && result.data.length > 0) {
-        latestPageview = result.data[0].pageview;
-      }
-    } catch (e) {}
-    // 依照排序後的 allCardsSortable 組合 carousel，主卡片用最新 pageview
-    const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
-    if (mainIdx !== -1) {
-      allCardsSortable[mainIdx].flex_json = getMainBubble({ ...getFormData(), pageview: latestPageview });
-      allCardsSortable[mainIdx].img = getFormData().main_image_url || defaultCard.main_image_url;
-    }
-    const flexArr = allCardsSortable.map(c => c.flex_json);
-    let flexJson;
-    if (flexArr.length === 1) {
-      flexJson = {
-        type: 'flex',
-        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: flexArr[0],
-        pageview: formatPageview(latestPageview)
-      };
-    } else {
-      flexJson = {
-        type: 'flex',
-        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: {
-          type: 'carousel',
-          contents: flexArr
-        },
-        pageview: formatPageview(latestPageview)
-      };
-    }
-    // 儲存主卡片（用最新內容）
-    const formData = getFormData();
-    const { pageview, ...formDataWithoutPageview } = formData;
-    const response = await fetch('/api/cards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        page_id: 'M01001',
-        line_user_id: liffProfile.userId,
-        ...formDataWithoutPageview,
-        flex_json: flexJson,
-        card_order: allCardsSortable.map(c => c.id)
-      })
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || '儲存失敗');
-    }
-    // 分享時批次更新 pageview
+    
+    // **修復問題3：先批次更新pageview，再生成flexJson**
+    // 步驟1：分享時批次更新 pageview
     let mainCardId = null;
     try {
       const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
@@ -1032,6 +1007,7 @@ async function shareToLine() {
         mainCardId = result.data[0].id;
       }
     } catch (e) {}
+    
     const cardIdTypeArr = allCardsSortable.map((c, i) => ({ id: c.id === 'main' ? mainCardId : c.id, type: c.type })).filter(c => c.id);
     if (cardIdTypeArr.length > 0) {
       await fetch('/api/cards/pageview', {
@@ -1041,49 +1017,74 @@ async function shareToLine() {
       });
     }
     
-    // **修復問題1：分享後重新取得最新pageview並更新前端顯示**
+    // 步驟2：取得最新 pageview（更新後的）
+    let latestPageview = getFormData().pageview;
     try {
       const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
       const result = await res.json();
       if (result.success && result.data && result.data.length > 0) {
-        const updatedPageview = result.data[0].pageview;
-        // 更新 pageview 輸入框
-        if (document.getElementById('pageview')) {
-          document.getElementById('pageview').value = formatPageview(updatedPageview);
-        }
-        // 重新渲染主卡片 flex_json 與預覽
-        const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
-        if (mainIdx !== -1) {
-          allCardsSortable[mainIdx].flex_json = getMainBubble({ ...getFormData(), pageview: updatedPageview });
-        }
-        // 重新組合最終分享的 flex
-        const updatedFlexArr = allCardsSortable.map(c => c.flex_json);
-        if (updatedFlexArr.length === 1) {
-          flexJson = {
-            type: 'flex',
-            altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-            contents: updatedFlexArr[0],
-            pageview: formatPageview(updatedPageview)
-          };
-        } else {
-          flexJson = {
-            type: 'flex',
-            altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-            contents: {
-              type: 'carousel',
-              contents: updatedFlexArr
-            },
-            pageview: formatPageview(updatedPageview)
-          };
-        }
-        // 重新渲染預覽與JSON
-        renderPreview();
-        renderShareJsonBox();
+        latestPageview = result.data[0].pageview;
+        console.log('ShareToLine: 取得更新後的pageview:', latestPageview);
       }
-    } catch (e) {
-      console.error('Failed to refresh pageview after share:', e);
+    } catch (e) {}
+    
+    // 步驟3：用最新pageview重新生成flexJson
+    const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
+    if (mainIdx !== -1) {
+      allCardsSortable[mainIdx].flex_json = getMainBubble({ ...getFormData(), pageview: latestPageview });
+      allCardsSortable[mainIdx].img = getFormData().main_image_url || defaultCard.main_image_url;
     }
     
+    const flexArr = allCardsSortable.map(c => c.flex_json);
+    let flexJson;
+    if (flexArr.length === 1) {
+      flexJson = {
+        type: 'flex',
+        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+        contents: flexArr[0],
+        pageview: formatPageview(latestPageview) // 使用最新的pageview
+      };
+    } else {
+      flexJson = {
+        type: 'flex',
+        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+        contents: {
+          type: 'carousel',
+          contents: flexArr
+        },
+        pageview: formatPageview(latestPageview) // 使用最新的pageview
+      };
+    }
+    
+    console.log('ShareToLine: 重新生成flexJson，pageview:', latestPageview);
+    
+    // 步驟4：儲存更新後的flexJson到資料庫
+    const formData = getFormData();
+    const { pageview, ...formDataWithoutPageview } = formData;
+    const response = await fetch('/api/cards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        page_id: 'M01001',
+        line_user_id: liffProfile.userId,
+        ...formDataWithoutPageview,
+        flex_json: flexJson, // 儲存包含最新pageview的flexJson
+        card_order: allCardsSortable.map(c => c.id)
+      })
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || '儲存失敗');
+    }
+    
+    // 步驟5：更新前端顯示
+    if (document.getElementById('pageview')) {
+      document.getElementById('pageview').value = formatPageview(latestPageview);
+    }
+    renderPreview();
+    renderShareJsonBox();
+    
+    // 步驟6：分享
     await liff.shareTargetPicker([flexJson])
       .then(closeOrRedirect)
       .catch(closeOrRedirect);
