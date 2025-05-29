@@ -585,9 +585,10 @@ window.onload = async function() {
     if (userId) apiUrl += `&userId=${userId}`;
     let cardLoaded = false;
     let loadedFlexJson = null;
+    let result = null; // **修復：確保result變數在正確作用域內**
     try {
       const res = await fetch(apiUrl);
-      const result = await res.json();
+      result = await res.json();
       if (result.success && result.data && result.data.length > 0) {
         const card = result.data[0];
         Object.keys(defaultCard).forEach(key => {
@@ -617,7 +618,7 @@ window.onload = async function() {
     renderPreview();
     renderShareJsonBoxWithPromo();
     // **修復問題2：正確處理card_order排序**
-    if (cardLoaded && result.data && result.data[0]) {
+    if (cardLoaded && result && result.data && result.data[0]) {
       const cardData = result.data[0];
       
       // **暫存卡片資料，等宣傳卡片載入完成後再處理排序**
@@ -631,6 +632,8 @@ window.onload = async function() {
           let newAllCards = [];
           let newSelectedPromo = [];
           
+          console.log('按照card_order重建卡片:', cardOrder);
+          
           // 按照card_order順序重建卡片陣列
           cardOrder.forEach(cardId => {
             if (cardId === 'main') {
@@ -641,6 +644,7 @@ window.onload = async function() {
                 flex_json: getMainBubble(getFormData()), 
                 img: getFormData().main_image_url || defaultCard.main_image_url 
               });
+              console.log('加入主卡片');
             } else {
               // 宣傳卡片 - 從promoCardList中找到對應的卡片
               const found = promoCardList.find(c => c.id === cardId);
@@ -652,13 +656,22 @@ window.onload = async function() {
                   img: found.flex_json.body.contents[0].url 
                 });
                 newSelectedPromo.push(found.id);
+                console.log('加入宣傳卡片:', found.id, found.main_title_1);
+              } else {
+                console.log('找不到宣傳卡片:', cardId);
               }
             }
           });
           
+          console.log('最終卡片陣列:', newAllCards);
+          console.log('最終選中的宣傳卡片:', newSelectedPromo);
+          
           if (newAllCards.length > 0) {
             allCardsSortable = newAllCards;
             selectedPromoCards = newSelectedPromo;
+            renderPromoCardSelector(); // **修復問題2-2：重新渲染選擇器以正確顯示狀態**
+            renderPromoCardListSortable();
+            console.log('卡片排序處理完成');
           }
         } else if (loadedFlexJson && loadedFlexJson.contents && loadedFlexJson.contents.type === 'carousel') {
           // 若沒有card_order但有carousel，還原排序（舊邏輯保留）
@@ -689,16 +702,24 @@ window.onload = async function() {
     }
     renderPromoCardListSortable();
   }
+  
+  // **修復問題1：將分享按鈕移到正確位置，確保總是顯示**
   // 顯示分享按鈕後連結欄位（可複製）
   const sBtnUrlInput = document.getElementById('s_button_url');
   if(sBtnUrlInput && sBtnUrlInput.parentNode) {
     sBtnUrlInput.style.display = '';
-    let shareBtn = document.createElement('button');
-    shareBtn.type = 'button';
-    shareBtn.textContent = '分享到LINE';
-    shareBtn.style = 'margin-top:12px;background:#06C755;color:#fff;padding:10px 18px;border:none;border-radius:4px;font-size:16px;cursor:pointer;display:block;width:100%';
-    shareBtn.onclick = shareToLine;
-    sBtnUrlInput.parentNode.appendChild(shareBtn);
+    
+    // **檢查是否已經有分享按鈕，避免重複添加**
+    let existingShareBtn = sBtnUrlInput.parentNode.querySelector('button[onclick*="shareToLine"]');
+    if (!existingShareBtn) {
+      let shareBtn = document.createElement('button');
+      shareBtn.type = 'button';
+      shareBtn.textContent = '分享到LINE';
+      shareBtn.style = 'margin-top:12px;background:#06C755;color:#fff;padding:10px 18px;border:none;border-radius:4px;font-size:16px;cursor:pointer;display:block;width:100%';
+      shareBtn.onclick = shareToLine;
+      sBtnUrlInput.parentNode.appendChild(shareBtn);
+    }
+    
     // 設定分享按鈕連結為帶 pageId 和 userId 的 LIFF 連結
     const pageId = 'M01001';
     const userIdParam = liffProfile.userId || getQueryParam('userId');
@@ -1157,11 +1178,16 @@ async function loadPromoCards() {
       // **修復問題2：在宣傳卡片載入完成後處理card_order排序**
       if (window.pendingCardData) {
         const cardData = window.pendingCardData;
+        console.log('處理暫存的卡片資料:', cardData);
+        console.log('card_order:', cardData.card_order);
+        
         // 處理已載入的卡片資料的排序
         if (cardData.card_order && Array.isArray(cardData.card_order)) {
           const cardOrder = cardData.card_order;
           let newAllCards = [];
           let newSelectedPromo = [];
+          
+          console.log('按照card_order重建卡片:', cardOrder);
           
           // 按照card_order順序重建卡片陣列
           cardOrder.forEach(cardId => {
@@ -1173,6 +1199,7 @@ async function loadPromoCards() {
                 flex_json: getMainBubble(getFormData()), 
                 img: getFormData().main_image_url || defaultCard.main_image_url 
               });
+              console.log('加入主卡片');
             } else {
               // 宣傳卡片 - 從promoCardList中找到對應的卡片
               const found = promoCardList.find(c => c.id === cardId);
@@ -1184,18 +1211,29 @@ async function loadPromoCards() {
                   img: found.flex_json.body.contents[0].url 
                 });
                 newSelectedPromo.push(found.id);
+                console.log('加入宣傳卡片:', found.id, found.main_title_1);
+              } else {
+                console.log('找不到宣傳卡片:', cardId);
               }
             }
           });
+          
+          console.log('最終卡片陣列:', newAllCards);
+          console.log('最終選中的宣傳卡片:', newSelectedPromo);
           
           if (newAllCards.length > 0) {
             allCardsSortable = newAllCards;
             selectedPromoCards = newSelectedPromo;
             renderPromoCardSelector(); // **修復問題2-2：重新渲染選擇器以正確顯示狀態**
             renderPromoCardListSortable();
+            console.log('卡片排序處理完成');
           }
+        } else {
+          console.log('沒有有效的card_order數據');
         }
         delete window.pendingCardData; // 清除暫存資料
+      } else {
+        console.log('沒有找到暫存的卡片資料');
       }
     }
   } catch (e) {
