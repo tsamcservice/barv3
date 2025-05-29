@@ -1,7 +1,4 @@
 // 全域變數宣告
-let allCardsSortable = [];
-let promoCardList = [];
-let selectedPromoCards = [];
 
 // 會員卡初始資料
 const defaultCard = {
@@ -672,8 +669,6 @@ window.onload = async function() {
 };
 
 // 主卡片與宣傳卡片拖曳排序功能
-let allCardsSortable = [];
-
 // 展開/收合宣傳卡片選擇區塊
 window.addEventListener('DOMContentLoaded', function() {
   const toggleBtn = document.getElementById('toggle-promo-selector');
@@ -931,9 +926,6 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // 宣傳卡片功能
-let promoCardList = [];
-let selectedPromoCards = [];
-
 // 載入宣傳卡片時同時渲染 selector
 async function loadPromoCards() {
   try {
@@ -1104,8 +1096,6 @@ function renderPromoCardSelector() {
 }
 
 // 主卡片與宣傳卡片拖曳排序功能
-let allCardsSortable = [];
-
 // 展開/收合宣傳卡片選擇區塊
 window.addEventListener('DOMContentLoaded', function() {
   const toggleBtn = document.getElementById('toggle-promo-selector');
@@ -1451,9 +1441,6 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // 宣傳卡片功能
-let promoCardList = [];
-let selectedPromoCards = [];
-
 // 載入宣傳卡片時同時渲染 selector
 async function loadPromoCards() {
   try {
