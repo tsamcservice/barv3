@@ -44,16 +44,19 @@
         return;
       }
       let flexJson = null;
+      let cardAltTitle = '';
       if (userId) {
         // 查詢個人卡片
         const apiUrl = `/api/cards?pageId=${pageId}&userId=${userId}`;
         const result = await safeFetchJson(apiUrl);
         flexJson = result?.data?.[0]?.flex_json;
+        cardAltTitle = result?.data?.[0]?.card_alt_title || '';
       } else {
         // 查詢初始卡片
         const result = await safeFetchJson(`/api/cards?pageId=${pageId}`);
         const defaultCard = Array.isArray(result?.data) ? result.data.find(card => !card.line_user_id) : null;
         flexJson = defaultCard?.flex_json;
+        cardAltTitle = defaultCard?.card_alt_title || '';
       }
       if (!flexJson) {
         errorBox.textContent = '查無卡片資料';
@@ -73,6 +76,10 @@
         });
       }
       flex2html('main-card-preview', flexJson);
+      if (cardAltTitle) {
+        document.title = cardAltTitle + ' - 會員卡預覽';
+        document.querySelector('h1').textContent = cardAltTitle;
+      }
     }
     window.onload = renderCardPreview;
   </script>
