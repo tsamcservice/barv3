@@ -59,10 +59,10 @@ function getQueryParam(name) {
   return url.searchParams.get(name);
 }
 
-// 加強 input 預設樣式
+// 移除 input[data-default] 灰色樣式，強制黑色
 const style = document.createElement('style');
 style.innerHTML = `
-  input[data-default] { color: #bbb !important; }
+  input { color: #222 !important; }
 `;
 document.head.appendChild(style);
 

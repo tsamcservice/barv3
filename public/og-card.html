@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>會員卡預覽</title>
+  <link rel="stylesheet" href="js/flex2html.css">
+  <script src="js/flex2html.min.js"></script>
+  <style>
+    body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .container { max-width: 480px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; padding: 24px; }
+    h1 { text-align: center; color: #4caf50; margin-bottom: 24px; }
+    #main-card-preview { min-height: 320px; }
+    .error { color: #c62828; text-align: center; margin: 32px 0; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>會員卡預覽</h1>
+    <div id="main-card-preview"></div>
+    <div id="errorBox" class="error" style="display:none;"></div>
+  </div>
+  <script>
+    function getQueryParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+    async function safeFetchJson(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      try { return JSON.parse(text); } catch (e) { return { success: false, error: 'API 回傳非 JSON', raw: text }; }
+    }
+    function formatPageview(val) { return String(val || 0).padStart(4, '0'); }
+    async function renderCardPreview() {
+      const pageId = getQueryParam('pageId');
+      const userId = getQueryParam('userId');
+      const preview = document.getElementById('main-card-preview');
+      const errorBox = document.getElementById('errorBox');
+      preview.innerHTML = '';
+      errorBox.style.display = 'none';
+      if (!pageId) {
+        errorBox.textContent = '請帶入 pageId 參數';
+        errorBox.style.display = '';
+        return;
+      }
+      let flexJson = null;
+      if (userId) {
+        // 查詢個人卡片
+        const apiUrl = `/api/cards?pageId=${pageId}&userId=${userId}`;
+        const result = await safeFetchJson(apiUrl);
+        flexJson = result?.data?.[0]?.flex_json;
+      } else {
+        // 查詢初始卡片
+        const result = await safeFetchJson(`/api/cards?pageId=${pageId}`);
+        const defaultCard = Array.isArray(result?.data) ? result.data.find(card => !card.line_user_id) : null;
+        flexJson = defaultCard?.flex_json;
+      }
+      if (!flexJson) {
+        errorBox.textContent = '查無卡片資料';
+        errorBox.style.display = '';
+        return;
+      }
+      // 若 pageview 欄位存在，補零
+      if (flexJson.body && flexJson.body.contents) {
+        flexJson.body.contents.forEach(c => {
+          if (c.type === 'box' && c.contents) {
+            c.contents.forEach(cc => {
+              if (cc.type === 'text' && cc.text && !isNaN(cc.text)) {
+                cc.text = formatPageview(cc.text);
+              }
+            });
+          }
+        });
+      }
+      flex2html('main-card-preview', flexJson);
+    }
+    window.onload = renderCardPreview;
+  </script>
+</body>
+</html> 
