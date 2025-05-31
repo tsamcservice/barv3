@@ -94,6 +94,30 @@ function setImageUserStyle(img, url) {
   img.style.display = 'block';
 }
 
+// **新增：清理FLEX JSON用於分享，移除自定義欄位確保符合LINE標準**
+function cleanFlexJsonForShare(flexJson) {
+  const cleanedJson = JSON.parse(JSON.stringify(flexJson)); // 深度複製
+  
+  function removeCustomFields(obj) {
+    if (typeof obj !== 'object' || obj === null) return;
+    
+    // 移除自定義欄位
+    delete obj._cardId;
+    delete obj._cardType;
+    
+    // 遞迴清理子物件
+    if (Array.isArray(obj)) {
+      obj.forEach(removeCustomFields);
+    } else {
+      Object.values(obj).forEach(removeCustomFields);
+    }
+  }
+  
+  removeCustomFields(cleanedJson);
+  console.log('🧹 清理FLEX JSON，移除自定義欄位');
+  return cleanedJson;
+}
+
 // 主卡片識別函數 - 使用pageId精確識別主卡片
 function isMainCard(bubbleContent) {
   if (!bubbleContent) return false;
@@ -518,7 +542,11 @@ function renderShareJsonBox() {
   title.style.cssText = 'font-weight:bold;font-size:16px;margin-bottom:8px;';
   box.appendChild(title);
   const pre = document.createElement('pre');
-  pre.textContent = JSON.stringify(shareMsg, null, 2);
+  
+  // **清理JSON顯示，移除自定義欄位**
+  const cleanShareMsg = cleanFlexJsonForShare(shareMsg);
+  pre.textContent = JSON.stringify(cleanShareMsg, null, 2);
+  
   pre.style.cssText = 'font-size:14px;line-height:1.5;user-select:text;white-space:pre-wrap;word-break:break-all;background:#fff;padding:10px;border-radius:4px;max-height:300px;overflow:auto;';
   box.appendChild(pre);
   const copyBtn = document.createElement('button');
@@ -715,7 +743,9 @@ window.onload = async function() {
         console.error('自動分享模式pageview更新失敗:', e);
       }
       // 自動分享
-      await liff.shareTargetPicker([flexJson])
+      const cleanFlexJson = cleanFlexJsonForShare(flexJson);
+      console.log('📤 分享清理後的FLEX JSON');
+      await liff.shareTargetPicker([cleanFlexJson])
         .then(() => {
           loadingDiv.remove();
           closeOrRedirect();
@@ -1105,9 +1135,12 @@ async function shareToLine() {
     
     console.log('ShareToLine: 重新生成flexJson，pageview:', latestPageview);
     
-    // 步驟4：儲存更新後的flexJson到資料庫
+    // **清理FLEX JSON用於儲存**
+    const cleanFlexJsonForSave = cleanFlexJsonForShare(flexJson);
+    
     const formData = getFormData();
     const { pageview, ...formDataWithoutPageview } = formData;
+    
     const response = await fetch('/api/cards', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1115,7 +1148,7 @@ async function shareToLine() {
         page_id: 'M01001',
         line_user_id: liffProfile.userId,
         ...formDataWithoutPageview,
-        flex_json: flexJson,
+        flex_json: cleanFlexJsonForSave,
         card_order: allCardsSortable.map(c => c.id)
       })
     });
@@ -1131,8 +1164,10 @@ async function shareToLine() {
     renderPreview();
     renderShareJsonBox();
     
-    // 步驟6：分享
-    await liff.shareTargetPicker([flexJson])
+    // **步驟6：清理FLEX JSON並分享**
+    const cleanFlexJson = cleanFlexJsonForShare(flexJson);
+    console.log('📤 分享清理後的FLEX JSON');
+    await liff.shareTargetPicker([cleanFlexJson])
       .then(closeOrRedirect)
       .catch(closeOrRedirect);
   } catch (err) {
@@ -1163,73 +1198,6 @@ Array.from(document.querySelectorAll('#cardForm input')).forEach(input => {
     renderShareJsonBox();
   });
 });
-
-// 儲存功能
-document.getElementById('cardForm').onsubmit = async function(e) {
-  e.preventDefault();
-  if (!window.liff) return alert('LIFF 未載入');
-  try {
-    await liff.init({ liffId });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
-    // 取得最新 pageview
-    let latestPageview = getFormData().pageview;
-    try {
-      const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
-      const result = await res.json();
-      if (result.success && result.data && result.data.length > 0) {
-        latestPageview = result.data[0].pageview;
-      }
-    } catch (e) {}
-    // 依照排序後的 allCardsSortable 組合 carousel，主卡片用最新 pageview
-    const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
-    if (mainIdx !== -1) {
-      allCardsSortable[mainIdx].flex_json = getMainBubble({ ...getFormData(), pageview: latestPageview, page_id: 'M01001' });
-      allCardsSortable[mainIdx].img = getFormData().main_image_url || defaultCard.main_image_url;
-    }
-    const flexArr = allCardsSortable.map(c => c.flex_json);
-    let flexJson;
-    if (flexArr.length === 1) {
-      flexJson = {
-        type: 'flex',
-        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: flexArr[0]
-      };
-    } else {
-      flexJson = {
-        type: 'flex',
-        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: {
-          type: 'carousel',
-          contents: flexArr
-        }
-      };
-    }
-    const formData = getFormData();
-    const { pageview, ...formDataWithoutPageview } = formData;
-    const response = await fetch('/api/cards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        page_id: 'M01001',
-        line_user_id: liffProfile.userId,
-        ...formDataWithoutPageview,
-        flex_json: flexJson,
-        card_order: allCardsSortable.map(c => c.id)
-      })
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || '儲存失敗');
-    }
-    const result = await response.json();
-    alert('儲存成功！');
-  } catch (err) {
-    alert('儲存失敗: ' + err.message);
-  }
-};
 
 // 圖片上傳功能
 function bindImageUpload(inputId, btnId, previewId, urlId) {
