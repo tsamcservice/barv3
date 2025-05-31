@@ -816,14 +816,8 @@ window.onload = async function() {
       const cleanFlexJson = cleanFlexJsonForShare(flexJson);
       console.log('📤 分享清理後的FLEX JSON');
       await liff.shareTargetPicker([cleanFlexJson])
-        .then(() => {
-          loadingDiv.remove();
-          closeOrRedirect();
-        })
-        .catch(() => {
-          loadingDiv.remove();
-          closeOrRedirect();
-        });
+        .then(closeOrRedirect)
+        .catch(closeOrRedirect);
     } catch (e) {
       loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">自動分享失敗：' + (e.message || e) + '</div>';
     }
@@ -1231,6 +1225,23 @@ async function shareToLine() {
     if (document.getElementById('pageview')) {
       document.getElementById('pageview').value = formatPageview(latestPageview);
     }
+    
+    // **修復預覽更新問題：確保allCardsSortable陣列同步最新狀態**
+    if (allCardsSortable && allCardsSortable.length > 0) {
+      // 重新初始化allCardsSortable，確保包含最新的主卡片
+      const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
+      if (mainCardIndex !== -1) {
+        // 更新主卡片的資料
+        allCardsSortable[mainCardIndex] = {
+          type: 'main',
+          id: 'main',
+          flex_json: getMainBubble({ ...getFormData(), pageview: latestPageview, page_id: 'M01001' }),
+          img: getFormData().main_image_url || defaultCard.main_image_url
+        };
+        console.log('✅ 已更新allCardsSortable中的主卡片，pageview:', latestPageview);
+      }
+    }
+    
     renderPreview();
     renderShareJsonBox();
     
