@@ -25,22 +25,48 @@
 ### 2. 自動分享模式（卡片上的分享按鈕）
 **觸發方式**：用戶點擊已分享卡片上的【分享給好友】按鈕
 
-**當前執行流程**：
+**最終執行流程**：
 1. 查詢現有的 FLEX JSON 資料
-2. 更新資料庫 pageview 欄位 +1
-3. 重新查詢取得最新 pageview 數值
-4. 識別並更新 carousel 中的主卡片
-5. 保留所有宣傳卡片的原始順序
-6. 執行分享
+2. **批次更新所有卡片的 pageview（主卡+宣傳卡）**
+3. 重新查詢主卡取得最新 pageview 數值（僅用於識別和日誌）
+4. 識別並更新 carousel 中的主卡片位置
+5. 保留所有宣傳卡片的原始順序和內容
+6. 執行分享（使用原始JSON，不更新其中的pageview數字）
 
-**當前結果**：
-- ✅ 資料庫 pageview 欄位 +1
-- ❓ 資料庫 flex_json 未更新（保持原始內容）
-- ❓ 分享出去的卡片顯示舊的 pageview
+**最終結果**：
+- ✅ 資料庫 pageview 欄位 +1（主卡+宣傳卡）
+- ✅ 資料庫 flex_json 保持原始內容（不更新）
+- ✅ 分享出去的卡片保持一致性（顯示原始pageview）
+- ✅ 所有卡片統計數據正確更新
 
-**設計考量**：
-- **優點**：分享內容一致性，避免即時數據不同步
-- **缺點**：pageview 數字不是即時的
+**設計優勢**：
+- **內容一致性**：所有用戶看到相同的分享內容
+- **統計完整性**：主卡和宣傳卡的瀏覽統計都正確累計
+- **效能最佳化**：避免即時更新JSON帶來的複雜性
+- **避免競態條件**：不會因為並發分享造成數據不一致
+
+**技術實現**：
+```javascript
+// 建立要更新的卡片清單
+let cardIdTypeArr = [{ id: cardId, type: 'main' }];
+
+// 如果是carousel，包含所有宣傳卡片
+if (flexJson.contents && flexJson.contents.type === 'carousel') {
+  const carouselContents = flexJson.contents.contents;
+  carouselContents.forEach(content => {
+    if (!isMainCard(content) && content._cardId) {
+      cardIdTypeArr.push({ id: content._cardId, type: 'promo' });
+    }
+  });
+}
+
+// 批次更新pageview
+await fetch('/api/cards/pageview', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ cardIdTypeArr })
+});
+```
 
 ## 核心技術實現
 
@@ -185,9 +211,9 @@ Body: {
 ## 技術規範
 
 ### 版本控制
-- 當前版本：v20250531-M+
-- 主要特性：雙主卡問題修復、預覽更新修復
-- 下一版本：統計邏輯優化
+- 當前版本：v20250531-N
+- 主要特性：編輯模式預覽修復、自動分享宣傳卡pageview更新
+- 下一版本：統計邏輯優化與新功能開發
 
 ### 性能考量
 - pageview更新操作應該異步執行
@@ -202,4 +228,4 @@ Body: {
 ---
 
 *最後更新：2025-05-31*
-*文檔版本：1.0* 
+*文檔版本：1.1* 

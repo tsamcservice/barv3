@@ -1,6 +1,6 @@
 // 版本標記函數
 function createVersionTag() {
-  return 'v20250531-M';
+  return 'v20250531-N';
 }
 
 // 會員卡初始資料
@@ -682,12 +682,35 @@ window.onload = async function() {
         loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
         return;
       }
-      // pageview +1
+      // **修復：自動分享時也要更新所有卡片的pageview**
       try {
+        // **1. 建立要更新的卡片清單（主卡+宣傳卡）**
+        let cardIdTypeArr = [{ id: cardId, type: 'main' }];
+        
+        // **2. 如果是carousel，還要包含宣傳卡片**
+        if (flexJson.contents && flexJson.contents.type === 'carousel') {
+          const carouselContents = flexJson.contents.contents;
+          for (let i = 0; i < carouselContents.length; i++) {
+            const content = carouselContents[i];
+            // 如果不是主卡，就是宣傳卡片
+            if (!isMainCard(content)) {
+              // 嘗試從content中找到宣傳卡片的ID
+              // 這裡可能需要從 _cardId 或其他方式識別
+              if (content._cardId && content._cardId !== cardId) {
+                cardIdTypeArr.push({ id: content._cardId, type: 'promo' });
+                console.log('🎯 自動分享：加入宣傳卡片 pageview 更新:', content._cardId);
+              }
+            }
+          }
+        }
+        
+        console.log('📊 自動分享：準備更新的卡片清單:', cardIdTypeArr);
+        
+        // **3. 批次更新所有卡片的pageview**
         await fetch('/api/cards/pageview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cardIdTypeArr: [{ id: cardId, type: 'main' }] })
+          body: JSON.stringify({ cardIdTypeArr })
         });
         
         // **關鍵修復：pageview更新後重新取得最新資料**
@@ -868,11 +891,11 @@ window.onload = async function() {
       });
       await fillAllFieldsWithProfile();
     }
-    // 5. 掛 input 監聽
-    if(document.getElementById('display_name'))
-      document.getElementById('display_name').addEventListener('input', updateCardAltTitle);
-    if(document.getElementById('main_title_1'))
-      document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
+    // 5. 掛 input 監聽 - 已移到DOMContentLoaded中統一處理
+    // if(document.getElementById('display_name'))
+    //   document.getElementById('display_name').addEventListener('input', updateCardAltTitle);
+    // if(document.getElementById('main_title_1'))
+    //   document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
     // 6. 渲染預覽與 JSON
     renderPreview();
     renderShareJsonBox();
@@ -1265,18 +1288,26 @@ function updateCardAltTitle() {
   renderPreview();
   renderShareJsonBox();
 }
+
+// **修復：將所有input監聽器邏輯移到DOMContentLoaded中，確保正確綁定**
 window.addEventListener('DOMContentLoaded', function() {
+  // 綁定主標題和名字的變動監聽
   if(document.getElementById('display_name'))
     document.getElementById('display_name').addEventListener('input', updateCardAltTitle);
   if(document.getElementById('main_title_1'))
     document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
-});
-
-// 欄位即時預覽
-Array.from(document.querySelectorAll('#cardForm input')).forEach(input => {
-  input.addEventListener('input', function(e) {
-    renderPreview();
-    renderShareJsonBox();
+  
+  // **修復：所有表單欄位的即時預覽功能**
+  const formInputs = document.querySelectorAll('#cardForm input[type="text"], #cardForm input[type="url"], #cardForm input[type="color"]');
+  console.log('🔧 綁定即時預覽，找到欄位數量:', formInputs.length);
+  
+  formInputs.forEach((input, index) => {
+    console.log(`🔧 綁定欄位 ${index + 1}: ${input.id || input.name || 'unnamed'}`);
+    input.addEventListener('input', function(e) {
+      console.log('🔄 欄位變動觸發預覽更新:', e.target.id || e.target.name);
+      renderPreview();
+      renderShareJsonBox();
+    });
   });
 });
 
