@@ -94,6 +94,69 @@ function setImageUserStyle(img, url) {
   img.style.display = 'block';
 }
 
+// 新增：主卡片識別輔助函數 - 用於自動分享模式精確識別主卡片
+function isMainCard(bubbleContent) {
+  if (!bubbleContent || !bubbleContent.body) return false;
+  
+  // 檢查1：是否有footer（主卡片特有的footer文字）
+  const hasMainFooter = bubbleContent.footer && 
+    bubbleContent.footer.contents && 
+    bubbleContent.footer.contents[0] && 
+    bubbleContent.footer.contents[0].text === '呈璽元宇宙3D展覽館';
+  
+  // 檢查2：是否有愛心圖標區塊（主卡片特有）
+  const hasLoveIcon = bubbleContent.body.contents && 
+    bubbleContent.body.contents.some(item => 
+      item.type === 'box' && item.contents && 
+      item.contents.some(subItem => 
+        subItem.url && (subItem.url.includes('loveicon') || subItem.url.includes('love'))
+      )
+    );
+  
+  // 檢查3：是否有會員編號區塊（主卡片特有）
+  const hasAmemberArea = bubbleContent.body.contents && 
+    bubbleContent.body.contents.some(item => 
+      item.type === 'box' && item.contents && 
+      item.contents.some(subItem => 
+        subItem.url && (subItem.url.includes('calendar') || subItem.url.includes('icon_calendar'))
+      )
+    );
+  
+  // 檢查4：是否有會員頭像區塊（主卡片特有的絕對定位）
+  const hasMemberArea = bubbleContent.body.contents && 
+    bubbleContent.body.contents.some(item => 
+      item.type === 'box' && item.width === '65px' && 
+      item.position === 'absolute' && item.offsetEnd === '5px'
+    );
+  
+  // 檢查5：是否有主卡片特有的按鈕組合（2個按鈕並排）
+  const hasMainButtons = bubbleContent.body.contents && 
+    bubbleContent.body.contents.some(item => 
+      item.type === 'box' && item.layout === 'horizontal' && 
+      item.contents && item.contents.length === 2 && 
+      item.contents.every(btn => btn.type === 'button')
+    );
+  
+  const identifyFeatures = {
+    hasMainFooter,
+    hasLoveIcon, 
+    hasAmemberArea,
+    hasMemberArea,
+    hasMainButtons
+  };
+  
+  const mainCardScore = Object.values(identifyFeatures).filter(Boolean).length;
+  const isMain = mainCardScore >= 3; // 至少要符合3個特徵
+  
+  console.log('🔍 主卡片識別檢查:', {
+    ...identifyFeatures,
+    score: mainCardScore,
+    isMain: isMain
+  });
+  
+  return isMain;
+}
+
 // 修改 fillAllFieldsWithProfile 與卡片資料填入流程
 async function fillAllFieldsWithProfile() {
   // 先填入預設值
@@ -571,75 +634,59 @@ window.onload = async function() {
             const updatedCardData = updatedResult.data[0];
             console.log('自動分享模式：取得最新pageview', latestPageview);
             
-            // **簡化處理：直接用最新的完整資料重新生成flexJson**
-            // 1. 先用最新的pageview生成主卡片
-            const updatedMainBubble = getMainBubble({ ...updatedCardData, pageview: latestPageview });
-            
-            // 2. 檢查原本是否為carousel（多卡片）
+            // **改進後備處理邏輯，避免2張主卡問題**
             if (flexJson.contents && flexJson.contents.type === 'carousel') {
-              // **修復問題4：正確識別並更新主卡片位置**
+              // **修復問題4：使用新的isMainCard函數精確識別主卡片位置**
               const originalContents = flexJson.contents.contents;
               let mainCardIndex = -1;
               
-              // **改進主卡片識別邏輯**
+              // **使用新的主卡識別函數**
               for (let i = 0; i < originalContents.length; i++) {
                 const content = originalContents[i];
-                console.log(`檢查卡片 ${i}:`, {
+                console.log(`🔍 檢查卡片 ${i}:`, {
                   hasFooter: !!content.footer,
-                  footerText: content.footer?.contents?.[0]?.text,
-                  bodyContentsLength: content.body?.contents?.length
+                  footerText: content.footer?.contents?.[0]?.text
                 });
                 
-                // 方法1：檢查是否有愛心圖標區塊（主卡片特有）
-                const hasLoveIcon = content.body && content.body.contents && 
-                  content.body.contents.some(item => 
-                    item.type === 'box' && item.contents && 
-                    item.contents.some(subItem => 
-                      subItem.url && (subItem.url.includes('loveicon') || subItem.url.includes('love'))
-                    )
-                  );
-                
-                // 方法2：檢查是否有footer（主卡片特有）
-                const hasMainFooter = content.footer && content.footer.contents && 
-                    content.footer.contents[0] && 
-                    content.footer.contents[0].text === '呈璽元宇宙3D展覽館';
-                
-                // 方法3：檢查是否有會員編號區塊（主卡片特有）
-                const hasAmemberArea = content.body && content.body.contents && 
-                  content.body.contents.some(item => 
-                    item.type === 'box' && item.contents && 
-                    item.contents.some(subItem => 
-                      subItem.url && (subItem.url.includes('calendar') || subItem.url.includes('icon_calendar'))
-                    )
-                  );
-                
-                console.log(`卡片 ${i} 檢查結果:`, {
-                  hasLoveIcon,
-                  hasMainFooter, 
-                  hasAmemberArea,
-                  isMainCard: hasLoveIcon || hasMainFooter || hasAmemberArea
-                });
-                
-                if (hasLoveIcon || hasMainFooter || hasAmemberArea) {
+                if (isMainCard(content)) {
                   mainCardIndex = i;
-                  console.log('🎯 找到主卡片位置:', i, {
-                    愛心圖標: hasLoveIcon,
-                    footer: hasMainFooter,
-                    會員編號區: hasAmemberArea
-                  });
+                  console.log('🎯 使用新識別邏輯找到主卡片位置:', i);
                   break;
                 }
               }
               
-              // 如果找到主卡片，更新它；否則假設第一張是主卡片
+              // **改進後備處理邏輯，避免2張主卡問題**
               if (mainCardIndex >= 0) {
-                originalContents[mainCardIndex] = updatedMainBubble;
-                console.log('自動分享模式：已更新主卡片位置', mainCardIndex);
+                // 找到主卡片，直接更新
+                originalContents[mainCardIndex] = getMainBubble({ ...updatedCardData, pageview: latestPageview });
+                console.log('✅ 自動分享模式：已更新主卡片位置', mainCardIndex);
               } else {
-                originalContents[0] = updatedMainBubble; // 後備方案
-                console.log('自動分享模式：使用後備方案更新第一張卡片');
+                // **更安全的後備方案：檢查第一張卡片是否可能是主卡片**
+                console.log('⚠️ 未找到明確的主卡片，檢查第一張卡片');
+                
+                if (originalContents.length > 0) {
+                  const firstCard = originalContents[0];
+                  // 簡單檢查第一張卡片是否可能是主卡片
+                  const firstCardMightBeMain = firstCard.footer || 
+                    (firstCard.body && firstCard.body.contents && firstCard.body.contents.length > 5);
+                  
+                  if (firstCardMightBeMain) {
+                    // 第一張卡片很可能是主卡片，更新它
+                    originalContents[0] = getMainBubble({ ...updatedCardData, pageview: latestPageview });
+                    console.log('✅ 自動分享模式：更新第一張卡片（判定為主卡片）');
+                  } else {
+                    // 第一張卡片不像是主卡片，在開頭插入新的主卡片
+                    originalContents.unshift(getMainBubble({ ...updatedCardData, pageview: latestPageview }));
+                    console.log('➕ 自動分享模式：在開頭添加新的主卡片');
+                  }
+                } else {
+                  // 沒有卡片，直接添加主卡片
+                  originalContents.push(getMainBubble({ ...updatedCardData, pageview: latestPageview }));
+                  console.log('🆕 自動分享模式：添加主卡片到空的carousel');
+                }
               }
               
+              // **重新組合 carousel flexJson**
               flexJson = {
                 type: 'flex',
                 altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
@@ -647,14 +694,14 @@ window.onload = async function() {
                   type: 'carousel',
                   contents: originalContents
                 },
-                pageview: formatPageview(latestPageview) // **修復問題2：加入pageview**
+                pageview: formatPageview(latestPageview)
               };
             } else {
               // 單卡片：直接替換
               flexJson = {
                 type: 'flex',
                 altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
-                contents: updatedMainBubble,
+                contents: getMainBubble({ ...updatedCardData, pageview: latestPageview }),
                 pageview: formatPageview(latestPageview) // **修復問題2：加入pageview**
               };
             }
