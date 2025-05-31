@@ -1,6 +1,6 @@
 // 版本標記函數
 function createVersionTag() {
-  return 'v20250531-N';
+  return 'v20250531-O';
 }
 
 // 會員卡初始資料
@@ -551,6 +551,15 @@ function getShareBubbles() {
 function renderPreview() {
   // **修復問題1：使用allCardsSortable渲染多卡片預覽**
   if (allCardsSortable && allCardsSortable.length > 1) {
+    // **關鍵修復：重新生成主卡片的flex_json**
+    const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
+    if (mainCardIndex !== -1) {
+      // 重新生成主卡片，使用最新的表單資料
+      allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...getFormData(), page_id: 'M01001' });
+      allCardsSortable[mainCardIndex].img = getFormData().main_image_url || defaultCard.main_image_url;
+      console.log('🔄 即時預覽：已更新主卡片內容');
+    }
+    
     // 多卡片：使用排序後的結果渲染carousel
     const flexArr = allCardsSortable.map(c => c.flex_json);
     const flexJson = {
@@ -587,6 +596,15 @@ function renderShareJsonBox() {
   // **修復問題1：使用allCardsSortable的排序結果生成JSON**
   let shareMsg;
   if (allCardsSortable && allCardsSortable.length > 1) {
+    // **關鍵修復：重新生成主卡片的flex_json（如果還沒更新）**
+    const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
+    if (mainCardIndex !== -1) {
+      // 重新生成主卡片，確保使用最新的表單資料
+      allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...getFormData(), page_id: 'M01001' });
+      allCardsSortable[mainCardIndex].img = getFormData().main_image_url || defaultCard.main_image_url;
+      console.log('🔄 JSON更新：已更新主卡片內容');
+    }
+    
     // 多卡片：按照排序後的結果組成carousel
     const flexArr = allCardsSortable.map(c => c.flex_json);
     shareMsg = {
@@ -931,10 +949,16 @@ window.onload = async function() {
               // 宣傳卡片 - 從promoCardList中找到對應的卡片
               const found = promoCardList.find(c => c.id === cardId);
               if (found) {
+                // **關鍵修復：為宣傳卡片的flex_json加入_cardId標識**
+                const promoFlexJson = JSON.parse(JSON.stringify(found.flex_json)); // 深度複製
+                promoFlexJson._cardId = found.id; // 加入宣傳卡片ID
+                promoFlexJson._cardType = 'promo'; // 標示為宣傳卡片
+                console.log('🏷️ card_order重建：為宣傳卡片加入標識:', found.id);
+                
                 newAllCards.push({ 
                   type: 'promo', 
                   id: found.id, 
-                  flex_json: found.flex_json, 
+                  flex_json: promoFlexJson, 
                   img: found.flex_json.body.contents[0].url 
                 });
                 newSelectedPromo.push(found.id);
@@ -1050,7 +1074,21 @@ function initAllCardsSortable() {
       mainCard,
       ...selectedPromoCards.map(id => {
         const card = promoCardList.find(c => c.id === id);
-        return card ? { type: 'promo', id: card.id, flex_json: card.flex_json, img: card.flex_json.body.contents[0].url } : null;
+        if (card) {
+          // **關鍵修復：為宣傳卡片的flex_json加入_cardId標識**
+          const promoFlexJson = JSON.parse(JSON.stringify(card.flex_json)); // 深度複製
+          promoFlexJson._cardId = card.id; // 加入宣傳卡片ID
+          promoFlexJson._cardType = 'promo'; // 標示為宣傳卡片
+          console.log('🏷️ 為宣傳卡片加入標識:', card.id);
+          
+          return { 
+            type: 'promo', 
+            id: card.id, 
+            flex_json: promoFlexJson, 
+            img: card.flex_json.body.contents[0].url 
+          };
+        }
+        return null;
       }).filter(Boolean)
     ];
   } else {
@@ -1426,10 +1464,16 @@ async function loadPromoCards() {
               // 宣傳卡片 - 從promoCardList中找到對應的卡片
               const found = promoCardList.find(c => c.id === cardId);
               if (found) {
+                // **關鍵修復：為宣傳卡片的flex_json加入_cardId標識**
+                const promoFlexJson = JSON.parse(JSON.stringify(found.flex_json)); // 深度複製
+                promoFlexJson._cardId = found.id; // 加入宣傳卡片ID
+                promoFlexJson._cardType = 'promo'; // 標示為宣傳卡片
+                console.log('🏷️ card_order重建：為宣傳卡片加入標識:', found.id);
+                
                 newAllCards.push({ 
                   type: 'promo', 
                   id: found.id, 
-                  flex_json: found.flex_json, 
+                  flex_json: promoFlexJson, 
                   img: found.flex_json.body.contents[0].url 
                 });
                 newSelectedPromo.push(found.id);
