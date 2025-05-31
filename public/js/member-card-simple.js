@@ -94,19 +94,8 @@ function setImageUserStyle(img, url) {
   img.style.display = 'block';
 }
 
-// 新增：主卡片識別輔助函數 - 改用pageId識別更精確
-function isMainCard(bubbleContent, pageId = null) {
-  // **方法1：優先使用pageId識別（M開頭 = 主卡片）**
-  if (pageId && typeof pageId === 'string') {
-    const isMainByPageId = pageId.toUpperCase().startsWith('M');
-    console.log('🎯 使用pageId識別主卡片:', {
-      pageId: pageId,
-      isMain: isMainByPageId
-    });
-    return isMainByPageId;
-  }
-  
-  // **方法2：後備識別 - 檢查bubble特徵（適用於已存在的flexJson）**
+// 主卡片識別函數 - 檢查bubble特徵識別主卡片
+function isMainCard(bubbleContent) {
   if (!bubbleContent || !bubbleContent.body) return false;
   
   // 檢查1：是否有footer（主卡片特有的footer文字）
@@ -140,9 +129,9 @@ function isMainCard(bubbleContent, pageId = null) {
   };
   
   const mainCardScore = Object.values(identifyFeatures).filter(Boolean).length;
-  const isMain = mainCardScore >= 2; // 降低門檻到2個特徵
+  const isMain = mainCardScore >= 2; // 至少2個特徵
   
-  console.log('🔍 後備特徵識別主卡片:', {
+  console.log('🔍 主卡片特徵識別:', {
     ...identifyFeatures,
     score: mainCardScore,
     isMain: isMain
@@ -488,8 +477,7 @@ function renderPreview() {
       contents: {
         type: 'carousel',
         contents: flexArr
-      },
-      pageview: formatPageview(getFormData().pageview)
+      }
     };
     const preview = document.getElementById('main-card-preview');
     preview.innerHTML = '';
@@ -500,8 +488,7 @@ function renderPreview() {
     const flexJson = {
       type: 'flex',
       altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
-      contents: bubble,
-      pageview: formatPageview(getFormData().pageview)
+      contents: bubble
     };
     const preview = document.getElementById('main-card-preview');
     preview.innerHTML = '';
@@ -526,8 +513,7 @@ function renderShareJsonBox() {
       contents: {
         type: 'carousel',
         contents: flexArr
-      },
-      pageview: formatPageview(getFormData().pageview)
+      }
     };
   } else {
     // 單卡片：只有主卡片
@@ -535,8 +521,7 @@ function renderShareJsonBox() {
     shareMsg = {
       type: 'flex',
       altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-      contents: mainCard,
-      pageview: formatPageview(getFormData().pageview)
+      contents: mainCard
     };
   }
   
@@ -642,7 +627,7 @@ window.onload = async function() {
                   footerText: content.footer?.contents?.[0]?.text
                 });
                 
-                if (isMainCard(content, pageId)) {
+                if (isMainCard(content)) {
                   mainCardIndex = i;
                   console.log('🎯 使用新識別邏輯找到主卡片位置:', i);
                   break;
@@ -687,16 +672,14 @@ window.onload = async function() {
                 contents: {
                   type: 'carousel',
                   contents: originalContents
-                },
-                pageview: formatPageview(latestPageview)
+                }
               };
             } else {
               // 單卡片：直接替換
               flexJson = {
                 type: 'flex',
                 altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
-                contents: getMainBubble({ ...updatedCardData, pageview: latestPageview }),
-                pageview: formatPageview(latestPageview) // **修復問題2：加入pageview**
+                contents: getMainBubble({ ...updatedCardData, pageview: latestPageview })
               };
             }
             
@@ -721,7 +704,7 @@ window.onload = async function() {
               let mainCardIndex = -1;
               
               for (let i = 0; i < originalContents.length; i++) {
-                if (isMainCard(originalContents[i], pageId)) {
+                if (isMainCard(originalContents[i])) {
                   mainCardIndex = i;
                   break;
                 }
@@ -738,16 +721,14 @@ window.onload = async function() {
                 contents: {
                   type: 'carousel',
                   contents: originalContents
-                },
-                pageview: formatPageview(latestPageview)
+                }
               };
             } else {
               // 單卡片模式 - 直接重新生成
               flexJson = {
                 type: 'flex',
                 altText: defaultCardUpdated.card_alt_title || defaultCardUpdated.main_title_1 || defaultCard.main_title_1,
-                contents: getMainBubble({ ...defaultCardUpdated, pageview: latestPageview }),
-                pageview: formatPageview(latestPageview)
+                contents: getMainBubble({ ...defaultCardUpdated, pageview: latestPageview })
               };
             }
             
@@ -1133,8 +1114,7 @@ async function shareToLine() {
       flexJson = {
         type: 'flex',
         altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: flexArr[0],
-        pageview: formatPageview(latestPageview) // 使用最新的pageview
+        contents: flexArr[0]
       };
     } else {
       flexJson = {
@@ -1143,8 +1123,7 @@ async function shareToLine() {
         contents: {
           type: 'carousel',
           contents: flexArr
-        },
-        pageview: formatPageview(latestPageview) // 使用最新的pageview
+        }
       };
     }
     
@@ -1160,7 +1139,7 @@ async function shareToLine() {
         page_id: 'M01001',
         line_user_id: liffProfile.userId,
         ...formDataWithoutPageview,
-        flex_json: flexJson, // 儲存包含最新pageview的flexJson
+        flex_json: flexJson,
         card_order: allCardsSortable.map(c => c.id)
       })
     });
@@ -1240,8 +1219,7 @@ document.getElementById('cardForm').onsubmit = async function(e) {
       flexJson = {
         type: 'flex',
         altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-        contents: flexArr[0],
-        pageview: formatPageview(latestPageview)
+        contents: flexArr[0]
       };
     } else {
       flexJson = {
@@ -1250,8 +1228,7 @@ document.getElementById('cardForm').onsubmit = async function(e) {
         contents: {
           type: 'carousel',
           contents: flexArr
-        },
-        pageview: formatPageview(latestPageview)
+        }
       };
     }
     const formData = getFormData();
@@ -1443,8 +1420,7 @@ function updatePreviewWithPromoSortable() {
     flexJson = {
       type: 'flex',
       altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
-      contents: flexArr[0],
-      pageview: formatPageview(getFormData().pageview)
+      contents: flexArr[0]
     };
   } else {
     flexJson = {
@@ -1453,8 +1429,7 @@ function updatePreviewWithPromoSortable() {
       contents: {
         type: 'carousel',
         contents: flexArr
-      },
-      pageview: formatPageview(getFormData().pageview)
+      }
     };
   }
   const preview = document.getElementById('main-card-preview');
