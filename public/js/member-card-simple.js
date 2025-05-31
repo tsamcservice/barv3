@@ -122,18 +122,33 @@ function cleanFlexJsonForShare(flexJson) {
 function isMainCard(bubbleContent) {
   if (!bubbleContent) return false;
   
-  // **新邏輯：使用pageId精確識別**
-  // 檢查是否有主卡標識 (_cardType = 'main' 或 _cardId 以 M 開頭)
+  // **方案1：使用自定義欄位識別（內部使用）**
   const isMainByCardType = bubbleContent._cardType === 'main';
   const isMainByCardId = bubbleContent._cardId && bubbleContent._cardId.startsWith('M');
   
-  const isMain = isMainByCardType || isMainByCardId;
+  // **方案2：使用footer action URI中的參數識別（LINE規範內，更可靠）**
+  let isMainByFooterUri = false;
+  if (bubbleContent.footer && bubbleContent.footer.contents && bubbleContent.footer.contents[0] && bubbleContent.footer.contents[0].action) {
+    const uri = bubbleContent.footer.contents[0].action.uri || '';
+    isMainByFooterUri = uri.includes('cardType=main') || uri.includes('pageId=M');
+  }
   
-  console.log('🔍 主卡片pageId識別:', {
+  // **方案3：使用footer文字特徵識別（後備方案）**
+  const isMainByFooterText = bubbleContent.footer && 
+    bubbleContent.footer.contents && 
+    bubbleContent.footer.contents[0] && 
+    bubbleContent.footer.contents[0].text === '呈璽元宇宙3D展覽館';
+  
+  const isMain = isMainByCardType || isMainByCardId || isMainByFooterUri || isMainByFooterText;
+  
+  console.log('🔍 主卡片多重識別:', {
     _cardType: bubbleContent._cardType,
     _cardId: bubbleContent._cardId,
+    footerUri: bubbleContent.footer?.contents?.[0]?.action?.uri,
     isMainByCardType,
     isMainByCardId,
+    isMainByFooterUri,
+    isMainByFooterText,
     isMain: isMain
   });
   
@@ -457,9 +472,17 @@ function getMainBubble(cardData) {
   bubble._cardId = cardData.page_id || pageId; // 使用實際的pageId
   bubble._cardType = 'main'; // 標示為主卡片
   
+  // **新方案：在footer的action中加入隱藏的主卡標識（LINE規範內）**
+  if (bubble.footer && bubble.footer.contents && bubble.footer.contents[0]) {
+    // 在footer的action中加入pageId參數，LINE接受這種格式
+    const originalUri = bubble.footer.contents[0].action.uri;
+    bubble.footer.contents[0].action.uri = originalUri + `?cardType=main&pageId=${pageId}`;
+  }
+  
   console.log('🏷️ 生成主卡片，加入標識:', {
     _cardId: bubble._cardId,
-    _cardType: bubble._cardType
+    _cardType: bubble._cardType,
+    footerUri: bubble.footer?.contents?.[0]?.action?.uri
   });
   
   return bubble;
