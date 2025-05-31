@@ -122,29 +122,49 @@ function cleanFlexJsonForShare(flexJson) {
 function isMainCard(bubbleContent) {
   if (!bubbleContent) return false;
   
-  // **方案1：使用自定義欄位識別（內部使用）**
+  // **方案1：檢查pageview文字中的隱藏標識（最穩定）**
+  let isMainByPageviewMarker = false;
+  if (bubbleContent.body && bubbleContent.body.contents) {
+    // 遞迴搜尋所有文字內容
+    function findPageviewMarker(contents) {
+      if (!Array.isArray(contents)) return false;
+      for (const item of contents) {
+        if (item.type === 'text' && item.text && item.text.includes('\u200B')) {
+          return true; // 找到零寬度空格標識
+        }
+        if (item.contents && Array.isArray(item.contents)) {
+          if (findPageviewMarker(item.contents)) return true;
+        }
+      }
+      return false;
+    }
+    isMainByPageviewMarker = findPageviewMarker(bubbleContent.body.contents);
+  }
+  
+  // **方案2：使用自定義欄位識別（內部使用）**
   const isMainByCardType = bubbleContent._cardType === 'main';
   const isMainByCardId = bubbleContent._cardId && bubbleContent._cardId.startsWith('M');
   
-  // **方案2：使用footer action URI中的參數識別（LINE規範內，更可靠）**
+  // **方案3：使用footer action URI中的參數識別（LINE規範內）**
   let isMainByFooterUri = false;
   if (bubbleContent.footer && bubbleContent.footer.contents && bubbleContent.footer.contents[0] && bubbleContent.footer.contents[0].action) {
     const uri = bubbleContent.footer.contents[0].action.uri || '';
     isMainByFooterUri = uri.includes('cardType=main') || uri.includes('pageId=M');
   }
   
-  // **方案3：使用footer文字特徵識別（後備方案）**
+  // **方案4：使用footer文字特徵識別（後備方案）**
   const isMainByFooterText = bubbleContent.footer && 
     bubbleContent.footer.contents && 
     bubbleContent.footer.contents[0] && 
     bubbleContent.footer.contents[0].text === '呈璽元宇宙3D展覽館';
   
-  const isMain = isMainByCardType || isMainByCardId || isMainByFooterUri || isMainByFooterText;
+  const isMain = isMainByPageviewMarker || isMainByCardType || isMainByCardId || isMainByFooterUri || isMainByFooterText;
   
   console.log('🔍 主卡片多重識別:', {
     _cardType: bubbleContent._cardType,
     _cardId: bubbleContent._cardId,
     footerUri: bubbleContent.footer?.contents?.[0]?.action?.uri,
+    isMainByPageviewMarker,
     isMainByCardType,
     isMainByCardId,
     isMainByFooterUri,
@@ -302,7 +322,7 @@ function getMainBubble(cardData) {
                   position: 'absolute',
                   offsetTop: '30px',
                   offsetStart: '12px',
-                  text: formatPageview(cardData.pageview || defaultCard.pageview),
+                  text: formatPageview(cardData.pageview || defaultCard.pageview) + '\u200B',
                   color: '#FFFFFF'
                 }
               ],
