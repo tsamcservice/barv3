@@ -1,3 +1,8 @@
+// 版本標記函數
+function createVersionTag() {
+  return 'v20250531-M';
+}
+
 // 會員卡初始資料
 const defaultCard = {
   main_image_url: 'https://barv3.vercel.app/uploads/vip/TS-B1.png',
@@ -158,7 +163,29 @@ function isMainCard(bubbleContent) {
     bubbleContent.footer.contents[0] && 
     bubbleContent.footer.contents[0].text === '呈璽元宇宙3D展覽館';
   
-  const isMain = isMainByPageviewMarker || isMainByCardType || isMainByCardId || isMainByFooterUri || isMainByFooterText;
+  // **新增方案5：檢查愛心圖片下方的pageview數字格式**
+  let isMainByPageviewFormat = false;
+  if (bubbleContent.body && bubbleContent.body.contents) {
+    function findPageviewText(contents) {
+      if (!Array.isArray(contents)) return false;
+      for (const item of contents) {
+        if (item.type === 'text' && item.text) {
+          // 檢查是否為4位數字格式（pageview）
+          const text = item.text.replace('\u200B', ''); // 移除零寬度字符後檢查
+          if (/^\d{4}$/.test(text)) {
+            return true;
+          }
+        }
+        if (item.contents && Array.isArray(item.contents)) {
+          if (findPageviewText(item.contents)) return true;
+        }
+      }
+      return false;
+    }
+    isMainByPageviewFormat = findPageviewText(bubbleContent.body.contents);
+  }
+  
+  const isMain = isMainByPageviewMarker || isMainByCardType || isMainByCardId || isMainByFooterUri || isMainByFooterText || isMainByPageviewFormat;
   
   console.log('🔍 主卡片多重識別:', {
     _cardType: bubbleContent._cardType,
@@ -169,6 +196,7 @@ function isMainCard(bubbleContent) {
     isMainByCardId,
     isMainByFooterUri,
     isMainByFooterText,
+    isMainByPageviewFormat,
     isMain: isMain
   });
   
@@ -662,126 +690,125 @@ window.onload = async function() {
           body: JSON.stringify({ cardIdTypeArr: [{ id: cardId, type: 'main' }] })
         });
         
-        // **修復問題4：自動分享模式下pageview更新後重新生成最新的flexJson**
+        // **關鍵修復：pageview更新後重新取得最新資料**
+        let updatedCardData = null;
+        let latestPageview = 0;
+        
         if (userIdParam) {
-          // 有userId：重新取得最新的 pageview 數字
+          // 有userId：重新查詢個人卡片取得最新pageview
           const updatedResult = await safeFetchJson(`/api/cards?pageId=${pageId}&userId=${userIdParam}`);
           if (updatedResult?.data?.[0]) {
-            const latestPageview = updatedResult.data[0].pageview;
-            const updatedCardData = updatedResult.data[0];
-            console.log('自動分享模式：取得最新pageview', latestPageview);
-            
-            // **改進後備處理邏輯，避免2張主卡問題**
-            if (flexJson.contents && flexJson.contents.type === 'carousel') {
-              // **修復問題4：使用新的isMainCard函數精確識別主卡片位置**
-              const originalContents = flexJson.contents.contents;
-              let mainCardIndex = -1;
-              
-              // **使用新的主卡識別函數**
-              for (let i = 0; i < originalContents.length; i++) {
-                const content = originalContents[i];
-                console.log(`🔍 檢查卡片 ${i}:`, {
-                  hasFooter: !!content.footer,
-                  footerText: content.footer?.contents?.[0]?.text
-                });
-                
-                if (isMainCard(content)) {
-                  mainCardIndex = i;
-                  console.log('🎯 使用新識別邏輯找到主卡片位置:', i);
-                  break;
-                }
-              }
-              
-              // **改進後備處理邏輯，避免2張主卡問題**
-              if (mainCardIndex >= 0) {
-                // 找到主卡片，直接更新
-                originalContents[mainCardIndex] = getMainBubble({ ...updatedCardData, pageview: latestPageview, page_id: pageId });
-                console.log('✅ 自動分享模式：已更新主卡片位置', mainCardIndex);
-              } else {
-                // **簡化後備邏輯：檢查第一張卡片**
-                console.log('⚠️ 未找到主卡片標識，檢查第一張卡片');
-                
-                if (originalContents.length > 0) {
-                  // 直接更新第一張卡片為主卡片（最安全的選擇）
-                  originalContents[0] = getMainBubble({ ...updatedCardData, pageview: latestPageview, page_id: pageId });
-                  console.log('✅ 自動分享模式：更新第一張卡片為主卡片');
-                } else {
-                  // 沒有卡片，直接添加主卡片
-                  originalContents.push(getMainBubble({ ...updatedCardData, pageview: latestPageview, page_id: pageId }));
-                  console.log('🆕 自動分享模式：添加主卡片到空的carousel');
-                }
-              }
-              
-              // **重新組合 carousel flexJson**
-              flexJson = {
-                type: 'flex',
-                altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
-                contents: {
-                  type: 'carousel',
-                  contents: originalContents
-                }
-              };
-            } else {
-              // 單卡片：直接替換
-              flexJson = {
-                type: 'flex',
-                altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
-                contents: getMainBubble({ ...updatedCardData, pageview: latestPageview, page_id: pageId })
-              };
-            }
-            
-            console.log('自動分享模式：已重新生成最新flexJson，pageview:', latestPageview);
+            updatedCardData = updatedResult.data[0];
+            latestPageview = updatedCardData.pageview;
+            console.log('🔄 已取得最新個人卡片 pageview:', latestPageview);
           }
         } else {
-          // **修復問題：初始卡(無userId)也需要重新生成flexJson with 最新pageview**
-          console.log('🔄 初始卡模式：重新取得最新pageview');
+          // 無userId：重新查詢初始卡片取得最新pageview
           const updatedResult = await safeFetchJson(`/api/cards?pageId=${pageId}`);
           const defaultCardUpdated = Array.isArray(updatedResult?.data)
             ? updatedResult.data.find(card => !card.line_user_id)
             : null;
-          
           if (defaultCardUpdated) {
-            const latestPageview = defaultCardUpdated.pageview;
-            console.log('初始卡模式：取得最新pageview', latestPageview);
-            
-            // 重新生成 flexJson with 最新 pageview
-            if (flexJson.contents && flexJson.contents.type === 'carousel') {
-              // carousel 模式 - 找到主卡片並更新
-              const originalContents = flexJson.contents.contents;
-              let mainCardIndex = -1;
-              
-              for (let i = 0; i < originalContents.length; i++) {
-                if (isMainCard(originalContents[i])) {
-                  mainCardIndex = i;
-                  break;
-                }
-              }
-              
-              if (mainCardIndex >= 0) {
-                originalContents[mainCardIndex] = getMainBubble({ ...defaultCardUpdated, pageview: latestPageview, page_id: pageId });
-                console.log('✅ 初始卡模式：更新carousel中的主卡片');
-              }
-              
-              flexJson = {
-                type: 'flex',
-                altText: defaultCardUpdated.card_alt_title || defaultCardUpdated.main_title_1 || defaultCard.main_title_1,
-                contents: {
-                  type: 'carousel',
-                  contents: originalContents
-                }
-              };
-            } else {
-              // 單卡片模式 - 直接重新生成
-              flexJson = {
-                type: 'flex',
-                altText: defaultCardUpdated.card_alt_title || defaultCardUpdated.main_title_1 || defaultCard.main_title_1,
-                contents: getMainBubble({ ...defaultCardUpdated, pageview: latestPageview, page_id: pageId })
-              };
-            }
-            
-            console.log('✅ 初始卡模式：已重新生成最新flexJson，pageview:', latestPageview);
+            updatedCardData = defaultCardUpdated;
+            latestPageview = defaultCardUpdated.pageview;
+            console.log('🔄 已取得最新初始卡片 pageview:', latestPageview);
           }
         }
+        
+        // 如果無法取得更新後的資料，使用原本的資料
+        if (!updatedCardData) {
+          updatedCardData = userIdParam 
+            ? (result?.data?.[0] || defaultCard)
+            : (defaultCard);
+          latestPageview = updatedCardData.pageview || 0;
+          console.log('⚠️ 使用原始資料，pageview:', latestPageview);
+        }
+        
+        // **修復問題4：強化主卡識別與更新邏輯**
+        if (flexJson.contents && flexJson.contents.type === 'carousel') {
+          // **使用新的isMainCard函數精確識別主卡片位置**
+          const originalContents = flexJson.contents.contents;
+          let mainCardIndex = -1;
+          let mainCardCount = 0;
+          
+          // **首先掃描所有卡片，統計主卡數量和位置**
+          for (let i = 0; i < originalContents.length; i++) {
+            const content = originalContents[i];
+            if (isMainCard(content)) {
+              if (mainCardIndex === -1) {
+                mainCardIndex = i; // 記錄第一個找到的主卡位置
+              }
+              mainCardCount++;
+              console.log(`🎯 找到主卡片位置: ${i}`);
+            }
+          }
+          
+          console.log(`📊 主卡統計: 總數=${mainCardCount}, 第一個位置=${mainCardIndex}`);
+          
+          // **產生新的主卡片（使用最新pageview）**
+          const newMainCard = getMainBubble({ ...updatedCardData, pageview: latestPageview, page_id: pageId });
+          
+          if (mainCardCount === 1 && mainCardIndex >= 0) {
+            // **理想情況：只有一張主卡，直接替換**
+            originalContents[mainCardIndex] = newMainCard;
+            console.log('✅ 自動分享模式：已更新唯一主卡片位置', mainCardIndex);
+          } else if (mainCardCount > 1) {
+            // **異常情況：多張主卡，移除多餘的主卡片，只保留第一張**
+            console.log('⚠️ 發現多張主卡，進行清理');
+            const filteredContents = [];
+            let mainCardAdded = false;
+            
+            for (let i = 0; i < originalContents.length; i++) {
+              const content = originalContents[i];
+              if (isMainCard(content)) {
+                if (!mainCardAdded) {
+                  // 只保留第一張主卡並更新
+                  filteredContents.push(newMainCard);
+                  mainCardAdded = true;
+                  console.log('✅ 保留並更新第一張主卡');
+                } else {
+                  console.log('🗑️ 移除多餘的主卡');
+                }
+              } else {
+                // 保留非主卡片
+                filteredContents.push(content);
+              }
+            }
+            
+            // 更新 carousel 內容
+            flexJson.contents.contents = filteredContents;
+            console.log('✅ 多主卡清理完成，剩餘卡片數:', filteredContents.length);
+          } else {
+            // **無主卡情況：將第一張卡片替換為主卡片**
+            console.log('⚠️ 未找到主卡片，將第一張卡片設為主卡');
+            if (originalContents.length > 0) {
+              originalContents[0] = newMainCard;
+              console.log('✅ 第一張卡片已設為主卡');
+            } else {
+              originalContents.push(newMainCard);
+              console.log('🆕 添加主卡到空的carousel');
+            }
+          }
+          
+          // **重新組合 carousel flexJson**
+          flexJson = {
+            type: 'flex',
+            altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
+            contents: {
+              type: 'carousel',
+              contents: flexJson.contents.contents // 使用更新後的內容
+            }
+          };
+        } else {
+          // 單卡片：直接替換
+          flexJson = {
+            type: 'flex',
+            altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
+            contents: getMainBubble({ ...updatedCardData, pageview: latestPageview, page_id: pageId })
+          };
+        }
+        
+        console.log('✅ 自動分享模式：已重新生成最新flexJson，pageview:', latestPageview);
       } catch (e) { 
         console.error('自動分享模式pageview更新失敗:', e);
       }
