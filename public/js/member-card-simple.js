@@ -796,7 +796,7 @@ window.onload = async function() {
             altText: updatedCardData.card_alt_title || updatedCardData.main_title_1 || defaultCard.main_title_1,
             contents: {
               type: 'carousel',
-              contents: flexJson.contents.contents // 使用更新後的內容
+              contents: originalContents // 使用原始陣列（已包含更新後的主卡）
             }
           };
         } else {
