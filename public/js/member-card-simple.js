@@ -94,8 +94,19 @@ function setImageUserStyle(img, url) {
   img.style.display = 'block';
 }
 
-// 新增：主卡片識別輔助函數 - 用於自動分享模式精確識別主卡片
-function isMainCard(bubbleContent) {
+// 新增：主卡片識別輔助函數 - 改用pageId識別更精確
+function isMainCard(bubbleContent, pageId = null) {
+  // **方法1：優先使用pageId識別（M開頭 = 主卡片）**
+  if (pageId && typeof pageId === 'string') {
+    const isMainByPageId = pageId.toUpperCase().startsWith('M');
+    console.log('🎯 使用pageId識別主卡片:', {
+      pageId: pageId,
+      isMain: isMainByPageId
+    });
+    return isMainByPageId;
+  }
+  
+  // **方法2：後備識別 - 檢查bubble特徵（適用於已存在的flexJson）**
   if (!bubbleContent || !bubbleContent.body) return false;
   
   // 檢查1：是否有footer（主卡片特有的footer文字）
@@ -122,33 +133,16 @@ function isMainCard(bubbleContent) {
       )
     );
   
-  // 檢查4：是否有會員頭像區塊（主卡片特有的絕對定位）
-  const hasMemberArea = bubbleContent.body.contents && 
-    bubbleContent.body.contents.some(item => 
-      item.type === 'box' && item.width === '65px' && 
-      item.position === 'absolute' && item.offsetEnd === '5px'
-    );
-  
-  // 檢查5：是否有主卡片特有的按鈕組合（2個按鈕並排）
-  const hasMainButtons = bubbleContent.body.contents && 
-    bubbleContent.body.contents.some(item => 
-      item.type === 'box' && item.layout === 'horizontal' && 
-      item.contents && item.contents.length === 2 && 
-      item.contents.every(btn => btn.type === 'button')
-    );
-  
   const identifyFeatures = {
     hasMainFooter,
     hasLoveIcon, 
-    hasAmemberArea,
-    hasMemberArea,
-    hasMainButtons
+    hasAmemberArea
   };
   
   const mainCardScore = Object.values(identifyFeatures).filter(Boolean).length;
-  const isMain = mainCardScore >= 3; // 至少要符合3個特徵
+  const isMain = mainCardScore >= 2; // 降低門檻到2個特徵
   
-  console.log('🔍 主卡片識別檢查:', {
+  console.log('🔍 後備特徵識別主卡片:', {
     ...identifyFeatures,
     score: mainCardScore,
     isMain: isMain
@@ -627,7 +621,7 @@ window.onload = async function() {
         
         // **修復問題4：自動分享模式下pageview更新後重新生成最新的flexJson**
         if (userIdParam) {
-          // 重新取得最新的 pageview 數字
+          // 有userId：重新取得最新的 pageview 數字
           const updatedResult = await safeFetchJson(`/api/cards?pageId=${pageId}&userId=${userIdParam}`);
           if (updatedResult?.data?.[0]) {
             const latestPageview = updatedResult.data[0].pageview;
@@ -648,7 +642,7 @@ window.onload = async function() {
                   footerText: content.footer?.contents?.[0]?.text
                 });
                 
-                if (isMainCard(content)) {
+                if (isMainCard(content, pageId)) {
                   mainCardIndex = i;
                   console.log('🎯 使用新識別邏輯找到主卡片位置:', i);
                   break;
@@ -707,6 +701,57 @@ window.onload = async function() {
             }
             
             console.log('自動分享模式：已重新生成最新flexJson，pageview:', latestPageview);
+          }
+        } else {
+          // **修復問題：初始卡(無userId)也需要重新生成flexJson with 最新pageview**
+          console.log('🔄 初始卡模式：重新取得最新pageview');
+          const updatedResult = await safeFetchJson(`/api/cards?pageId=${pageId}`);
+          const defaultCardUpdated = Array.isArray(updatedResult?.data)
+            ? updatedResult.data.find(card => !card.line_user_id)
+            : null;
+          
+          if (defaultCardUpdated) {
+            const latestPageview = defaultCardUpdated.pageview;
+            console.log('初始卡模式：取得最新pageview', latestPageview);
+            
+            // 重新生成 flexJson with 最新 pageview
+            if (flexJson.contents && flexJson.contents.type === 'carousel') {
+              // carousel 模式 - 找到主卡片並更新
+              const originalContents = flexJson.contents.contents;
+              let mainCardIndex = -1;
+              
+              for (let i = 0; i < originalContents.length; i++) {
+                if (isMainCard(originalContents[i], pageId)) {
+                  mainCardIndex = i;
+                  break;
+                }
+              }
+              
+              if (mainCardIndex >= 0) {
+                originalContents[mainCardIndex] = getMainBubble({ ...defaultCardUpdated, pageview: latestPageview });
+                console.log('✅ 初始卡模式：更新carousel中的主卡片');
+              }
+              
+              flexJson = {
+                type: 'flex',
+                altText: defaultCardUpdated.card_alt_title || defaultCardUpdated.main_title_1 || defaultCard.main_title_1,
+                contents: {
+                  type: 'carousel',
+                  contents: originalContents
+                },
+                pageview: formatPageview(latestPageview)
+              };
+            } else {
+              // 單卡片模式 - 直接重新生成
+              flexJson = {
+                type: 'flex',
+                altText: defaultCardUpdated.card_alt_title || defaultCardUpdated.main_title_1 || defaultCard.main_title_1,
+                contents: getMainBubble({ ...defaultCardUpdated, pageview: latestPageview }),
+                pageview: formatPageview(latestPageview)
+              };
+            }
+            
+            console.log('✅ 初始卡模式：已重新生成最新flexJson，pageview:', latestPageview);
           }
         }
       } catch (e) { 
