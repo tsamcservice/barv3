@@ -1041,23 +1041,6 @@ window.onload = async function() {
 // 主卡片與宣傳卡片拖曳排序功能
 let allCardsSortable = [];
 
-// 展開/收合宣傳卡片選擇區塊
-window.addEventListener('DOMContentLoaded', function() {
-  const toggleBtn = document.getElementById('toggle-promo-selector');
-  const selector = document.getElementById('promo-card-selector');
-  if (toggleBtn && selector) {
-    toggleBtn.onclick = function() {
-      if (selector.style.display === 'none') {
-        selector.style.display = '';
-        toggleBtn.textContent = '收合 <<';
-      } else {
-        selector.style.display = 'none';
-        toggleBtn.textContent = '點選加入 >>';
-      }
-    };
-  }
-});
-
 // 初始化排序區卡片陣列
 function initAllCardsSortable() {
   // 先建立主卡片
@@ -1327,15 +1310,17 @@ function updateCardAltTitle() {
   renderShareJsonBox();
 }
 
-// **修復：將所有input監聽器邏輯移到DOMContentLoaded中，確保正確綁定**
+// **統一的DOMContentLoaded初始化**
 window.addEventListener('DOMContentLoaded', function() {
-  // 綁定主標題和名字的變動監聽
+  console.log('🚀 DOMContentLoaded: 開始初始化...');
+  
+  // 1. 綁定主標題和名字的變動監聽
   if(document.getElementById('display_name'))
     document.getElementById('display_name').addEventListener('input', updateCardAltTitle);
   if(document.getElementById('main_title_1'))
     document.getElementById('main_title_1').addEventListener('input', updateCardAltTitle);
   
-  // **修復：所有表單欄位的即時預覽功能**
+  // 2. 綁定所有表單欄位的即時預覽功能
   const formInputs = document.querySelectorAll('#cardForm input[type="text"], #cardForm input[type="url"], #cardForm input[type="color"]');
   console.log('🔧 綁定即時預覽，找到欄位數量:', formInputs.length);
   
@@ -1347,6 +1332,141 @@ window.addEventListener('DOMContentLoaded', function() {
       renderShareJsonBox();
     });
   });
+
+  // 3. 添加表單提交監聽器實現儲存功能
+  const cardForm = document.getElementById('cardForm');
+  if (cardForm) {
+    cardForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      console.log('📝 表單提交事件觸發，開始儲存...');
+      
+      // 檢查LIFF登入狀態
+      if (!liffProfile.userId) {
+        alert('請先登入 LINE');
+        return;
+      }
+      
+      try {
+        // 顯示載入狀態
+        const submitButton = cardForm.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        submitButton.textContent = '儲存中...';
+        submitButton.disabled = true;
+        
+        const formData = getFormData();
+        
+        // 自動更新card_alt_title
+        if (!formData.card_alt_title && formData.main_title_1 && formData.display_name) {
+          formData.card_alt_title = `${formData.main_title_1}/${formData.display_name}`;
+          document.getElementById('card_alt_title').value = formData.card_alt_title;
+        }
+        
+        // 生成FLEX JSON
+        let flexJson;
+        if (allCardsSortable && allCardsSortable.length > 1) {
+          // 多卡片模式：生成carousel
+          const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
+          if (mainCardIndex !== -1) {
+            allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...formData, page_id: 'M01001' });
+            allCardsSortable[mainCardIndex].img = formData.main_image_url || defaultCard.main_image_url;
+          }
+          
+          const flexArr = allCardsSortable.map(c => c.flex_json);
+          flexJson = {
+            type: 'flex',
+            altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
+            contents: {
+              type: 'carousel',
+              contents: flexArr
+            }
+          };
+        } else {
+          // 單卡片模式
+          flexJson = {
+            type: 'flex',
+            altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
+            contents: getMainBubble({ ...formData, page_id: 'M01001' })
+          };
+        }
+        
+        // 清理FLEX JSON用於儲存
+        const cleanFlexJsonForSave = cleanFlexJsonForShare(flexJson);
+        
+        // 準備儲存資料
+        const saveData = {
+          page_id: 'M01001',
+          line_user_id: liffProfile.userId,
+          ...formData,
+          flex_json: cleanFlexJsonForSave,
+          card_order: allCardsSortable ? allCardsSortable.map(c => c.id) : ['main']
+        };
+        
+        console.log('💾 準備儲存資料:', saveData);
+        
+        // 發送API請求
+        const response = await fetch('/api/cards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(saveData)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || '儲存失敗');
+        }
+        
+        const result = await response.json();
+        console.log('✅ 儲存成功:', result);
+        
+        // 顯示成功訊息
+        alert('🎉 會員卡儲存成功！');
+        
+        // 更新預覽
+        renderPreview();
+        renderShareJsonBox();
+        
+      } catch (error) {
+        console.error('❌ 儲存失敗:', error);
+        alert('儲存失敗：' + error.message);
+      } finally {
+        // 恢復按鈕狀態
+        const submitButton = cardForm.querySelector('button[type="submit"]');
+        submitButton.textContent = '儲存卡片';
+        submitButton.disabled = false;
+      }
+    });
+    
+    console.log('✅ 表單提交監聽器已綁定');
+  } else {
+    console.error('❌ 找不到cardForm元素');
+  }
+
+  // 4. 綁定圖片上傳功能
+  bindImageUpload('main_image_upload', 'main_image_upload_btn', 'main_image_preview', 'main_image_url');
+  bindImageUpload('snow_image_upload', 'snow_image_upload_btn', 'snow_image_preview', 'snow_image_url');
+  bindImageUpload('calendar_image_upload', 'calendar_image_upload_btn', 'calendar_image_preview', 'calendar_image_url');
+  bindImageUpload('love_icon_upload', 'love_icon_upload_btn', 'love_icon_preview', 'love_icon_url');
+  bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url');
+
+  // 5. 展開/收合宣傳卡片選擇區塊
+  const toggleBtn = document.getElementById('toggle-promo-selector');
+  const selector = document.getElementById('promo-card-selector');
+  if (toggleBtn && selector) {
+    toggleBtn.onclick = function() {
+      if (selector.style.display === 'none') {
+        selector.style.display = '';
+        toggleBtn.textContent = '收合 <<';
+      } else {
+        selector.style.display = 'none';
+        toggleBtn.textContent = '點選加入 >>';
+      }
+    };
+  }
+
+  // 6. 載入宣傳卡片
+  loadPromoCards();
+  
+  console.log('✅ DOMContentLoaded: 初始化完成');
 });
 
 // 圖片上傳功能
@@ -1407,18 +1527,6 @@ function bindImageUpload(inputId, btnId, previewId, urlId) {
     reader.readAsDataURL(file);
   });
 }
-
-// 初始化圖片上傳功能
-window.addEventListener('DOMContentLoaded', function() {
-  // ... existing code ...
-  
-  // 綁定圖片上傳功能
-  bindImageUpload('main_image_upload', 'main_image_upload_btn', 'main_image_preview', 'main_image_url');
-  bindImageUpload('snow_image_upload', 'snow_image_upload_btn', 'snow_image_preview', 'snow_image_url');
-  bindImageUpload('calendar_image_upload', 'calendar_image_upload_btn', 'calendar_image_preview', 'calendar_image_url');
-  bindImageUpload('love_icon_upload', 'love_icon_upload_btn', 'love_icon_preview', 'love_icon_url');
-  bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url');
-});
 
 // 宣傳卡片功能
 let promoCardList = [];
@@ -1506,11 +1614,6 @@ async function loadPromoCards() {
     console.error('載入宣傳卡片失敗', e);
   }
 }
-
-// DOMContentLoaded 時初始化宣傳卡片功能
-window.addEventListener('DOMContentLoaded', function() {
-  loadPromoCards();
-});
 
 function updatePreviewWithPromoSortable() {
   // 依照排序後的 allCardsSortable 組合 carousel
