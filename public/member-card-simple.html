@@ -253,11 +253,14 @@
             z-index: 10;
             transition: all 0.3s ease;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            opacity: 0.8;
+            pointer-events: auto;
         }
         
         .preview-nav-btn:hover {
             background: rgba(76, 175, 80, 1);
             transform: translateY(-50%) scale(1.1);
+            opacity: 1;
         }
         
         .preview-nav-btn:disabled {
@@ -274,22 +277,15 @@
             right: -15px;
         }
         
-        /* 導航按鈕初始隱藏 */
-        .preview-nav-btn {
-            opacity: 0;
-            pointer-events: none;
+        /* 確保預覽容器有足夠的相對定位 */
+        .preview-container {
+            position: relative;
+            margin: 10px 0;
         }
         
-        /* 當預覽區域hover時顯示導航按鈕 */
-        .preview-container:hover .preview-nav-btn {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        
-        /* 當內容可滾動時顯示導航按鈕 */
+        /* 當內容可滾動時增強按鈕可見性 */
         .preview-container.scrollable .preview-nav-btn {
-            opacity: 0.7;
-            pointer-events: auto;
+            opacity: 0.9;
         }
         
         .preview-container.scrollable:hover .preview-nav-btn {

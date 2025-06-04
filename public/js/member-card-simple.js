@@ -1693,7 +1693,12 @@ function initPreviewNavigation() {
   const rightBtn = document.getElementById('preview-nav-right');
   
   if (!previewContainer || !previewElement || !leftBtn || !rightBtn) {
-    console.log('⚠️ 預覽導航元素未找到');
+    console.log('⚠️ 預覽導航元素未找到:', {
+      previewContainer: !!previewContainer,
+      previewElement: !!previewElement,
+      leftBtn: !!leftBtn,
+      rightBtn: !!rightBtn
+    });
     return;
   }
   
@@ -1702,6 +1707,7 @@ function initPreviewNavigation() {
   
   // 左滑按鈕點擊事件
   leftBtn.addEventListener('click', function() {
+    console.log('🔄 左滑按鈕點擊');
     previewElement.scrollBy({
       left: -scrollAmount,
       behavior: 'smooth'
@@ -1711,6 +1717,7 @@ function initPreviewNavigation() {
   
   // 右滑按鈕點擊事件
   rightBtn.addEventListener('click', function() {
+    console.log('🔄 右滑按鈕點擊');
     previewElement.scrollBy({
       left: scrollAmount,
       behavior: 'smooth'
@@ -1724,18 +1731,36 @@ function initPreviewNavigation() {
     
     // 檢查是否需要顯示導航按鈕
     const needsHorizontalScroll = scrollWidth > clientWidth;
+    const contentOverflow = scrollWidth > clientWidth + 5; // 5px tolerance
     
-    if (needsHorizontalScroll) {
+    console.log('🎮 導航按鈕狀態檢查:', {
+      scrollLeft,
+      scrollWidth,
+      clientWidth,
+      needsHorizontalScroll,
+      contentOverflow
+    });
+    
+    if (contentOverflow) {
       previewContainer.classList.add('scrollable');
+      leftBtn.style.display = 'block';
+      rightBtn.style.display = 'block';
       
       // 更新按鈕啟用/禁用狀態
-      leftBtn.disabled = scrollLeft <= 0;
-      rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth - 1;
+      leftBtn.disabled = scrollLeft <= 5;
+      rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth - 5;
     } else {
       previewContainer.classList.remove('scrollable');
-      leftBtn.disabled = true;
-      rightBtn.disabled = true;
+      leftBtn.style.display = 'none';
+      rightBtn.style.display = 'none';
     }
+    
+    console.log('🎮 按鈕狀態:', {
+      leftDisabled: leftBtn.disabled,
+      rightDisabled: rightBtn.disabled,
+      leftDisplay: leftBtn.style.display,
+      rightDisplay: rightBtn.style.display
+    });
   }
   
   // 監聽滾動事件更新按鈕狀態
@@ -1746,7 +1771,8 @@ function initPreviewNavigation() {
   
   // 監聽預覽內容變化（當渲染新內容時）
   const observer = new MutationObserver(function() {
-    setTimeout(updateNavButtons, 100);
+    console.log('🔄 預覽內容變化，更新導航按鈕');
+    setTimeout(updateNavButtons, 200);
   });
   
   observer.observe(previewElement, {
@@ -1755,7 +1781,19 @@ function initPreviewNavigation() {
   });
   
   // 初始檢查
-  setTimeout(updateNavButtons, 500);
+  setTimeout(() => {
+    console.log('🎮 執行初始導航檢查');
+    updateNavButtons();
+  }, 1000);
   
-  console.log('🎮 預覽導航功能已初始化');
+  // 強制顯示按鈕用於測試
+  console.log('🎮 預覽導航功能已初始化，強制顯示按鈕進行測試');
+  setTimeout(() => {
+    leftBtn.style.display = 'block';
+    rightBtn.style.display = 'block';
+    leftBtn.style.opacity = '0.8';
+    rightBtn.style.opacity = '0.8';
+    previewContainer.classList.add('scrollable');
+    console.log('🎮 測試：強制顯示導航按鈕');
+  }, 2000);
 } 
