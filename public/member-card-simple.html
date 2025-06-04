@@ -30,16 +30,20 @@
             border-radius: 8px; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             margin-bottom: 24px;
+            max-height: 95vh;
+            overflow-y: auto;
         }
         .preview-section { 
-            flex: 0 0 500px;
+            flex: 0 0 600px;
             background: #fff; 
             padding: 24px; 
             border-radius: 8px; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            min-height: 800px;
+            min-height: 900px;
             max-height: 95vh;
-            overflow-y: auto;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .form-group { 
             margin-bottom: 16px; 
@@ -209,11 +213,37 @@
             width: 100%;
             max-width: 450px;
             min-height: 600px;
-            margin: 0 auto;
+            margin: 0 auto 20px auto;
             background: #f8f9fa;
             border-radius: 8px;
             padding: 16px;
             box-sizing: border-box;
+            overflow: auto;
+            max-height: 650px;
+        }
+        
+        /* JSON區域滑動設置 */
+        #shareJsonBox {
+            flex: 1;
+            margin-top: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #shareJsonBox pre {
+            font-size: 12px;
+            line-height: 1.4;
+            user-select: text;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #fff;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            overflow: auto;
+            max-height: 200px;
+            flex: 1;
         }
         
         /* 強制覆蓋flex2html的縮放，確保100%顯示 */
@@ -244,6 +274,34 @@
             scale: 1 !important;
         }
         
+        /* 宣傳卡片區塊移到右邊預覽區域 */
+        .promo-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .promo-section h3 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .promo-controls {
+            margin-bottom: 16px;
+        }
+        
+        .promo-selector {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+        }
+        
+        .promo-selected {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
         /* 響應式設計：小螢幕時改為垂直佈局 */
         @media (max-width: 1200px) {
             .container {
@@ -252,7 +310,14 @@
             }
             .preview-section {
                 flex: none;
-                min-height: 500px;
+                min-height: 600px;
+                max-height: 80vh;
+            }
+            #main-card-preview {
+                max-height: 400px;
+            }
+            #shareJsonBox pre {
+                max-height: 150px;
             }
         }
     </style>
@@ -387,20 +452,29 @@
                     <label>分享按鈕顏色</label>
                     <input type="color" id="s_button_color" name="s_button_color" value="#A4924B">
                 </div>
-                <div class="form-group">
-                    <label>選擇宣傳卡片</label>
-                    <button type="button" id="toggle-promo-selector" style="margin-bottom:8px;">點選加入 &gt;&gt;</button>
-                    <div id="promo-card-selector" class="promo-list" style="margin-top:12px;display:none;"></div>
-                    <div style="margin:24px 0;text-align:center;color:#666;font-size:15px;">拖拉卡片左右排序</div>
-                    <div id="promo-cards" class="promo-list"></div>
-                </div>
                 <button type="submit" class="save-button">儲存卡片</button>
             </form>
         </div>
         <div class="preview-section">
             <h2>卡片預覽</h2>
             <div id="main-card-preview"></div>
-            <div id="shareJsonBox" style="margin-top:32px;"></div>
+            
+            <!-- 🎯 宣傳卡片區塊移到右邊 -->
+            <div class="promo-section">
+                <h3>🎨 選擇宣傳卡片</h3>
+                <div class="promo-controls">
+                    <button type="button" id="toggle-promo-selector" style="padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;">點選加入 &gt;&gt;</button>
+                </div>
+                <div class="promo-selector">
+                    <div id="promo-card-selector" class="promo-list" style="display:none;"></div>
+                </div>
+                <div class="promo-selected">
+                    <div style="margin:12px 0;text-align:center;color:#666;font-size:14px;">📱 拖拉卡片左右排序</div>
+                    <div id="promo-cards" class="promo-list"></div>
+                </div>
+            </div>
+            
+            <div id="shareJsonBox"></div>
         </div>
     </div>
     <script src="js/member-card-simple.js"></script>
