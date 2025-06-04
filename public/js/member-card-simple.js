@@ -625,26 +625,27 @@ function renderShareJsonBox() {
     };
   }
   
+  // **修復：使用CSS樣式中定義的h3標題結構**
   box.innerHTML = '';
-  const title = document.createElement('div');
-  title.textContent = '即將分享的 Flex Message JSON（可複製）';
-  title.style.cssText = 'font-weight:bold;font-size:16px;margin-bottom:8px;';
+  
+  const title = document.createElement('h3');
+  title.textContent = '📋 FLEX MESSAGE JSON';
   box.appendChild(title);
+  
   const pre = document.createElement('pre');
   
   // **清理JSON顯示，移除自定義欄位**
   const cleanShareMsg = cleanFlexJsonForShare(shareMsg);
   pre.textContent = JSON.stringify(cleanShareMsg, null, 2);
-  
-  pre.style.cssText = 'font-size:14px;line-height:1.5;user-select:text;white-space:pre-wrap;word-break:break-all;background:#fff;padding:10px;border-radius:4px;max-height:300px;overflow:auto;';
   box.appendChild(pre);
+  
   const copyBtn = document.createElement('button');
-  copyBtn.textContent = '一鍵複製';
-  copyBtn.style.cssText = 'margin:8px 0 0 0;padding:6px 16px;background:#4CAF50;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:15px;';
+  copyBtn.textContent = '📋 複製JSON';
+  copyBtn.style.cssText = 'margin:12px 0 0 0;padding:8px 16px;background:#4CAF50;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;width:100%;';
   copyBtn.onclick = () => {
     navigator.clipboard.writeText(pre.textContent).then(() => {
-      copyBtn.textContent = '已複製!';
-      setTimeout(()=>{copyBtn.textContent='一鍵複製';},1200);
+      copyBtn.textContent = '✅ 已複製!';
+      setTimeout(()=>{copyBtn.textContent='📋 複製JSON';},1500);
     });
   };
   box.appendChild(copyBtn);
@@ -1466,6 +1467,9 @@ window.addEventListener('DOMContentLoaded', function() {
   // 6. 載入宣傳卡片
   loadPromoCards();
   
+  // 7. 🎮 新增：初始化預覽區域左右滑動導航
+  initPreviewNavigation();
+  
   console.log('✅ DOMContentLoaded: 初始化完成');
 });
 
@@ -1679,4 +1683,79 @@ async function safeFetchJson(url) {
   } catch (e) {
     return { success: false, error: 'API 回傳非 JSON', raw: text };
   }
+}
+
+// 🎮 新增：預覽區域左右滑動導航功能
+function initPreviewNavigation() {
+  const previewContainer = document.querySelector('.preview-container');
+  const previewElement = document.getElementById('main-card-preview');
+  const leftBtn = document.getElementById('preview-nav-left');
+  const rightBtn = document.getElementById('preview-nav-right');
+  
+  if (!previewContainer || !previewElement || !leftBtn || !rightBtn) {
+    console.log('⚠️ 預覽導航元素未找到');
+    return;
+  }
+  
+  // 滑動距離
+  const scrollAmount = 200;
+  
+  // 左滑按鈕點擊事件
+  leftBtn.addEventListener('click', function() {
+    previewElement.scrollBy({
+      left: -scrollAmount,
+      behavior: 'smooth'
+    });
+    setTimeout(updateNavButtons, 100);
+  });
+  
+  // 右滑按鈕點擊事件
+  rightBtn.addEventListener('click', function() {
+    previewElement.scrollBy({
+      left: scrollAmount,
+      behavior: 'smooth'
+    });
+    setTimeout(updateNavButtons, 100);
+  });
+  
+  // 更新導航按鈕狀態
+  function updateNavButtons() {
+    const { scrollLeft, scrollWidth, clientWidth } = previewElement;
+    
+    // 檢查是否需要顯示導航按鈕
+    const needsHorizontalScroll = scrollWidth > clientWidth;
+    
+    if (needsHorizontalScroll) {
+      previewContainer.classList.add('scrollable');
+      
+      // 更新按鈕啟用/禁用狀態
+      leftBtn.disabled = scrollLeft <= 0;
+      rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth - 1;
+    } else {
+      previewContainer.classList.remove('scrollable');
+      leftBtn.disabled = true;
+      rightBtn.disabled = true;
+    }
+  }
+  
+  // 監聽滾動事件更新按鈕狀態
+  previewElement.addEventListener('scroll', updateNavButtons);
+  
+  // 監聽窗口大小變化
+  window.addEventListener('resize', updateNavButtons);
+  
+  // 監聽預覽內容變化（當渲染新內容時）
+  const observer = new MutationObserver(function() {
+    setTimeout(updateNavButtons, 100);
+  });
+  
+  observer.observe(previewElement, {
+    childList: true,
+    subtree: true
+  });
+  
+  // 初始檢查
+  setTimeout(updateNavButtons, 500);
+  
+  console.log('🎮 預覽導航功能已初始化');
 } 

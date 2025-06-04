@@ -219,6 +219,81 @@
             box-sizing: border-box;
             overflow: auto;
             max-height: 500px;
+            position: relative;
+        }
+        
+        /* 🔄 新增：水平滑動支援 */
+        #main-card-preview {
+            overflow-x: auto;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        
+        /* 🎮 新增：左右導航按鈕 */
+        .preview-nav {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .preview-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .preview-nav-btn:hover {
+            background: rgba(76, 175, 80, 1);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .preview-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: translateY(-50%) scale(0.9);
+        }
+        
+        .preview-nav-left {
+            left: -15px;
+        }
+        
+        .preview-nav-right {
+            right: -15px;
+        }
+        
+        /* 導航按鈕初始隱藏 */
+        .preview-nav-btn {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* 當預覽區域hover時顯示導航按鈕 */
+        .preview-container:hover .preview-nav-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* 當內容可滾動時顯示導航按鈕 */
+        .preview-container.scrollable .preview-nav-btn {
+            opacity: 0.7;
+            pointer-events: auto;
+        }
+        
+        .preview-container.scrollable:hover .preview-nav-btn {
+            opacity: 1;
         }
         
         /* JSON區域滑動設置 */
@@ -469,7 +544,13 @@
         </div>
         <div class="preview-section">
             <h2>卡片預覽</h2>
-            <div id="main-card-preview"></div>
+            
+            <!-- 🎮 新增：預覽導航容器 -->
+            <div class="preview-container">
+                <button class="preview-nav-btn preview-nav-left" id="preview-nav-left">‹</button>
+                <button class="preview-nav-btn preview-nav-right" id="preview-nav-right">›</button>
+                <div id="main-card-preview"></div>
+            </div>
             
             <!-- 🎯 宣傳卡片區塊移到右邊 -->
             <div class="promo-section">
