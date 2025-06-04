@@ -585,6 +585,23 @@ function renderPreview() {
     preview.innerHTML = '';
     flex2html('main-card-preview', flexJson);
   }
+  
+  // 🔧 修復：確保預覽渲染後導航按鈕依然可見
+  setTimeout(() => {
+    const leftBtn = document.getElementById('preview-nav-left');
+    const rightBtn = document.getElementById('preview-nav-right');
+    const previewContainer = document.querySelector('.preview-container');
+    
+    if (leftBtn && rightBtn && previewContainer) {
+      leftBtn.style.display = 'block';
+      rightBtn.style.display = 'block';
+      leftBtn.style.opacity = '0.8';
+      rightBtn.style.opacity = '0.8';
+      previewContainer.classList.add('scrollable');
+      console.log('🎮 renderPreview後確保導航按鈕可見');
+    }
+  }, 100);
+  
   renderShareJsonBox();
 }
 
@@ -1705,6 +1722,16 @@ function initPreviewNavigation() {
   // 滑動距離
   const scrollAmount = 200;
   
+  // 🔧 修復：強制按鈕始終可見
+  function ensureButtonsVisible() {
+    leftBtn.style.display = 'block';
+    rightBtn.style.display = 'block';
+    leftBtn.style.opacity = '0.8';
+    rightBtn.style.opacity = '0.8';
+    previewContainer.classList.add('scrollable');
+    console.log('🎮 確保按鈕可見');
+  }
+  
   // 左滑按鈕點擊事件
   leftBtn.addEventListener('click', function() {
     console.log('🔄 左滑按鈕點擊');
@@ -1725,41 +1752,26 @@ function initPreviewNavigation() {
     setTimeout(updateNavButtons, 100);
   });
   
-  // 更新導航按鈕狀態
+  // 🔧 修復：簡化按鈕狀態更新邏輯
   function updateNavButtons() {
-    const { scrollLeft, scrollWidth, clientWidth } = previewElement;
+    // 先確保按鈕可見
+    ensureButtonsVisible();
     
-    // 檢查是否需要顯示導航按鈕
-    const needsHorizontalScroll = scrollWidth > clientWidth;
-    const contentOverflow = scrollWidth > clientWidth + 5; // 5px tolerance
+    const { scrollLeft, scrollWidth, clientWidth } = previewElement;
     
     console.log('🎮 導航按鈕狀態檢查:', {
       scrollLeft,
       scrollWidth,
-      clientWidth,
-      needsHorizontalScroll,
-      contentOverflow
+      clientWidth
     });
     
-    if (contentOverflow) {
-      previewContainer.classList.add('scrollable');
-      leftBtn.style.display = 'block';
-      rightBtn.style.display = 'block';
-      
-      // 更新按鈕啟用/禁用狀態
-      leftBtn.disabled = scrollLeft <= 5;
-      rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth - 5;
-    } else {
-      previewContainer.classList.remove('scrollable');
-      leftBtn.style.display = 'none';
-      rightBtn.style.display = 'none';
-    }
+    // 簡化邏輯：只更新啟用/禁用狀態，不隱藏按鈕
+    leftBtn.disabled = scrollLeft <= 5;
+    rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth - 5;
     
     console.log('🎮 按鈕狀態:', {
       leftDisabled: leftBtn.disabled,
-      rightDisabled: rightBtn.disabled,
-      leftDisplay: leftBtn.style.display,
-      rightDisplay: rightBtn.style.display
+      rightDisabled: rightBtn.disabled
     });
   }
   
@@ -1767,12 +1779,18 @@ function initPreviewNavigation() {
   previewElement.addEventListener('scroll', updateNavButtons);
   
   // 監聽窗口大小變化
-  window.addEventListener('resize', updateNavButtons);
+  window.addEventListener('resize', () => {
+    ensureButtonsVisible();
+    setTimeout(updateNavButtons, 100);
+  });
   
   // 監聽預覽內容變化（當渲染新內容時）
   const observer = new MutationObserver(function() {
-    console.log('🔄 預覽內容變化，更新導航按鈕');
-    setTimeout(updateNavButtons, 200);
+    console.log('🔄 預覽內容變化，確保按鈕可見');
+    setTimeout(() => {
+      ensureButtonsVisible();
+      updateNavButtons();
+    }, 100);
   });
   
   observer.observe(previewElement, {
@@ -1780,20 +1798,11 @@ function initPreviewNavigation() {
     subtree: true
   });
   
-  // 初始檢查
-  setTimeout(() => {
-    console.log('🎮 執行初始導航檢查');
-    updateNavButtons();
-  }, 1000);
+  // 立即顯示按鈕
+  ensureButtonsVisible();
   
-  // 強制顯示按鈕用於測試
-  console.log('🎮 預覽導航功能已初始化，強制顯示按鈕進行測試');
-  setTimeout(() => {
-    leftBtn.style.display = 'block';
-    rightBtn.style.display = 'block';
-    leftBtn.style.opacity = '0.8';
-    rightBtn.style.opacity = '0.8';
-    previewContainer.classList.add('scrollable');
-    console.log('🎮 測試：強制顯示導航按鈕');
-  }, 2000);
+  // 定期確保按鈕可見（防止被其他邏輯隱藏）
+  setInterval(ensureButtonsVisible, 3000);
+  
+  console.log('🎮 預覽導航功能已初始化，按鈕應該始終可見');
 } 
