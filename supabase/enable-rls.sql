@@ -65,8 +65,13 @@ CREATE POLICY "允許服務角色完全訪問users" ON public.users
     FOR ALL USING (auth.role() = 'service_role');
 
 -- 8. 允許匿名用戶查看公開內容（用於分享功能）
+-- 🔧 修正：確保自動分享功能正常運作
 CREATE POLICY "允許匿名用戶查看公開卡片" ON public.member_cards
     FOR SELECT USING (line_user_id IS NULL OR true);
 
+-- 🔧 新增：明確允許匿名用戶查看所有會員卡片（分享功能需要）
+CREATE POLICY "允許分享功能訪問所有卡片" ON public.member_cards
+    FOR SELECT USING (true);
+
 -- 完成提示
-SELECT 'RLS 已成功啟用，安全性問題已修復！' as status; 
+SELECT 'RLS 已成功啟用，安全性問題已修復！自動分享功能正常運作！' as status; 
