@@ -16,34 +16,25 @@
             margin: 0;
             padding: 0;
         }
+        
+        /* 🔄 修改：單欄垂直布局 */
         .container { 
-            max-width: 1400px;
+            max-width: 800px;
             margin: 32px auto;
             padding: 0 16px;
-            display: flex;
-            gap: 32px;
         }
-        .form-section { 
-            flex: 1;
+        
+        /* 🔄 修改：統一的區塊樣式 */
+        .form-section,
+        .promo-section,
+        .preview-section { 
             background: #fff; 
             padding: 24px; 
             border-radius: 8px; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             margin-bottom: 24px;
-            max-height: 95vh;
-            overflow-y: auto;
         }
-        .preview-section { 
-            flex: 0 0 600px;
-            background: #fff; 
-            padding: 24px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            min-height: 900px;
-            max-height: 95vh;
-            overflow-y: auto;
-            display: block;
-        }
+        
         .form-group { 
             margin-bottom: 16px; 
         }
@@ -68,6 +59,8 @@
             outline: none;
             box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
         }
+        
+        /* 🎨 宣傳卡片區塊樣式 */
         .promo-list { 
             display: flex; 
             gap: 8px; 
@@ -115,6 +108,122 @@
         .sort-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+        
+        .promo-controls {
+            margin-bottom: 16px;
+        }
+        
+        .promo-selector {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        
+        .promo-selected {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px;
+            background: #fafafa;
+        }
+        
+        /* 💻 預覽區域樣式優化 */
+        .preview-container {
+            position: relative;
+            margin: 16px 0;
+        }
+        
+        /* 🔧 修正flex2html預覽：參考作者原始實現 */
+        #main-card-preview {
+            max-width: 380px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        /* 移除所有可能干擾flex2html的樣式 */
+        #main-card-preview .flx-message {
+            margin: 0 !important;
+            transform: none !important;
+            zoom: 1 !important;
+            scale: 1 !important;
+        }
+        
+        #main-card-preview .flx-bubble,
+        #main-card-preview .flx-carousel,
+        #main-card-preview .flx-carousel-item {
+            transform: none !important;
+            zoom: 1 !important;
+            scale: 1 !important;
+        }
+        
+        /* 預覽導航按鈕 */
+        .preview-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.8;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+        
+        .preview-nav-btn:hover {
+            opacity: 1;
+            background: rgba(0,0,0,0.8);
+        }
+        
+        .preview-nav-left {
+            left: -20px;
+        }
+        
+        .preview-nav-right {
+            right: -20px;
+        }
+        
+        /* JSON區域樣式 */
+        #shareJsonBox {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        #shareJsonBox h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        
+        #shareJsonBox pre {
+            font-size: 11px;
+            line-height: 1.3;
+            user-select: text;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #fff;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            overflow: auto;
+            max-height: 400px;
+            margin: 0;
         }
         
         /* 載入中狀態 */
@@ -200,208 +309,42 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
+        /* 圖片預覽樣式 */
         .image-preview {
-            max-width: 80px;
-            max-height: 80px;
+            max-width: 200px;
+            max-height: 200px;
             margin-top: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             display: none;
         }
-        
-        /* 🎯 修復預覽縮小問題：確保FLEX消息100%正常呈現 */
-        #main-card-preview {
-            width: 100%;
-            max-width: 450px;
-            min-height: 400px;
-            margin: 0 auto 20px auto;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 16px;
-            box-sizing: border-box;
-            overflow: auto;
-            max-height: 500px;
-            position: relative;
+        .image-preview.show {
+            display: block;
         }
         
-        /* 🔄 新增：水平滑動支援 */
-        #main-card-preview {
-            overflow-x: auto;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-        }
-        
-        /* 🎮 新增：左右導航按鈕 */
-        .preview-nav {
-            position: relative;
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .preview-nav-btn {
+        /* JSON複製按鈕 */
+        .json-copy-btn {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(76, 175, 80, 0.9);
+            top: 8px;
+            right: 8px;
+            background: #4caf50;
             color: white;
             border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 18px;
-            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
             cursor: pointer;
-            z-index: 10;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            opacity: 0.8;
-            pointer-events: auto;
         }
         
-        .preview-nav-btn:hover {
-            background: rgba(76, 175, 80, 1);
-            transform: translateY(-50%) scale(1.1);
-            opacity: 1;
-        }
-        
-        .preview-nav-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: translateY(-50%) scale(0.9);
-        }
-        
-        .preview-nav-left {
-            left: -15px;
-        }
-        
-        .preview-nav-right {
-            right: -15px;
-        }
-        
-        /* 確保預覽容器有足夠的相對定位 */
-        .preview-container {
-            position: relative;
-            margin: 10px 0;
-        }
-        
-        /* 當內容可滾動時增強按鈕可見性 */
-        .preview-container.scrollable .preview-nav-btn {
-            opacity: 0.9;
-        }
-        
-        .preview-container.scrollable:hover .preview-nav-btn {
-            opacity: 1;
-        }
-        
-        /* JSON區域滑動設置 */
-        #shareJsonBox {
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
-        
-        #shareJsonBox h3 {
-            margin: 0 0 12px 0;
-            font-size: 16px;
+        /* 區塊標題樣式 */
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
             color: #333;
-            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 16px;
             padding-bottom: 8px;
-        }
-        
-        #shareJsonBox pre {
-            font-size: 11px;
-            line-height: 1.3;
-            user-select: text;
-            white-space: pre-wrap;
-            word-break: break-all;
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            overflow: auto;
-            max-height: 300px;
-            margin: 0;
-        }
-        
-        /* 強制覆蓋flex2html的縮放，確保100%顯示 */
-        #main-card-preview .flx-message,
-        #main-card-preview .flx-bubble,
-        #main-card-preview .flx-carousel,
-        #main-card-preview .flx-carousel-item {
-            transform: none !important;
-            zoom: 1 !important;
-            scale: 1 !important;
-            width: 100% !important;
-            max-width: 380px !important;
-        }
-        
-        /* 確保圖片和內容正常顯示 */
-        #main-card-preview img {
-            transform: none !important;
-            zoom: 1 !important;
-            scale: 1 !important;
-        }
-        
-        /* 移除所有可能的縮放樣式 */
-        #main-card-preview [style*="transform"],
-        #main-card-preview [style*="zoom"],
-        #main-card-preview [style*="scale"] {
-            transform: none !important;
-            zoom: 1 !important;
-            scale: 1 !important;
-        }
-        
-        /* 宣傳卡片區塊移到右邊預覽區域 */
-        .promo-section {
-            margin-top: 20px;
-            margin-bottom: 20px;
-            padding-top: 20px;
-            border-top: 2px solid #e0e0e0;
-        }
-        
-        .promo-section h3 {
-            margin: 0 0 16px 0;
-            font-size: 18px;
-            color: #333;
-        }
-        
-        .promo-controls {
-            margin-bottom: 16px;
-        }
-        
-        .promo-selector {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-bottom: 16px;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            padding: 8px;
-        }
-        
-        .promo-selected {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            padding: 8px;
-            background: #fafafa;
-        }
-        
-        /* 響應式設計：小螢幕時改為垂直佈局 */
-        @media (max-width: 1200px) {
-            .container {
-                flex-direction: column;
-                max-width: 800px;
-            }
-            .preview-section {
-                flex: none;
-                min-height: 600px;
-                max-height: 80vh;
-            }
-            #main-card-preview {
-                max-height: 400px;
-            }
-            #shareJsonBox pre {
-                max-height: 150px;
-            }
+            border-bottom: 2px solid #4caf50;
         }
     </style>
 </head>
@@ -409,9 +352,13 @@
     <div style="position:fixed;top:0;right:0;z-index:1000;padding:12px 24px 0 0;text-align:right;">
         <span id="liffUserInfo" style="display:inline-flex;align-items:center;gap:8px;"></span>
     </div>
+    
     <h1 style="text-align:center; margin-top:24px;">我專屬的會員卡片</h1>
+    
     <div class="container">
+        <!-- 📝 第一區：基本資料 -->
         <div class="form-section">
+            <h2 class="section-title">📝 基本資料設定</h2>
             <div class="liff-user" id="liffUser"></div>
             <form id="cardForm">
                 <div class="form-group">
@@ -538,34 +485,39 @@
                 <button type="submit" class="save-button">儲存卡片</button>
             </form>
         </div>
+        
+        <!-- 🎨 第二區：附加卡片 -->
+        <div class="promo-section">
+            <h2 class="section-title">🎨 附加卡片管理</h2>
+            <div class="promo-controls">
+                <button type="button" id="toggle-promo-selector" style="padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;">點選加入 &gt;&gt;</button>
+            </div>
+            <div class="promo-selector">
+                <div id="promo-card-selector" class="promo-list" style="display:none;"></div>
+            </div>
+            <div class="promo-selected">
+                <div style="margin:12px 0;text-align:center;color:#666;font-size:14px;">📱 拖拉卡片左右排序</div>
+                <div id="promo-cards" class="promo-list"></div>
+            </div>
+        </div>
+
+        <!-- 👀 第三區：預覽區域 -->
         <div class="preview-section">
-            <h2>卡片預覽</h2>
-            
-            <!-- 🎮 新增：預覽導航容器 -->
+            <h2 class="section-title">👀 卡片預覽</h2>
             <div class="preview-container">
                 <button class="preview-nav-btn preview-nav-left" id="preview-nav-left">‹</button>
                 <button class="preview-nav-btn preview-nav-right" id="preview-nav-right">›</button>
                 <div id="main-card-preview"></div>
             </div>
-            
-            <!-- 🎯 宣傳卡片區塊移到右邊 -->
-            <div class="promo-section">
-                <h3>🎨 選擇宣傳卡片</h3>
-                <div class="promo-controls">
-                    <button type="button" id="toggle-promo-selector" style="padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;">點選加入 &gt;&gt;</button>
-                </div>
-                <div class="promo-selector">
-                    <div id="promo-card-selector" class="promo-list" style="display:none;"></div>
-                </div>
-                <div class="promo-selected">
-                    <div style="margin:12px 0;text-align:center;color:#666;font-size:14px;">📱 拖拉卡片左右排序</div>
-                    <div id="promo-cards" class="promo-list"></div>
-                </div>
-            </div>
-            
+        </div>
+        
+        <!-- 💾 第四區：JSON資料 -->
+        <div class="preview-section">
+            <h2 class="section-title">💾 JSON 資料</h2>
             <div id="shareJsonBox"></div>
         </div>
     </div>
+    
     <script src="js/member-card-simple.js"></script>
 </body>
 </html> 
