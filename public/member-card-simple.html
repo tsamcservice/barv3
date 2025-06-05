@@ -138,29 +138,24 @@
             margin: 16px 0;
         }
         
-        /* 🔧 修正flex2html預覽：參考作者原始實現 */
+        /* 🔧 修正flex2html預覽：使用chatbox容器 */
         #main-card-preview {
-            max-width: 380px;
+            /* 使用chatbox樣式來配合flex2html.css */
+            position: relative;
             margin: 0 auto;
-            background: #fff;
+            background: transparent;
+            min-height: 200px;
+        }
+        
+        /* 確保chatbox內的內容正常顯示 */
+        #main-card-preview .chatbox {
+            background-color: #849ebf;
+            width: 100%;
+            max-width: 380px;
+            height: auto;
+            margin: 0 auto;
+            padding: 20px 0;
             border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        /* 移除所有可能干擾flex2html的樣式 */
-        #main-card-preview .flx-message {
-            margin: 0 !important;
-            transform: none !important;
-            zoom: 1 !important;
-            scale: 1 !important;
-        }
-        
-        #main-card-preview .flx-bubble,
-        #main-card-preview .flx-carousel,
-        #main-card-preview .flx-carousel-item {
-            transform: none !important;
-            zoom: 1 !important;
-            scale: 1 !important;
         }
         
         /* 預覽導航按鈕 */
@@ -507,7 +502,11 @@
             <div class="preview-container">
                 <button class="preview-nav-btn preview-nav-left" id="preview-nav-left">‹</button>
                 <button class="preview-nav-btn preview-nav-right" id="preview-nav-right">›</button>
-                <div id="main-card-preview"></div>
+                <div id="main-card-preview">
+                    <div class="chatbox">
+                        <!-- flex2html內容將插入這裡 -->
+                    </div>
+                </div>
             </div>
         </div>
         

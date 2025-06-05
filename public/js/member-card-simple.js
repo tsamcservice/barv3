@@ -570,9 +570,22 @@ function renderPreview() {
         contents: flexArr
       }
     };
+    
+    // 🔧 修正：使用chatbox容器進行flex2html渲染
     const preview = document.getElementById('main-card-preview');
-    preview.innerHTML = '';
-    flex2html('main-card-preview', flexJson);
+    let chatbox = preview.querySelector('.chatbox');
+    if (!chatbox) {
+      chatbox = document.createElement('div');
+      chatbox.className = 'chatbox';
+      preview.appendChild(chatbox);
+    }
+    chatbox.innerHTML = '';
+    
+    // 創建一個臨時ID並渲染
+    const tempId = 'temp-chatbox-' + Date.now();
+    chatbox.id = tempId;
+    flex2html(tempId, flexJson);
+    
   } else {
     // 單卡片：只渲染主卡片
     const bubble = getMainBubble(getFormData());
@@ -581,9 +594,21 @@ function renderPreview() {
       altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
       contents: bubble
     };
+    
+    // 🔧 修正：使用chatbox容器進行flex2html渲染
     const preview = document.getElementById('main-card-preview');
-    preview.innerHTML = '';
-    flex2html('main-card-preview', flexJson);
+    let chatbox = preview.querySelector('.chatbox');
+    if (!chatbox) {
+      chatbox = document.createElement('div');
+      chatbox.className = 'chatbox';
+      preview.appendChild(chatbox);
+    }
+    chatbox.innerHTML = '';
+    
+    // 創建一個臨時ID並渲染
+    const tempId = 'temp-chatbox-' + Date.now();
+    chatbox.id = tempId;
+    flex2html(tempId, flexJson);
   }
   
   // 🔧 修復：確保預覽渲染後導航按鈕依然可見
@@ -1656,9 +1681,22 @@ function updatePreviewWithPromoSortable() {
       }
     };
   }
+  
+  // 🔧 修正：使用chatbox容器進行flex2html渲染
   const preview = document.getElementById('main-card-preview');
-  preview.innerHTML = '';
-  flex2html('main-card-preview', flexJson);
+  let chatbox = preview.querySelector('.chatbox');
+  if (!chatbox) {
+    chatbox = document.createElement('div');
+    chatbox.className = 'chatbox';
+    preview.appendChild(chatbox);
+  }
+  chatbox.innerHTML = '';
+  
+  // 創建一個臨時ID並渲染
+  const tempId = 'temp-chatbox-' + Date.now();
+  chatbox.id = tempId;
+  flex2html(tempId, flexJson);
+  
   renderShareJsonBox();
 }
 
