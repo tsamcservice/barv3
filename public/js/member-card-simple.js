@@ -611,22 +611,6 @@ function renderPreview() {
     flex2html(tempId, flexJson);
   }
   
-  // 🔧 修復：確保預覽渲染後導航按鈕依然可見
-  setTimeout(() => {
-    const leftBtn = document.getElementById('preview-nav-left');
-    const rightBtn = document.getElementById('preview-nav-right');
-    const previewContainer = document.querySelector('.preview-container');
-    
-    if (leftBtn && rightBtn && previewContainer) {
-      leftBtn.style.display = 'block';
-      rightBtn.style.display = 'block';
-      leftBtn.style.opacity = '0.8';
-      rightBtn.style.opacity = '0.8';
-      previewContainer.classList.add('scrollable');
-      console.log('🎮 renderPreview後確保導航按鈕可見');
-    }
-  }, 100);
-  
   renderShareJsonBox();
 }
 

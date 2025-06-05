@@ -138,55 +138,60 @@
             margin: 16px 0;
         }
         
-        /* 🔧 修正flex2html預覽：使用chatbox容器 */
+        /* 🔧 修正flex2html預覽：固定尺寸避免壓縮 */
         #main-card-preview {
-            /* 使用chatbox樣式來配合flex2html.css */
             position: relative;
             margin: 0 auto;
             background: transparent;
-            min-height: 200px;
+            /* 🔧 增大預覽區域以適應組合卡片 */
+            min-height: 300px;
+            width: 100%;
+            max-width: 500px; /* 增大最大寬度 */
+            /* 🔧 添加水平滑動功能 */
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch; /* iOS滑動優化 */
         }
         
         /* 確保chatbox內的內容正常顯示 */
         #main-card-preview .chatbox {
             background-color: #849ebf;
             width: 100%;
-            max-width: 380px;
+            min-width: 450px; /* 🔧 增大最小寬度 */
             height: auto;
+            min-height: 280px; /* 🔧 增大最小高度 */
             margin: 0 auto;
-            padding: 20px 0;
+            padding: 25px 10px; /* 🔧 增加內邊距 */
             border-radius: 8px;
+            /* 🔧 手機版固定尺寸避免壓縮 */
+            box-sizing: border-box;
         }
         
-        /* 預覽導航按鈕 */
-        .preview-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0,0,0,0.6);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 18px;
-            cursor: pointer;
-            opacity: 0.8;
-            z-index: 10;
-            transition: all 0.3s ease;
+        /* 🔧 手機版特別優化 */
+        @media (max-width: 768px) {
+            #main-card-preview {
+                max-width: 100%;
+                min-height: 280px;
+            }
+            
+            #main-card-preview .chatbox {
+                min-width: 350px; /* 手機版最小寬度 */
+                min-height: 250px; /* 手機版最小高度 */
+                padding: 20px 8px;
+            }
         }
         
-        .preview-nav-btn:hover {
-            opacity: 1;
-            background: rgba(0,0,0,0.8);
-        }
-        
-        .preview-nav-left {
-            left: -20px;
-        }
-        
-        .preview-nav-right {
-            right: -20px;
+        /* 🔧 平板版優化 */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            #main-card-preview {
+                max-width: 480px;
+            }
+            
+            #main-card-preview .chatbox {
+                min-width: 420px;
+                min-height: 260px;
+            }
         }
         
         /* JSON區域樣式 */
@@ -500,8 +505,6 @@
         <div class="preview-section">
             <h2 class="section-title">👀 卡片預覽</h2>
             <div class="preview-container">
-                <button class="preview-nav-btn preview-nav-left" id="preview-nav-left">‹</button>
-                <button class="preview-nav-btn preview-nav-right" id="preview-nav-right">›</button>
                 <div id="main-card-preview">
                     <div class="chatbox">
                         <!-- flex2html內容將插入這裡 -->
