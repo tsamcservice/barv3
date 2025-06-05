@@ -144,53 +144,61 @@
             margin: 0 auto;
             background: transparent;
             /* 🔧 增大預覽區域以適應組合卡片 */
-            min-height: 300px;
+            min-height: 320px; /* 增加高度 */
             width: 100%;
-            max-width: 500px; /* 增大最大寬度 */
+            max-width: 520px; /* 增大最大寬度 */
             /* 🔧 添加水平滑動功能 */
             overflow-x: auto;
             overflow-y: hidden;
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch; /* iOS滑動優化 */
+            /* 🔧 確保滑動區域可見 */
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
         }
         
         /* 確保chatbox內的內容正常顯示 */
         #main-card-preview .chatbox {
             background-color: #849ebf;
             width: 100%;
-            min-width: 450px; /* 🔧 增大最小寬度 */
+            min-width: 480px; /* 🔧 進一步增大最小寬度 */
             height: auto;
-            min-height: 280px; /* 🔧 增大最小高度 */
+            min-height: 300px; /* 🔧 進一步增大最小高度 */
             margin: 0 auto;
-            padding: 25px 10px; /* 🔧 增加內邊距 */
+            padding: 28px 12px; /* 🔧 增加內邊距 */
             border-radius: 8px;
             /* 🔧 手機版固定尺寸避免壓縮 */
             box-sizing: border-box;
         }
         
-        /* 🔧 手機版特別優化 */
+        /* 🔧 手機版特別優化 - 進一步增大尺寸 */
         @media (max-width: 768px) {
             #main-card-preview {
                 max-width: 100%;
-                min-height: 280px;
+                min-height: 300px;
+                /* 🔧 強制水平滑動 */
+                overflow-x: scroll;
             }
             
             #main-card-preview .chatbox {
-                min-width: 350px; /* 手機版最小寬度 */
-                min-height: 250px; /* 手機版最小高度 */
-                padding: 20px 8px;
+                min-width: 400px; /* 手機版最小寬度再增加 */
+                min-height: 300px; /* 手機版最小高度再增加 */
+                padding: 25px 12px; /* 增加內邊距 */
+                /* 🔧 防止壓縮的關鍵設定 */
+                flex-shrink: 0;
+                width: 400px; /* 固定寬度增加 */
             }
         }
         
         /* 🔧 平板版優化 */
         @media (min-width: 769px) and (max-width: 1024px) {
             #main-card-preview {
-                max-width: 480px;
+                max-width: 500px;
             }
             
             #main-card-preview .chatbox {
-                min-width: 420px;
-                min-height: 260px;
+                min-width: 460px;
+                min-height: 290px;
             }
         }
         
