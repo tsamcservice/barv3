@@ -144,53 +144,94 @@
             margin: 0 auto;
             background: transparent;
             /* 🔧 增大預覽區域以適應組合卡片 */
-            min-height: 300px;
+            min-height: 320px;
             width: 100%;
-            max-width: 500px; /* 增大最大寬度 */
-            /* 🔧 添加水平滑動功能 */
+            max-width: 600px; /* 🔧 進一步增大容器寬度 */
+            /* 🔧 強化水平滑動功能 */
             overflow-x: auto;
             overflow-y: hidden;
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch; /* iOS滑動優化 */
+            /* 🔧 確保滑動區域可見 */
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            /* 🔧 新增：確保滑動軌跡可見 */
+            scrollbar-width: thin;
+            scrollbar-color: #4caf50 #f1f1f1;
+        }
+        
+        /* 🔧 WebKit 瀏覽器的滑動軌跡樣式 */
+        #main-card-preview::-webkit-scrollbar {
+            height: 8px;
+        }
+        #main-card-preview::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        #main-card-preview::-webkit-scrollbar-thumb {
+            background: #4caf50;
+            border-radius: 4px;
+        }
+        #main-card-preview::-webkit-scrollbar-thumb:hover {
+            background: #45a049;
         }
         
         /* 確保chatbox內的內容正常顯示 */
         #main-card-preview .chatbox {
             background-color: #849ebf;
-            width: 100%;
-            min-width: 450px; /* 🔧 增大最小寬度 */
+            /* 🔧 關鍵修改：固定寬度550px，不再使用min-width */
+            width: 550px; /* 固定寬度確保不壓縮 */
             height: auto;
-            min-height: 280px; /* 🔧 增大最小高度 */
-            margin: 0 auto;
-            padding: 25px 10px; /* 🔧 增加內邊距 */
+            min-height: 300px;
+            margin: 0; /* 🔧 移除auto居中，讓滑動正常 */
+            padding: 25px 12px;
             border-radius: 8px;
-            /* 🔧 手機版固定尺寸避免壓縮 */
+            /* 🔧 防止任何形式的縮放或壓縮 */
+            flex-shrink: 0;
             box-sizing: border-box;
         }
         
-        /* 🔧 手機版特別優化 */
+        /* 🔧 手機版特別優化 - 確保550px寬度 */
         @media (max-width: 768px) {
             #main-card-preview {
-                max-width: 100%;
-                min-height: 280px;
+                max-width: 100%; /* 容器可以是手機全寬 */
+                min-height: 320px;
+                /* 🔧 確保水平滑動 */
+                overflow-x: scroll; /* 強制顯示滑動條 */
             }
             
             #main-card-preview .chatbox {
-                min-width: 350px; /* 手機版最小寬度 */
-                min-height: 250px; /* 手機版最小高度 */
-                padding: 20px 8px;
+                /* 🔧 手機版維持550px固定寬度 */
+                width: 550px; /* 超出手機寬度，可滑動查看 */
+                min-height: 320px;
+                padding: 25px 12px;
+                /* 🔧 關鍵：防止任何壓縮 */
+                flex-shrink: 0;
+                transform: none; /* 防止任何變形 */
             }
         }
         
         /* 🔧 平板版優化 */
         @media (min-width: 769px) and (max-width: 1024px) {
             #main-card-preview {
-                max-width: 480px;
+                max-width: 600px;
             }
             
             #main-card-preview .chatbox {
-                min-width: 420px;
-                min-height: 260px;
+                width: 550px; /* 平板版也使用550px */
+                min-height: 300px;
+            }
+        }
+        
+        /* 🔧 電腦版優化 */
+        @media (min-width: 1025px) {
+            #main-card-preview {
+                max-width: 600px;
+            }
+            
+            #main-card-preview .chatbox {
+                width: 550px; /* 電腦版也使用550px，可滑動查看組合卡片 */
+                min-height: 300px;
             }
         }
         
