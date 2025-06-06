@@ -1208,9 +1208,13 @@ async function shareToLine() {
   // 顯示分享準備提示
   alert('🚀 準備分享會員卡至LINE\n\n⚠️ 請勿封鎖跳出視窗');
   
+  // 顯示載入動畫
+  showShareLoading();
+  
   try {
     await liff.init({ liffId });
     if (!liff.isLoggedIn()) {
+      hideShareLoading();
       liff.login();
       return;
     }
@@ -1325,15 +1329,18 @@ async function shareToLine() {
     console.log('📤 分享清理後的FLEX JSON');
     await liff.shareTargetPicker([cleanFlexJson])
       .then(() => {
+        hideShareLoading();
         alert('✅ 分享會員卡成功！\n\n📝 請記得關閉本會員卡編修頁面');
         closeOrRedirect();
       })
       .catch((error) => {
+        hideShareLoading();
         console.log('分享取消或失敗:', error);
         // 不顯示錯誤訊息，因為用戶可能主動取消分享
         closeOrRedirect();
       });
   } catch (err) {
+    hideShareLoading();
     alert('儲存或分享失敗: ' + err.message);
   }
 }
@@ -1846,6 +1853,58 @@ function initPreviewNavigation() {
   console.log('🎮 預覽導航功能已初始化，按鈕應該始終可見');
 }
 
+// 💫 分享載入動畫功能
+function showShareLoading() {
+  // 創建載入遮罩
+  let loadingOverlay = document.getElementById('shareLoadingOverlay');
+  if (!loadingOverlay) {
+    loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'shareLoadingOverlay';
+    loadingOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 18px;
+    `;
+    
+    loadingOverlay.innerHTML = `
+      <div style="text-align: center;">
+        <div style="width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid #4caf50; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+        <div>🎨 卡片製作中...</div>
+        <div style="font-size: 14px; margin-top: 10px; color: #ccc;">請稍候，正在準備您的會員卡</div>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    `;
+    
+    document.body.appendChild(loadingOverlay);
+  }
+  
+  loadingOverlay.style.display = 'flex';
+  console.log('✨ 顯示分享載入動畫');
+}
+
+function hideShareLoading() {
+  const loadingOverlay = document.getElementById('shareLoadingOverlay');
+  if (loadingOverlay) {
+    loadingOverlay.style.display = 'none';
+  }
+  console.log('✨ 隱藏分享載入動畫');
+}
+
 // 📸 圖片庫選擇功能
 let currentSelectTarget = null; // 當前要設定圖片的目標
 
@@ -1914,10 +1973,25 @@ async function showImageLibrary() {
     
     // 獲取用戶圖片列表
     const response = await fetch(`/api/uploaded-images?userId=${liffProfile.userId}`);
-    const result = await response.json();
+    
+    // 檢查響應狀態
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    // 嘗試解析JSON
+    let result;
+    try {
+      result = await response.json();
+    } catch (parseError) {
+      console.error('解析響應失敗:', parseError);
+      const responseText = await response.text();
+      console.error('原始響應:', responseText);
+      throw new Error('API回傳格式錯誤，請檢查伺服器設定');
+    }
     
     if (!result.success) {
-      throw new Error(result.message);
+      throw new Error(result.message || 'API回傳失敗狀態');
     }
     
     const images = result.data || [];
@@ -1939,7 +2013,24 @@ async function showImageLibrary() {
     
   } catch (error) {
     console.error('載入圖片庫失敗:', error);
-    grid.innerHTML = '<div style="text-align:center;padding:20px;color:#f44336;">❌ 載入失敗<br>' + error.message + '</div>';
+    
+    // 提供更詳細的錯誤信息和解決方案
+    let errorMessage = error.message;
+    if (errorMessage.includes('API回傳格式錯誤')) {
+      errorMessage += '<br><small>建議：檢查Supabase設定或稍後再試</small>';
+    } else if (errorMessage.includes('HTTP 404')) {
+      errorMessage = '圖片庫API未找到<br><small>請確認系統已正確部署</small>';
+    } else if (errorMessage.includes('HTTP 500')) {
+      errorMessage = '伺服器錯誤<br><small>請稍後再試或聯繫管理員</small>';
+    }
+    
+    grid.innerHTML = `
+      <div style="text-align:center;padding:20px;color:#f44336;">
+        ❌ 載入失敗<br>
+        ${errorMessage}<br>
+        <button onclick="showImageLibrary()" style="margin-top:10px;padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;">重試</button>
+      </div>
+    `;
   }
 }
 
