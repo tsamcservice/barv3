@@ -1204,6 +1204,10 @@ window.moveCardRight = function(idx) {
 // 重構 shareToLine
 async function shareToLine() {
   if (!window.liff) return alert('LIFF 未載入');
+  
+  // 顯示分享準備提示
+  alert('🚀 準備分享會員卡至LINE\n\n⚠️ 請勿封鎖跳出視窗');
+  
   try {
     await liff.init({ liffId });
     if (!liff.isLoggedIn()) {
@@ -1320,8 +1324,15 @@ async function shareToLine() {
     const cleanFlexJson = cleanFlexJsonForShare(flexJson);
     console.log('📤 分享清理後的FLEX JSON');
     await liff.shareTargetPicker([cleanFlexJson])
-      .then(closeOrRedirect)
-      .catch(closeOrRedirect);
+      .then(() => {
+        alert('✅ 分享會員卡成功！\n\n📝 請記得關閉本會員卡編修頁面');
+        closeOrRedirect();
+      })
+      .catch((error) => {
+        console.log('分享取消或失敗:', error);
+        // 不顯示錯誤訊息，因為用戶可能主動取消分享
+        closeOrRedirect();
+      });
   } catch (err) {
     alert('儲存或分享失敗: ' + err.message);
   }
@@ -1446,7 +1457,7 @@ window.addEventListener('DOMContentLoaded', function() {
         console.log('✅ 儲存成功:', result);
         
         // 顯示成功訊息
-        alert('🎉 會員卡儲存成功！');
+        alert('🎉 會員卡儲存成功！\n\n📝 請記得關閉本會員卡編修頁面');
         
         // 更新預覽
         renderPreview();
@@ -1474,6 +1485,9 @@ window.addEventListener('DOMContentLoaded', function() {
   bindImageUpload('calendar_image_upload', 'calendar_image_upload_btn', 'calendar_image_preview', 'calendar_image_url');
   bindImageUpload('love_icon_upload', 'love_icon_upload_btn', 'love_icon_preview', 'love_icon_url');
   bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url');
+  
+  // 5. 綁定圖片選擇功能
+  bindImageSelect('main_image_select_btn', 'main_image_url', 'main_image_preview');
 
   // 5. 展開/收合宣傳卡片選擇區塊
   const toggleBtn = document.getElementById('toggle-promo-selector');
@@ -1495,6 +1509,9 @@ window.addEventListener('DOMContentLoaded', function() {
   
   // 7. 🎮 新增：初始化預覽區域左右滑動導航
   initPreviewNavigation();
+  
+  // 8. 初始化圖片庫模態框
+  initImageLibraryModal();
   
   console.log('✅ DOMContentLoaded: 初始化完成');
 });
@@ -1827,4 +1844,128 @@ function initPreviewNavigation() {
   setInterval(ensureButtonsVisible, 3000);
   
   console.log('🎮 預覽導航功能已初始化，按鈕應該始終可見');
+}
+
+// 📸 圖片庫選擇功能
+let currentSelectTarget = null; // 當前要設定圖片的目標
+
+function bindImageSelect(selectBtnId, urlInputId, previewId) {
+  const selectBtn = document.getElementById(selectBtnId);
+  const urlInput = document.getElementById(urlInputId);
+  const preview = document.getElementById(previewId);
+  
+  if (selectBtn) {
+    selectBtn.addEventListener('click', function() {
+      // 記錄目標欄位
+      currentSelectTarget = {
+        urlInput: urlInput,
+        preview: preview
+      };
+      
+      // 顯示圖片庫模態框
+      showImageLibrary();
+    });
+  }
+}
+
+function initImageLibraryModal() {
+  const modal = document.getElementById('imageLibraryModal');
+  const closeBtn = modal.querySelector('.close-modal');
+  
+  if (!modal || !closeBtn) {
+    console.log('圖片庫模態框元素未找到');
+    return;
+  }
+  
+  // 關閉按鈕事件
+  closeBtn.addEventListener('click', hideImageLibrary);
+  
+  // 點擊背景關閉
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+      hideImageLibrary();
+    }
+  });
+  
+  console.log('✅ 圖片庫模態框已初始化');
+}
+
+async function showImageLibrary() {
+  const modal = document.getElementById('imageLibraryModal');
+  const grid = document.getElementById('imageLibraryGrid');
+  
+  if (!modal || !grid) {
+    alert('圖片庫功能載入失敗');
+    return;
+  }
+  
+  // 顯示模態框
+  modal.style.display = 'block';
+  
+  // 顯示載入中
+  grid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">📸 載入圖片庫中...</div>';
+  
+  try {
+    // 檢查是否已登入
+    if (!liffProfile.userId) {
+      grid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">❌ 請先登入 LINE</div>';
+      return;
+    }
+    
+    // 獲取用戶圖片列表
+    const response = await fetch(`/api/uploaded-images?userId=${liffProfile.userId}`);
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    
+    const images = result.data || [];
+    
+    if (images.length === 0) {
+      grid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">📷 暫無已上傳的圖片<br><small>請先上傳圖片後再使用此功能</small></div>';
+      return;
+    }
+    
+    // 渲染圖片列表
+    grid.innerHTML = images.map(img => `
+      <div class="image-library-item" onclick="selectImage('${img.url}')">
+        <img src="${img.url}" alt="${img.name}" loading="lazy">
+        <div class="name">${img.name}</div>
+      </div>
+    `).join('');
+    
+    console.log(`✅ 載入了 ${images.length} 張圖片`);
+    
+  } catch (error) {
+    console.error('載入圖片庫失敗:', error);
+    grid.innerHTML = '<div style="text-align:center;padding:20px;color:#f44336;">❌ 載入失敗<br>' + error.message + '</div>';
+  }
+}
+
+function hideImageLibrary() {
+  const modal = document.getElementById('imageLibraryModal');
+  modal.style.display = 'none';
+  currentSelectTarget = null;
+}
+
+function selectImage(imageUrl) {
+  if (currentSelectTarget) {
+    // 設定URL到目標欄位
+    currentSelectTarget.urlInput.value = imageUrl;
+    
+    // 更新預覽圖片
+    setImageUserStyle(currentSelectTarget.preview, imageUrl);
+    
+    // 觸發預覽更新
+    renderPreview();
+    renderShareJsonBox();
+    
+    // 關閉模態框
+    hideImageLibrary();
+    
+    // 提示成功
+    console.log('✅ 已選擇圖片:', imageUrl);
+    alert('✅ 圖片選擇成功！');
+  }
 } 
