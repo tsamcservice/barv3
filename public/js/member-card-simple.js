@@ -1495,6 +1495,8 @@ window.addEventListener('DOMContentLoaded', function() {
   
   // 5. 綁定圖片選擇功能
   bindImageSelect('main_image_select_btn', 'main_image_url', 'main_image_preview');
+  bindImageSelect('snow_image_select_btn', 'snow_image_url', 'snow_image_preview');
+  bindImageSelect('member_image_select_btn', 'member_image_url', 'member_image_preview');
 
   // 5. 展開/收合宣傳卡片選擇區塊
   const toggleBtn = document.getElementById('toggle-promo-selector');
@@ -2002,12 +2004,24 @@ async function showImageLibrary() {
     }
     
     // 渲染圖片列表
-    grid.innerHTML = images.map(img => `
-      <div class="image-library-item" onclick="selectImage('${img.url}')">
-        <img src="${img.url}" alt="${img.name}" loading="lazy">
-        <div class="name">${img.name}</div>
-      </div>
-    `).join('');
+    grid.innerHTML = images.map(img => {
+      if (img.type === 'placeholder' || !img.url) {
+        return `
+          <div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">
+            📷 ${img.name}<br>
+            <small>請先上傳並使用圖片，然後就可以在此重複選擇</small>
+          </div>
+        `;
+      }
+      
+      return `
+        <div class="image-library-item" onclick="selectImage('${img.url}')">
+          <img src="${img.url}" alt="${img.name}" loading="lazy" 
+               onerror="this.parentElement.innerHTML='<div style=\\'text-align:center;padding:20px;color:#999;\\'>圖片載入失敗<br><small>${img.name}</small></div>'">
+          <div class="name">${img.name}</div>
+        </div>
+      `;
+    }).join('');
     
     console.log(`✅ 載入了 ${images.length} 張圖片`);
     
