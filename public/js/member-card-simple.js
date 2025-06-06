@@ -1968,31 +1968,44 @@ async function showImageLibrary() {
   
   try {
     // 檢查是否已登入
+    console.log('🔍 圖片庫調試: 檢查登入狀態');
+    console.log('🔍 liffProfile:', liffProfile);
+    
     if (!liffProfile.userId) {
+      console.error('❌ 用戶未登入');
       grid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">❌ 請先登入 LINE</div>';
       return;
     }
     
+    console.log('🔍 用戶ID:', liffProfile.userId);
+    
     // 獲取用戶圖片列表
-    const response = await fetch(`/api/uploaded-images?userId=${liffProfile.userId}`);
+    const apiUrl = `/api/uploaded-images?userId=${liffProfile.userId}`;
+    console.log('🔍 API請求URL:', apiUrl);
+    
+    const response = await fetch(apiUrl);
+    console.log('🔍 API響應狀態:', response.status, response.statusText);
     
     // 檢查響應狀態
     if (!response.ok) {
+      console.error('❌ HTTP錯誤:', response.status, response.statusText);
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
     // 嘗試解析JSON
     let result;
     try {
-      result = await response.json();
-    } catch (parseError) {
-      console.error('解析響應失敗:', parseError);
       const responseText = await response.text();
-      console.error('原始響應:', responseText);
-      throw new Error('API回傳格式錯誤，請檢查伺服器設定');
+      console.log('🔍 原始響應內容:', responseText);
+      result = JSON.parse(responseText);
+      console.log('🔍 解析後的結果:', result);
+    } catch (parseError) {
+      console.error('❌ 解析響應失敗:', parseError);
+      throw new Error('API回傳格式錯誤: ' + parseError.message);
     }
     
     if (!result.success) {
+      console.error('❌ API回傳失敗:', result);
       throw new Error(result.message || 'API回傳失敗狀態');
     }
     
@@ -2015,10 +2028,15 @@ async function showImageLibrary() {
       }
       
       return `
-        <div class="image-library-item" onclick="selectImage('${img.url}')">
-          <img src="${img.url}" alt="${img.name}" loading="lazy" 
-               onerror="this.parentElement.innerHTML='<div style=\\'text-align:center;padding:20px;color:#999;\\'>圖片載入失敗<br><small>${img.name}</small></div>'">
-          <div class="name">${img.name}</div>
+        <div class="image-library-item">
+          <div onclick="selectImage('${img.url}')" style="cursor:pointer;">
+            <img src="${img.url}" alt="${img.name}" loading="lazy" 
+                 onerror="this.parentElement.innerHTML='<div style=\\'text-align:center;padding:20px;color:#999;\\'>圖片載入失敗<br><small>${img.name}</small></div>'">
+            <div class="name">${img.name}</div>
+          </div>
+          <button onclick="deleteImage('${img.url}', event)" 
+                  style="position:absolute;top:5px;right:5px;background:#f44336;color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;"
+                  title="刪除此圖片">×</button>
         </div>
       `;
     }).join('');
@@ -2072,5 +2090,54 @@ function selectImage(imageUrl) {
     // 提示成功
     console.log('✅ 已選擇圖片:', imageUrl);
     alert('✅ 圖片選擇成功！');
+  }
+}
+
+// 🗑️ 刪除圖片功能
+async function deleteImage(imageUrl, event) {
+  // 防止冒泡觸發選擇
+  event.stopPropagation();
+  
+  if (!confirm('確定要刪除這張圖片嗎？\n\n這將從所有會員卡記錄中移除此圖片。')) {
+    return;
+  }
+  
+  console.log('🗑️ 準備刪除圖片:', imageUrl);
+  
+  try {
+    // 檢查登入狀態
+    if (!liffProfile.userId) {
+      alert('請先登入 LINE');
+      return;
+    }
+    
+    // 調用刪除API
+    const response = await fetch('/api/image-management', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userId: liffProfile.userId,
+        action: 'delete',
+        imageUrl: imageUrl
+      })
+    });
+    
+    const result = await response.json();
+    console.log('🔍 刪除API響應:', result);
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || '刪除失敗');
+    }
+    
+    alert(`✅ 圖片刪除成功！\n\n已從 ${result.updatedRecords} 個會員卡記錄中移除。`);
+    
+    // 重新載入圖片庫
+    showImageLibrary();
+    
+  } catch (error) {
+    console.error('❌ 刪除圖片失敗:', error);
+    alert('刪除失敗: ' + error.message);
   }
 } 

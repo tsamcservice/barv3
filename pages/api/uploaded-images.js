@@ -6,27 +6,37 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
+  console.log('🔍 uploaded-images API 被調用');
+  console.log('🔍 請求方法:', req.method);
+  console.log('🔍 請求參數:', req.query);
+  
   if (req.method !== 'GET') {
+    console.log('❌ 不支援的請求方法:', req.method);
     return res.status(405).json({ success: false, message: '僅支援GET方法' });
   }
 
   try {
     const { userId } = req.query;
+    console.log('🔍 提取的userId:', userId);
     
     if (!userId) {
+      console.log('❌ 缺少userId參數');
       return res.status(400).json({ success: false, message: '缺少userId參數' });
     }
 
     // 改為從資料庫中收集用戶已使用過的圖片URL
+    console.log('🔍 開始查詢會員卡資料...');
     const { data: memberCards, error: cardsError } = await supabase
       .from('member_cards')
       .select('main_image_url, snow_image_url, calendar_image_url, love_icon_url, member_image_url, updated_at')
       .eq('line_user_id', userId)
       .order('updated_at', { ascending: false });
 
+    console.log('🔍 Supabase查詢結果:', { memberCards, cardsError });
+
     if (cardsError) {
-      console.error('查詢會員卡錯誤:', cardsError);
-      return res.status(500).json({ success: false, message: '查詢資料失敗' });
+      console.error('❌ 查詢會員卡錯誤:', cardsError);
+      return res.status(500).json({ success: false, message: '查詢資料失敗: ' + cardsError.message });
     }
 
     // 收集所有非空的圖片URL
