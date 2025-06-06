@@ -1915,19 +1915,44 @@ function bindImageSelect(selectBtnId, urlInputId, previewId) {
   const urlInput = document.getElementById(urlInputId);
   const preview = document.getElementById(previewId);
   
+  console.log('🔍 綁定圖片選擇按鈕:', selectBtnId, '找到元素:', !!selectBtn);
+  
   if (selectBtn) {
     selectBtn.addEventListener('click', function() {
+      console.log('🔍 圖片選擇按鈕被點擊:', selectBtnId);
+      
       // 記錄目標欄位
       currentSelectTarget = {
         urlInput: urlInput,
         preview: preview
       };
       
+      console.log('🔍 設定目標欄位:', {
+        urlInput: !!urlInput,
+        preview: !!preview
+      });
+      
       // 顯示圖片庫模態框
       showImageLibrary();
     });
+  } else {
+    console.error('❌ 找不到圖片選擇按鈕:', selectBtnId);
   }
 }
+
+// 🔧 測試函數 - 手動觸發圖片庫
+window.testImageLibrary = function() {
+  console.log('🧪 手動測試圖片庫功能');
+  console.log('🧪 當前liffProfile:', liffProfile);
+  
+  // 設定一個假的目標（測試用）
+  currentSelectTarget = {
+    urlInput: { value: '' },
+    preview: { src: '' }
+  };
+  
+  showImageLibrary();
+};
 
 function initImageLibraryModal() {
   const modal = document.getElementById('imageLibraryModal');
@@ -1952,11 +1977,19 @@ function initImageLibraryModal() {
 }
 
 async function showImageLibrary() {
+  // 🚨 強制顯示調試信息
+  console.log('🚨 === 圖片庫功能開始 ===');
+  alert('🔍 開始調試圖片庫功能\n請查看F12 Console標籤');
+  
   const modal = document.getElementById('imageLibraryModal');
   const grid = document.getElementById('imageLibraryGrid');
   
+  console.log('🔍 Modal元素:', modal);
+  console.log('🔍 Grid元素:', grid);
+  
   if (!modal || !grid) {
-    alert('圖片庫功能載入失敗');
+    console.error('❌ 找不到圖片庫元素');
+    alert('圖片庫功能載入失敗 - 找不到必要元素');
     return;
   }
   
@@ -1969,11 +2002,13 @@ async function showImageLibrary() {
   try {
     // 檢查是否已登入
     console.log('🔍 圖片庫調試: 檢查登入狀態');
-    console.log('🔍 liffProfile:', liffProfile);
+    console.log('🔍 liffProfile物件:', liffProfile);
+    console.log('🔍 liffProfile類型:', typeof liffProfile);
     
-    if (!liffProfile.userId) {
-      console.error('❌ 用戶未登入');
-      grid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">❌ 請先登入 LINE</div>';
+    if (!liffProfile || !liffProfile.userId) {
+      console.error('❌ 用戶未登入或liffProfile不存在');
+      console.log('🔍 liffProfile詳細內容:', JSON.stringify(liffProfile, null, 2));
+      grid.innerHTML = '<div style="text-align:center;padding:20px;color:#f44336;">❌ 請先登入 LINE<br><small>調試: liffProfile無效</small></div>';
       return;
     }
     
@@ -1983,8 +2018,11 @@ async function showImageLibrary() {
     const apiUrl = `/api/uploaded-images?userId=${liffProfile.userId}`;
     console.log('🔍 API請求URL:', apiUrl);
     
+    console.log('🔍 開始發送API請求...');
     const response = await fetch(apiUrl);
+    console.log('🔍 API響應物件:', response);
     console.log('🔍 API響應狀態:', response.status, response.statusText);
+    console.log('🔍 API響應Headers:', [...response.headers.entries()]);
     
     // 檢查響應狀態
     if (!response.ok) {
@@ -2044,7 +2082,13 @@ async function showImageLibrary() {
     console.log(`✅ 載入了 ${images.length} 張圖片`);
     
   } catch (error) {
-    console.error('載入圖片庫失敗:', error);
+    console.error('🚨 載入圖片庫失敗:', error);
+    console.error('🚨 錯誤堆疊:', error.stack);
+    console.error('🚨 錯誤名稱:', error.name);
+    console.error('🚨 錯誤訊息:', error.message);
+    
+    // 🚨 強制顯示錯誤給用戶
+    alert(`🚨 圖片庫錯誤詳情：\n\n錯誤類型: ${error.name}\n錯誤訊息: ${error.message}\n\n請查看F12 Console獲取更多信息`);
     
     // 提供更詳細的錯誤信息和解決方案
     let errorMessage = error.message;
@@ -2059,8 +2103,10 @@ async function showImageLibrary() {
     grid.innerHTML = `
       <div style="text-align:center;padding:20px;color:#f44336;">
         ❌ 載入失敗<br>
-        ${errorMessage}<br>
+        <strong>錯誤:</strong> ${error.name}<br>
+        <strong>訊息:</strong> ${errorMessage}<br>
         <button onclick="showImageLibrary()" style="margin-top:10px;padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;">重試</button>
+        <button onclick="console.log('🔍 當前liffProfile:', liffProfile)" style="margin-top:10px;margin-left:8px;padding:8px 16px;background:#2196f3;color:white;border:none;border-radius:4px;cursor:pointer;">檢查登入狀態</button>
       </div>
     `;
   }
