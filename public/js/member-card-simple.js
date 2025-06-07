@@ -211,6 +211,10 @@ async function fillAllFieldsWithProfile() {
       setInputDefaultStyle(document.getElementById(key), defaultCard[key]);
     }
   });
+  
+  // 初始化圖片預覽
+  initImagePreviews();
+  
   // 再用 LINE 資訊覆蓋會員圖片與名字（不動 card_alt_title）
   if (window.liff && liff.getProfile) {
     try {
@@ -219,7 +223,14 @@ async function fillAllFieldsWithProfile() {
       liffProfile.pictureUrl = profile.pictureUrl;
       liffProfile.userId = profile.userId;
       if(document.getElementById('display_name')) setInputDefaultStyle(document.getElementById('display_name'), profile.displayName);
-      if(document.getElementById('member_image_url')) setInputDefaultStyle(document.getElementById('member_image_url'), profile.pictureUrl);
+      if(document.getElementById('member_image_url')) {
+        setInputDefaultStyle(document.getElementById('member_image_url'), profile.pictureUrl);
+        // 更新會員圖片預覽
+        const memberPreview = document.getElementById('member_image_preview');
+        if (memberPreview) {
+          setImageUserStyle(memberPreview, profile.pictureUrl);
+        }
+      }
       renderLiffUserInfo(profile);
     } catch (e) {}
   }
@@ -233,6 +244,29 @@ async function fillAllFieldsWithProfile() {
   }
   renderPreview();
   renderShareJsonBox();
+}
+
+// 新增：初始化所有圖片預覽
+function initImagePreviews() {
+  const imageFields = [
+    { urlId: 'main_image_url', previewId: 'main_image_preview' },
+    { urlId: 'snow_image_url', previewId: 'snow_image_preview' },
+    { urlId: 'calendar_image_url', previewId: 'calendar_image_preview' },
+    { urlId: 'love_icon_url', previewId: 'love_icon_preview' },
+    { urlId: 'member_image_url', previewId: 'member_image_preview' }
+  ];
+  
+  imageFields.forEach(field => {
+    const urlInput = document.getElementById(field.urlId);
+    const preview = document.getElementById(field.previewId);
+    if (urlInput && preview && urlInput.value) {
+      if (urlInput.value.trim() !== '') {
+        setImageUserStyle(preview, urlInput.value);
+      } else {
+        setImageDefaultStyle(preview, preview.src);
+      }
+    }
+  });
 }
 
 function getFormData() {
