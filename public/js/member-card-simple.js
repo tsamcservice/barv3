@@ -2018,6 +2018,7 @@ async function showImageLibrary() {
     
     const response = await fetch(apiUrl);
     console.log('API響應狀態:', response.status, response.statusText);
+    console.log('API響應Headers:', response.headers.get('content-type'));
     
     if (!response.ok) {
       const httpError = 'HTTP ' + response.status + ': ' + response.statusText;
@@ -2027,6 +2028,7 @@ async function showImageLibrary() {
     
     const responseText = await response.text();
     console.log('原始響應前200字:', responseText.substring(0, 200));
+    console.log('完整響應內容:', responseText);
     
     let result;
     try {

@@ -9,6 +9,8 @@ export default async function handler(req, res) {
   console.log('🔍 uploaded-images API 被調用');
   console.log('🔍 請求方法:', req.method);
   console.log('🔍 請求參數:', req.query);
+  console.log('🔍 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? '已設定' : '未設定');
+  console.log('🔍 Service Role Key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '已設定' : '未設定');
   
   if (req.method !== 'GET') {
     console.log('❌ 不支援的請求方法:', req.method);
@@ -26,6 +28,8 @@ export default async function handler(req, res) {
 
     // 從專門的 uploaded_images 表讀取用戶上傳的圖片
     console.log('🔍 開始查詢上傳圖片記錄...');
+    console.log('🔍 查詢條件:', { line_user_id: userId, is_active: true });
+    
     const { data: uploadedImages, error: imagesError } = await supabase
       .from('uploaded_images')
       .select('*')
@@ -33,7 +37,10 @@ export default async function handler(req, res) {
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
-    console.log('🔍 上傳圖片查詢結果:', { uploadedImages, imagesError });
+    console.log('🔍 上傳圖片查詢結果:');
+    console.log('🔍 - 資料:', uploadedImages);
+    console.log('🔍 - 錯誤:', imagesError);
+    console.log('🔍 - 錯誤詳情:', imagesError ? JSON.stringify(imagesError, null, 2) : '無錯誤');
 
     if (imagesError) {
       console.error('❌ 查詢上傳圖片錯誤:', imagesError);
