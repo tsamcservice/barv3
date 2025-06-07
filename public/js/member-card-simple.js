@@ -2146,6 +2146,14 @@ async function showImageLibrary() {
         return '<div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">📷 ' + img.name + '<br><small>請先上傳並使用圖片，然後就可以在此重複選擇</small></div>';
       }
       
+      // 處理檔案大小顯示
+      let sizeText = '';
+      if (img.file_size && img.file_size > 0) {
+        const sizeKB = Math.round(img.file_size / 1024);
+        const sizeMB = (img.file_size / (1024 * 1024)).toFixed(2);
+        sizeText = sizeKB > 1024 ? `${sizeMB}MB` : `${sizeKB}KB`;
+      }
+      
       // 處理尺寸顯示
       let dimensionText = '';
       if (img.width && img.height && img.width > 0 && img.height > 0) {
