@@ -2218,11 +2218,40 @@ async function testImageLibraryDeep() {
   }
 }
 
+// 🧪 簡單API測試函數
+async function testSimpleAPI() {
+  console.log('=== 簡單API測試開始 ===');
+  alert('🧪 測試基本API功能\n\n請查看F12 Console');
+  
+  try {
+    console.log('🔍 調用簡單測試API...');
+    const response = await fetch('/api/simple-test?test=123');
+    console.log('🔍 簡單API響應狀態:', response.status, response.statusText);
+    
+    const result = await response.json();
+    console.log('🔍 簡單API結果:', result);
+    
+    if (result.success) {
+      console.log('✅ 簡單API測試成功！');
+      console.log('環境變數狀態:', result.environment);
+      alert('✅ 簡單API測試成功！\n\n請查看Console獲取詳細信息');
+    } else {
+      console.error('❌ 簡單API測試失敗:', result);
+      alert('❌ 簡單API測試失敗\n\n' + (result.error || '未知錯誤'));
+    }
+    
+  } catch (error) {
+    console.error('❌ 簡單API測試異常:', error);
+    alert('❌ 簡單API測試異常\n\n' + error.message);
+  }
+}
+
 // 在全域作用域添加測試說明
 console.log('🧪 圖片庫測試說明：');
 console.log('1. 按F12開啟開發者工具');
 console.log('2. 切換到Console標籤');
-console.log('3a. 基本測試: testImageLibrary()');
-console.log('3b. 深度診斷: testImageLibraryDeep()');
+console.log('3a. 簡單測試: testSimpleAPI()');
+console.log('3b. 基本測試: testImageLibrary()');
+console.log('3c. 深度診斷: testImageLibraryDeep()');
 console.log('4. 按Enter執行測試');
 console.log('5. 觀察詳細的調試信息'); 

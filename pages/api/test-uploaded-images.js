@@ -14,10 +14,18 @@ const supabaseService = createClient(
 
 export default async function handler(req, res) {
   console.log('🧪 測試API被調用');
-  console.log('🧪 環境變數檢查:');
-  console.log('  - SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? '已設定' : '❌ 未設定');
-  console.log('  - ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '已設定' : '❌ 未設定');
-  console.log('  - SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '已設定' : '❌ 未設定');
+  
+  // 增加全域錯誤處理
+  try {
+    console.log('🧪 環境變數檢查:');
+    console.log('  - SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? '已設定' : '❌ 未設定');
+    console.log('  - ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '已設定' : '❌ 未設定');
+    console.log('  - SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '已設定' : '❌ 未設定');
+    
+    // 檢查Supabase客戶端是否正確初始化
+    if (!supabaseService || !supabaseAnon) {
+      throw new Error('Supabase客戶端初始化失敗');
+    }
   
   if (req.method !== 'GET') {
     return res.status(405).json({ success: false, message: '僅支援GET方法' });
@@ -119,4 +127,14 @@ export default async function handler(req, res) {
     message: '診斷測試完成',
     results: results
   });
+  
+  } catch (globalError) {
+    console.error('🧪 API全域錯誤:', globalError);
+    res.status(500).json({
+      success: false,
+      message: '測試API執行失敗',
+      error: globalError.message,
+      stack: globalError.stack
+    });
+  }
 } 
