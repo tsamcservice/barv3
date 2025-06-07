@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
+// 由於SERVICE_ROLE_KEY無法讀取，改用ANON_KEY
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 export default async function handler(req, res) {
