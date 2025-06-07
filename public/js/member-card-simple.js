@@ -2173,10 +2173,56 @@ function testImageLibrary() {
   showImageLibrary();
 }
 
+// 🧪 深度診斷測試函數
+async function testImageLibraryDeep() {
+  console.log('=== 深度診斷測試開始 ===');
+  alert('🔍 開始深度診斷\n\n請查看F12 Console獲取詳細信息');
+  
+  if (!liffProfile || !liffProfile.userId) {
+    console.error('❌ 用戶未登入，無法進行測試');
+    alert('❌ 錯誤：用戶未登入\n\n請先登入LINE後再測試');
+    return;
+  }
+  
+  try {
+    console.log('🔍 開始調用診斷API...');
+    const testUrl = '/api/test-uploaded-images?userId=' + liffProfile.userId;
+    console.log('🔍 診斷API URL:', testUrl);
+    
+    const response = await fetch(testUrl);
+    console.log('🔍 診斷API響應狀態:', response.status, response.statusText);
+    
+    const result = await response.json();
+    console.log('🔍 診斷API結果:', result);
+    
+    if (result.success) {
+      console.log('🔍 診斷測試完成！結果如下：');
+      result.results.tests.forEach((test, index) => {
+        console.log(`  測試${index + 1}: ${test.name}`);
+        console.log(`    - 成功: ${test.success ? '✅' : '❌'}`);
+        console.log(`    - 錯誤: ${test.error || '無'}`);
+        if (test.count !== undefined) {
+          console.log(`    - 資料筆數: ${test.count}`);
+        }
+      });
+      
+      alert('🔍 診斷測試完成！\n\n請查看F12 Console獲取詳細結果');
+    } else {
+      console.error('❌ 診斷測試失敗:', result.message);
+      alert('❌ 診斷測試失敗\n\n' + result.message);
+    }
+    
+  } catch (error) {
+    console.error('❌ 診斷測試異常:', error);
+    alert('❌ 診斷測試異常\n\n' + error.message);
+  }
+}
+
 // 在全域作用域添加測試說明
 console.log('🧪 圖片庫測試說明：');
 console.log('1. 按F12開啟開發者工具');
 console.log('2. 切換到Console標籤');
-console.log('3. 輸入: testImageLibrary()');
+console.log('3a. 基本測試: testImageLibrary()');
+console.log('3b. 深度診斷: testImageLibraryDeep()');
 console.log('4. 按Enter執行測試');
 console.log('5. 觀察詳細的調試信息'); 
