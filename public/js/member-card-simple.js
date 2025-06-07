@@ -1977,22 +1977,20 @@ function initImageLibraryModal() {
 }
 
 async function showImageLibrary() {
-  // 🚨 強制顯示調試信息
-  console.log('🚨 === 圖片庫功能開始 ===');
-  alert('🔍 開始調試圖片庫功能\n請查看F12 Console標籤');
+  console.log('=== 圖片庫調試開始 ===');
   
   const modal = document.getElementById('imageLibraryModal');
   const grid = document.getElementById('imageLibraryGrid');
   
-  console.log('🔍 Modal元素:', modal);
-  console.log('🔍 Grid元素:', grid);
+  console.log('Modal元素存在:', !!modal);
+  console.log('Grid元素存在:', !!grid);
   
   if (!modal || !grid) {
-    console.error('❌ 找不到圖片庫元素');
-    alert('圖片庫功能載入失敗 - 找不到必要元素');
+    console.error('找不到圖片庫元素');
+    alert('錯誤: 找不到圖片庫元素');
     return;
   }
-  
+
   // 顯示模態框
   modal.style.display = 'block';
   
@@ -2000,51 +1998,47 @@ async function showImageLibrary() {
   grid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">📸 載入圖片庫中...</div>';
   
   try {
-    // 檢查是否已登入
-    console.log('🔍 圖片庫調試: 檢查登入狀態');
-    console.log('🔍 liffProfile物件:', liffProfile);
-    console.log('🔍 liffProfile類型:', typeof liffProfile);
+    // 檢查登入狀態
+    console.log('檢查登入狀態...');
+    console.log('liffProfile:', liffProfile);
     
     if (!liffProfile || !liffProfile.userId) {
-      console.error('❌ 用戶未登入或liffProfile不存在');
-      console.log('🔍 liffProfile詳細內容:', JSON.stringify(liffProfile, null, 2));
-      grid.innerHTML = '<div style="text-align:center;padding:20px;color:#f44336;">❌ 請先登入 LINE<br><small>調試: liffProfile無效</small></div>';
+      console.error('用戶未登入');
+      grid.innerHTML = '<div style="text-align:center;padding:20px;color:#f44336;">❌ 請先登入 LINE</div>';
+      alert('錯誤: 請先登入LINE');
       return;
     }
     
-    console.log('🔍 用戶ID:', liffProfile.userId);
+    console.log('用戶ID:', liffProfile.userId);
     
     // 獲取用戶圖片列表
-    const apiUrl = `/api/uploaded-images?userId=${liffProfile.userId}`;
-    console.log('🔍 API請求URL:', apiUrl);
+    const apiUrl = '/api/uploaded-images?userId=' + liffProfile.userId;
+    console.log('API請求URL:', apiUrl);
     
-    console.log('🔍 開始發送API請求...');
     const response = await fetch(apiUrl);
-    console.log('🔍 API響應物件:', response);
-    console.log('🔍 API響應狀態:', response.status, response.statusText);
-    console.log('🔍 API響應Headers:', [...response.headers.entries()]);
+    console.log('API響應狀態:', response.status, response.statusText);
     
-    // 檢查響應狀態
     if (!response.ok) {
-      console.error('❌ HTTP錯誤:', response.status, response.statusText);
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const httpError = 'HTTP ' + response.status + ': ' + response.statusText;
+      console.error('HTTP錯誤:', httpError);
+      throw new Error(httpError);
     }
     
-    // 嘗試解析JSON
+    const responseText = await response.text();
+    console.log('原始響應前200字:', responseText.substring(0, 200));
+    
     let result;
     try {
-      const responseText = await response.text();
-      console.log('🔍 原始響應內容:', responseText);
       result = JSON.parse(responseText);
-      console.log('🔍 解析後的結果:', result);
+      console.log('JSON解析成功');
     } catch (parseError) {
-      console.error('❌ 解析響應失敗:', parseError);
-      throw new Error('API回傳格式錯誤: ' + parseError.message);
+      console.error('JSON解析失敗:', parseError);
+      throw new Error('JSON解析錯誤: ' + parseError.message);
     }
     
     if (!result.success) {
-      console.error('❌ API回傳失敗:', result);
-      throw new Error(result.message || 'API回傳失敗狀態');
+      console.error('API回傳失敗:', result.message);
+      throw new Error(result.message || 'API操作失敗');
     }
     
     const images = result.data || [];
@@ -2055,60 +2049,41 @@ async function showImageLibrary() {
     }
     
     // 渲染圖片列表
-    grid.innerHTML = images.map(img => {
+    grid.innerHTML = images.map(function(img) {
       if (img.type === 'placeholder' || !img.url) {
-        return `
-          <div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">
-            📷 ${img.name}<br>
-            <small>請先上傳並使用圖片，然後就可以在此重複選擇</small>
-          </div>
-        `;
+        return '<div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">📷 ' + img.name + '<br><small>請先上傳並使用圖片，然後就可以在此重複選擇</small></div>';
       }
       
-      return `
-        <div class="image-library-item">
-          <div onclick="selectImage('${img.url}')" style="cursor:pointer;">
-            <img src="${img.url}" alt="${img.name}" loading="lazy" 
-                 onerror="this.parentElement.innerHTML='<div style=\\'text-align:center;padding:20px;color:#999;\\'>圖片載入失敗<br><small>${img.name}</small></div>'">
-            <div class="name">${img.name}</div>
-          </div>
-          <button onclick="deleteImage('${img.url}', event)" 
-                  style="position:absolute;top:5px;right:5px;background:#f44336;color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;"
-                  title="刪除此圖片">×</button>
-        </div>
-      `;
+      return '<div class="image-library-item">' +
+        '<div onclick="selectImage(\'' + img.url + '\')" style="cursor:pointer;">' +
+        '<img src="' + img.url + '" alt="' + img.name + '" loading="lazy">' +
+        '<div class="name">' + img.name + '</div>' +
+        '</div>' +
+        '<button onclick="deleteImage(\'' + img.url + '\', event)" style="position:absolute;top:5px;right:5px;background:#f44336;color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;" title="刪除此圖片">×</button>' +
+        '</div>';
     }).join('');
     
-    console.log(`✅ 載入了 ${images.length} 張圖片`);
+    console.log('載入了', images.length, '張圖片');
     
   } catch (error) {
-    console.error('🚨 載入圖片庫失敗:', error);
-    console.error('🚨 錯誤堆疊:', error.stack);
-    console.error('🚨 錯誤名稱:', error.name);
-    console.error('🚨 錯誤訊息:', error.message);
+    console.error('圖片庫載入失敗:', error);
+    console.error('錯誤類型:', error.name);
+    console.error('錯誤訊息:', error.message);
     
-    // 🚨 強制顯示錯誤給用戶
-    alert(`🚨 圖片庫錯誤詳情：\n\n錯誤類型: ${error.name}\n錯誤訊息: ${error.message}\n\n請查看F12 Console獲取更多信息`);
+    alert('圖片庫載入失敗:\n\n' + error.message + '\n\n請查看F12 Console獲取詳細信息');
     
-    // 提供更詳細的錯誤信息和解決方案
     let errorMessage = error.message;
-    if (errorMessage.includes('API回傳格式錯誤')) {
-      errorMessage += '<br><small>建議：檢查Supabase設定或稍後再試</small>';
-    } else if (errorMessage.includes('HTTP 404')) {
-      errorMessage = '圖片庫API未找到<br><small>請確認系統已正確部署</small>';
+    if (errorMessage.includes('HTTP 404')) {
+      errorMessage = '圖片庫API未找到';
     } else if (errorMessage.includes('HTTP 500')) {
-      errorMessage = '伺服器錯誤<br><small>請稍後再試或聯繫管理員</small>';
+      errorMessage = '伺服器錯誤，請稍後再試';
     }
     
-    grid.innerHTML = `
-      <div style="text-align:center;padding:20px;color:#f44336;">
-        ❌ 載入失敗<br>
-        <strong>錯誤:</strong> ${error.name}<br>
-        <strong>訊息:</strong> ${errorMessage}<br>
-        <button onclick="showImageLibrary()" style="margin-top:10px;padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;">重試</button>
-        <button onclick="console.log('🔍 當前liffProfile:', liffProfile)" style="margin-top:10px;margin-left:8px;padding:8px 16px;background:#2196f3;color:white;border:none;border-radius:4px;cursor:pointer;">檢查登入狀態</button>
-      </div>
-    `;
+    grid.innerHTML = '<div style="text-align:center;padding:20px;color:#f44336;">' +
+      '❌ 載入失敗<br>' +
+      '<strong>錯誤:</strong> ' + errorMessage + '<br>' +
+            '<button onclick="showImageLibrary()" style="margin-top:10px;padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;">重試</button>' +
+      '</div>';
   }
 }
 
@@ -2186,4 +2161,19 @@ async function deleteImage(imageUrl, event) {
     console.error('❌ 刪除圖片失敗:', error);
     alert('刪除失敗: ' + error.message);
   }
-} 
+}
+
+// 🧪 測試函數 - 供用戶手動調試使用
+function testImageLibrary() {
+  console.log('=== 手動測試圖片庫功能 ===');
+  alert('🧪 開始手動測試\n\n請在F12 Console觀察輸出信息');
+  showImageLibrary();
+}
+
+// 在全域作用域添加測試說明
+console.log('🧪 圖片庫測試說明：');
+console.log('1. 按F12開啟開發者工具');
+console.log('2. 切換到Console標籤');
+console.log('3. 輸入: testImageLibrary()');
+console.log('4. 按Enter執行測試');
+console.log('5. 觀察詳細的調試信息'); 
