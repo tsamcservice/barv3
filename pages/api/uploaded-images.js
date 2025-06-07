@@ -24,71 +24,52 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: '缺少userId參數' });
     }
 
-    // 改為從資料庫中收集用戶已使用過的圖片URL
-    console.log('🔍 開始查詢會員卡資料...');
-    const { data: memberCards, error: cardsError } = await supabase
-      .from('member_cards')
-      .select('main_image_url, snow_image_url, calendar_image_url, love_icon_url, member_image_url, updated_at')
+    // 從專門的 uploaded_images 表讀取用戶上傳的圖片
+    console.log('🔍 開始查詢上傳圖片記錄...');
+    const { data: uploadedImages, error: imagesError } = await supabase
+      .from('uploaded_images')
+      .select('*')
       .eq('line_user_id', userId)
-      .order('updated_at', { ascending: false });
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
-    console.log('🔍 Supabase查詢結果:', { memberCards, cardsError });
+    console.log('🔍 上傳圖片查詢結果:', { uploadedImages, imagesError });
 
-    if (cardsError) {
-      console.error('❌ 查詢會員卡錯誤:', cardsError);
-      return res.status(500).json({ success: false, message: '查詢資料失敗: ' + cardsError.message });
+    if (imagesError) {
+      console.error('❌ 查詢上傳圖片錯誤:', imagesError);
+      return res.status(500).json({ success: false, message: '查詢圖片資料失敗: ' + imagesError.message });
     }
 
-    // 收集所有非空的圖片URL
-    const imageUrls = new Set();
-    const imageDetails = [];
+    let imageDetails = [];
 
-    if (memberCards && memberCards.length > 0) {
-      memberCards.forEach(card => {
-        const urls = [
-          card.main_image_url,
-          card.snow_image_url, 
-          card.calendar_image_url,
-          card.love_icon_url,
-          card.member_image_url
-        ];
-        
-        urls.forEach(url => {
-          if (url && url.trim() && url.startsWith('http') && !imageUrls.has(url)) {
-            imageUrls.add(url);
-            
-            // 從URL中提取檔案名稱
-            const filename = url.split('/').pop() || 'unknown';
-            
-            imageDetails.push({
-              name: filename,
-              url: url,
-              created_at: card.updated_at,
-              type: 'used_in_card'
-            });
-          }
-        });
-      });
+    if (uploadedImages && uploadedImages.length > 0) {
+      imageDetails = uploadedImages.map(img => ({
+        name: img.original_filename || img.image_url.split('/').pop() || 'unknown',
+        url: img.image_url,
+        created_at: img.created_at,
+        file_size: img.file_size,
+        file_type: img.file_type,
+        usage_count: img.usage_count,
+        last_used_at: img.last_used_at,
+        type: 'uploaded'
+      }));
     }
 
-    // 如果沒有找到圖片，提供範例圖片
+    // 如果沒有找到圖片，提供提示信息
     if (imageDetails.length === 0) {
       imageDetails.push({
-        name: '暫無已使用圖片',
+        name: '暫無已上傳的圖片',
         url: '',
         created_at: new Date().toISOString(),
         type: 'placeholder'
       });
     }
 
-    // 按時間排序，最新的在前
-    imageDetails.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
     res.status(200).json({
       success: true,
       data: imageDetails,
       total: imageDetails.length,
-      message: `找到 ${imageDetails.length} 張已使用的圖片`
+      message: `找到 ${imageDetails.length} 張已上傳的圖片`
     });
 
   } catch (error) {

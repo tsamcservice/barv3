@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { file, fileName, fileType } = req.body;
+    const { file, fileName, fileType, userId } = req.body;
     
     if (!file || !fileName || !fileType) {
       return res.status(400).json({ 
@@ -86,9 +86,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('成功取得公開 URL:', publicUrl);
 
+    // 如果有提供 userId，記錄圖片到資料庫
+    if (userId) {
+      try {
+        console.log('開始記錄圖片到資料庫:', { userId, publicUrl, fileName });
+        
+        const { error: dbError } = await supabase
+          .from('uploaded_images')
+          .insert({
+            line_user_id: userId,
+            image_url: publicUrl,
+            original_filename: fileName,
+            file_size: buffer.length,
+            file_type: fileType,
+            storage_path: data.path,
+            usage_count: 0,
+            is_active: true
+          });
+
+        if (dbError) {
+          console.error('記錄圖片到資料庫失敗:', dbError);
+          // 不影響上傳成功，只是記錄失敗
+        } else {
+          console.log('✅ 圖片記錄成功寫入資料庫');
+        }
+      } catch (dbError) {
+        console.error('資料庫操作錯誤:', dbError);
+        // 不影響上傳成功
+      }
+    }
+
     return res.status(200).json({ 
       success: true,
-      data: { url: publicUrl }
+      data: { 
+        url: publicUrl,
+        fileName: fileName,
+        fileSize: buffer.length,
+        recorded: !!userId
+      }
     });
   } catch (error) {
     console.error('Upload error:', error);

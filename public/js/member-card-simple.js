@@ -1562,6 +1562,7 @@ function bindImageUpload(inputId, btnId, previewId, urlId) {
             file: e.target.result,
             fileName: file.name,
             fileType: file.type,
+            userId: liffProfile?.userId || null,
           }),
         });
         const data = await response.json();
