@@ -6,6 +6,49 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// 添加圖片尺寸檢測功能
+function getImageDimensions(buffer: Buffer): Promise<{width: number, height: number}> {
+  return new Promise((resolve, reject) => {
+    // 檢測 PNG 格式
+    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+      const width = buffer.readUInt32BE(16);
+      const height = buffer.readUInt32BE(20);
+      resolve({ width, height });
+      return;
+    }
+    
+    // 檢測 JPEG 格式
+    if (buffer[0] === 0xFF && buffer[1] === 0xD8) {
+      let pos = 2;
+      while (pos < buffer.length) {
+        if (buffer[pos] === 0xFF) {
+          const marker = buffer[pos + 1];
+          if (marker === 0xC0 || marker === 0xC2) {
+            const height = buffer.readUInt16BE(pos + 5);
+            const width = buffer.readUInt16BE(pos + 7);
+            resolve({ width, height });
+            return;
+          }
+          pos += 2 + buffer.readUInt16BE(pos + 2);
+        } else {
+          pos++;
+        }
+      }
+    }
+    
+    // 檢測 GIF 格式
+    if (buffer.toString('ascii', 0, 6) === 'GIF87a' || buffer.toString('ascii', 0, 6) === 'GIF89a') {
+      const width = buffer.readUInt16LE(6);
+      const height = buffer.readUInt16LE(8);
+      resolve({ width, height });
+      return;
+    }
+    
+    // 無法檢測時返回預設值
+    resolve({ width: 0, height: 0 });
+  });
+}
+
 // 設定檔案大小限制為 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -86,10 +129,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('成功取得公開 URL:', publicUrl);
 
+    // 檢測圖片尺寸
+    const dimensions = await getImageDimensions(buffer);
+    console.log('檢測到圖片尺寸:', dimensions);
+
     // 如果有提供 userId，記錄圖片到資料庫
     if (userId) {
       try {
-        console.log('開始記錄圖片到資料庫:', { userId, publicUrl, fileName });
+        console.log('開始記錄圖片到資料庫:', { userId, publicUrl, fileName, dimensions });
         
         const { error: dbError } = await supabase
           .from('uploaded_images')
@@ -100,6 +147,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             file_size: buffer.length,
             file_type: fileType,
             storage_path: data.path,
+            image_width: dimensions.width,
+            image_height: dimensions.height,
             usage_count: 0,
             is_active: true
           });
@@ -122,6 +171,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         url: publicUrl,
         fileName: fileName,
         fileSize: buffer.length,
+        width: dimensions.width,
+        height: dimensions.height,
         recorded: !!userId
       }
     });

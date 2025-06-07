@@ -1345,6 +1345,30 @@ async function shareToLine() {
   }
 }
 
+// LINE頭貼使用功能 - 簡化版本
+function useLINEProfile(urlId, previewId, infoId) {
+  const urlInput = document.getElementById(urlId);
+  const preview = document.getElementById(previewId);
+  const infoDiv = infoId ? document.getElementById(infoId) : null;
+  
+  if (liffProfile && liffProfile.pictureUrl) {
+    // 直接將LINE頭貼URL設定到欄位
+    urlInput.value = liffProfile.pictureUrl;
+    setImageUserStyle(preview, liffProfile.pictureUrl);
+    
+    // 顯示LINE頭貼資訊
+    if (infoDiv) {
+      infoDiv.innerHTML = `📱 LINE頭貼 | 👤 ${liffProfile.displayName}`;
+      infoDiv.classList.add('show');
+    }
+    
+    console.log('✅ 已設定LINE頭貼:', liffProfile.pictureUrl);
+    renderPreview();
+  } else {
+    alert('無法取得LINE頭貼，請確認已登入LINE');
+  }
+}
+
 // 監聽 display_name、main_title_1 input 變動，自動更新 card_alt_title
 function updateCardAltTitle() {
   const mainTitle = document.getElementById('main_title_1').value;
@@ -1486,17 +1510,28 @@ window.addEventListener('DOMContentLoaded', function() {
     console.error('❌ 找不到cardForm元素');
   }
 
-  // 4. 綁定圖片上傳功能
-  bindImageUpload('main_image_upload', 'main_image_upload_btn', 'main_image_preview', 'main_image_url');
-  bindImageUpload('snow_image_upload', 'snow_image_upload_btn', 'snow_image_preview', 'snow_image_url');
-  bindImageUpload('calendar_image_upload', 'calendar_image_upload_btn', 'calendar_image_preview', 'calendar_image_url');
-  bindImageUpload('love_icon_upload', 'love_icon_upload_btn', 'love_icon_preview', 'love_icon_url');
-  bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url');
+  // 4. 綁定圖片上傳功能（包含資訊顯示）
+  bindImageUpload('main_image_upload', 'main_image_upload_btn', 'main_image_preview', 'main_image_url', 'main_image_info');
+  bindImageUpload('snow_image_upload', 'snow_image_upload_btn', 'snow_image_preview', 'snow_image_url', 'snow_image_info');
+  bindImageUpload('calendar_image_upload', 'calendar_image_upload_btn', 'calendar_image_preview', 'calendar_image_url', 'calendar_image_info');
+  bindImageUpload('love_icon_upload', 'love_icon_upload_btn', 'love_icon_preview', 'love_icon_url', 'love_icon_info');
+  bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url', 'member_image_info');
   
   // 5. 綁定圖片選擇功能
   bindImageSelect('main_image_select_btn', 'main_image_url', 'main_image_preview');
   bindImageSelect('snow_image_select_btn', 'snow_image_url', 'snow_image_preview');
+  bindImageSelect('calendar_image_select_btn', 'calendar_image_url', 'calendar_image_preview');
+  bindImageSelect('love_icon_select_btn', 'love_icon_url', 'love_icon_preview');
   bindImageSelect('member_image_select_btn', 'member_image_url', 'member_image_preview');
+  
+  // 6. 綁定LINE頭貼功能（僅會員圖片）
+  const lineProfileBtn = document.getElementById('member_line_profile_btn');
+  if (lineProfileBtn) {
+    lineProfileBtn.addEventListener('click', function() {
+      useLINEProfile('member_image_url', 'member_image_preview', 'member_image_info');
+    });
+    console.log('✅ LINE頭貼按鈕已綁定');
+  }
 
   // 5. 展開/收合宣傳卡片選擇區塊
   const toggleBtn = document.getElementById('toggle-promo-selector');
@@ -1526,23 +1561,56 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // 圖片上傳功能
-function bindImageUpload(inputId, btnId, previewId, urlId) {
+// 更新後的圖片上傳函數，支援檔案資訊顯示
+function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
   const input = document.getElementById(inputId);
   const btn = document.getElementById(btnId);
   const preview = document.getElementById(previewId);
   const urlInput = document.getElementById(urlId);
+  const infoDiv = infoId ? document.getElementById(infoId) : null;
+  
   // 預設圖
   setImageDefaultStyle(preview, urlInput.value || preview.src);
+  
+  // 顯示圖片資訊
+  function showImageInfo(fileName, width, height, fileSize) {
+    if (!infoDiv) return;
+    const fileSizeKB = Math.round(fileSize / 1024);
+    const fileSizeMB = (fileSize / (1024 * 1024)).toFixed(2);
+    const sizeText = fileSizeKB > 1024 ? `${fileSizeMB}MB` : `${fileSizeKB}KB`;
+    
+    infoDiv.innerHTML = `📁 ${fileName} | 📐 ${width}×${height} | 📦 ${sizeText}`;
+    infoDiv.classList.add('show');
+  }
+  
+  // 隱藏圖片資訊
+  function hideImageInfo() {
+    if (!infoDiv) return;
+    infoDiv.classList.remove('show');
+  }
+  
   // 檔案選擇事件
   input.addEventListener('change', function() {
     if (input.files && input.files[0]) {
       const reader = new FileReader();
       reader.onload = function(e) {
         setImageUserStyle(preview, e.target.result);
+        // 檔案選擇時暫時顯示基本資訊
+        const file = input.files[0];
+        if (infoDiv) {
+          const fileSizeKB = Math.round(file.size / 1024);
+          const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+          const sizeText = fileSizeKB > 1024 ? `${fileSizeMB}MB` : `${fileSizeKB}KB`;
+          infoDiv.innerHTML = `📁 ${file.name} | 📦 ${sizeText} (準備上傳...)`;
+          infoDiv.classList.add('show');
+        }
       };
       reader.readAsDataURL(input.files[0]);
+    } else {
+      hideImageInfo();
     }
   });
+  
   // 上傳按鈕點擊事件
   btn.addEventListener('click', async function() {
     if (!input.files || !input.files[0]) {
@@ -1553,6 +1621,10 @@ function bindImageUpload(inputId, btnId, previewId, urlId) {
     const reader = new FileReader();
     reader.onload = async function(e) {
       try {
+        if (infoDiv) {
+          infoDiv.innerHTML = '⏳ 正在上傳...';
+        }
+        
         const response = await fetch('/api/upload', {
           method: 'POST',
           headers: {
@@ -1572,6 +1644,15 @@ function bindImageUpload(inputId, btnId, previewId, urlId) {
         if (data.data?.url) {
           urlInput.value = data.data.url;
           setImageUserStyle(preview, data.data.url);
+          
+          // 顯示完整的圖片資訊
+          showImageInfo(
+            data.data.fileName,
+            data.data.width || 0,
+            data.data.height || 0,
+            data.data.fileSize
+          );
+          
           renderPreview();
         } else {
           throw new Error('未收到上傳 URL');
@@ -1579,9 +1660,17 @@ function bindImageUpload(inputId, btnId, previewId, urlId) {
       } catch (error) {
         console.error('Upload failed:', error);
         alert(error.message || '上傳失敗，請重試');
+        hideImageInfo();
       }
     };
     reader.readAsDataURL(file);
+  });
+  
+  // URL輸入框變化時隱藏資訊（因為可能是手動輸入的URL）
+  urlInput.addEventListener('input', function() {
+    if (!input.files || !input.files[0]) {
+      hideImageInfo();
+    }
   });
 }
 
@@ -2057,10 +2146,33 @@ async function showImageLibrary() {
         return '<div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">📷 ' + img.name + '<br><small>請先上傳並使用圖片，然後就可以在此重複選擇</small></div>';
       }
       
+      // 處理尺寸顯示
+      let dimensionText = '';
+      if (img.width && img.height && img.width > 0 && img.height > 0) {
+        dimensionText = `${img.width}×${img.height}`;
+      }
+      
+      // 組合資訊文字
+      let infoText = '';
+      if (dimensionText && sizeText) {
+        infoText = `📐 ${dimensionText} | 📦 ${sizeText}`;
+      } else if (dimensionText) {
+        infoText = `📐 ${dimensionText}`;
+      } else if (sizeText) {
+        infoText = `📦 ${sizeText}`;
+      }
+      
+      // 檢查是否為LINE頭貼
+      const isLineProfile = img.name && img.name.includes('LINE_profile');
+      const profileIcon = isLineProfile ? '📱 ' : '';
+      
       return '<div class="image-library-item">' +
         '<div onclick="selectImage(\'' + img.url + '\')" style="cursor:pointer;">' +
         '<img src="' + img.url + '" alt="' + img.name + '" loading="lazy">' +
-        '<div class="name">' + img.name + '</div>' +
+        '<div class="name" style="font-size:12px;margin-top:4px;text-align:center;">' + 
+          profileIcon + img.name + 
+          (infoText ? '<br><span style="color:#666;font-size:10px;">' + infoText + '</span>' : '') +
+        '</div>' +
         '</div>' +
         '<button onclick="deleteImage(\'' + img.url + '\', event)" style="position:absolute;top:5px;right:5px;background:#f44336;color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;" title="刪除此圖片">×</button>' +
         '</div>';

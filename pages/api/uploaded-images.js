@@ -57,6 +57,8 @@ export default async function handler(req, res) {
         created_at: img.created_at,
         file_size: img.file_size,
         file_type: img.file_type,
+        width: img.image_width || 0,
+        height: img.image_height || 0,
         usage_count: img.usage_count,
         last_used_at: img.last_used_at,
         type: 'uploaded'
