@@ -107,17 +107,23 @@ function setImageUserStyle(img, url) {
     img.style.backgroundColor = '#000000'; // 雪花動畫：黑色背景
   } else if (imgId === 'calendar_image_preview') {
     img.style.backgroundColor = '#A4924A'; // 行事曆：金色背景
-    img.style.maxWidth = '100px'; // 縮小50%
+    img.style.width = '100px'; // 固定寬度
+    img.style.height = '100px'; // 固定高度
+    img.style.maxWidth = '100px';
     img.style.maxHeight = '100px';
     img.style.borderRadius = '50%'; // 正圓形
   } else if (imgId === 'love_icon_preview') {
     img.style.backgroundColor = '#d00308'; // 愛心：紅色背景
-    img.style.maxWidth = '100px'; // 縮小50%
+    img.style.width = '100px'; // 固定寬度
+    img.style.height = '100px'; // 固定高度
+    img.style.maxWidth = '100px';
     img.style.maxHeight = '100px';
     img.style.borderRadius = '50%'; // 正圓形
   } else if (imgId === 'member_image_preview') {
     img.style.backgroundColor = 'transparent'; // 會員圖片：透明背景
-    img.style.maxWidth = '100px'; // 縮小50%
+    img.style.width = '100px'; // 固定寬度
+    img.style.height = '100px'; // 固定高度
+    img.style.maxWidth = '100px';
     img.style.maxHeight = '100px';
     img.style.borderRadius = '50%'; // 正圓形
   } else {
@@ -127,10 +133,17 @@ function setImageUserStyle(img, url) {
   // 🆕 為圖片添加載入狀態處理
   img.style.border = '3px solid #FFC107'; // 黃色表示載入中
   img.style.padding = '4px';
-  img.style.borderRadius = '8px';
   img.style.margin = '8px 0';
   img.style.boxSizing = 'border-box';
   img.title = '圖片載入中...';
+  
+  // 🔧 修復：保持圓形設定不被覆蓋
+  if (imgId === 'calendar_image_preview' || imgId === 'love_icon_preview' || imgId === 'member_image_preview') {
+    // 保持圓形設定
+    img.style.borderRadius = '50%';
+  } else {
+    img.style.borderRadius = '8px';
+  }
   
   console.log('🎨 設定載入中樣式（黃色邊框）for:', url, '背景色:', img.style.backgroundColor);
   
