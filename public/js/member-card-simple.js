@@ -360,27 +360,34 @@ function isValidImageUrl(url) {
     const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$/i;
     const isImageExtension = imageExtensions.test(url);
     
-    // 或者是包含圖片服務的URL（如imgur、vercel等）
-    const isImageService = /\/(uploads|images|img|static|assets)\//i.test(url) || 
-                          /(imgur|vercel|cloudinary|unsplash|pexels)\./.test(url);
+    // 🔧 重要修復：識別常見圖片存儲服務（包括Supabase）
+    const isImageService = /\/(uploads|images|img|static|assets|storage)\//i.test(url) || 
+                          /(imgur|vercel|cloudinary|unsplash|pexels|supabase)\./.test(url) ||
+                          /supabase\.co\/storage/i.test(url) || 
+                          /\.vercel\.app\/uploads/i.test(url);
     
     // 🔧 修復：如果有@符號，可能是特殊命名格式，放行
     const hasSpecialNaming = /@.*\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(url);
     
+    // 🔧 關鍵修復：如果以上都不匹配，但是是HTTPS URL，優先放行
+    const isHttpsUrl = url.startsWith('https://');
+    
+    const result = isImageExtension || isImageService || hasSpecialNaming || isHttpsUrl;
+    
     console.log('🔍 URL檢測:', {
-      url,
+      url: url.substring(0, 50) + (url.length > 50 ? '...' : ''),
       isImageExtension,
       isImageService,
-      hasSpecialNaming,
-      result: isImageExtension || isImageService || hasSpecialNaming
+      hasSpecialNaming, 
+      isHttpsUrl,
+      result
     });
     
-    return isImageExtension || isImageService || hasSpecialNaming;
+    return result;
   } catch (error) {
     console.log('🔍 URL檢測異常:', url, error);
-    // 🔧 修復：如果URL檢測失敗，仍然嘗試按圖片格式判斷
-    const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i;
-    return imageExtensions.test(url);
+    // 🔧 修復：如果URL檢測失敗，對於HTTPS URL默認放行
+    return url.startsWith('https://') || url.startsWith('http://');
   }
 }
 
@@ -1716,6 +1723,10 @@ window.addEventListener('DOMContentLoaded', function() {
   // 8. 初始化圖片庫模態框
   initImageLibraryModal();
   
+  // 🔧 重要修復：初始化圖片預覽功能
+  console.log('🔧 正在初始化圖片即時預覽功能...');
+  initImagePreviews();
+  
   console.log('✅ DOMContentLoaded: 初始化完成');
 });
 
@@ -2537,7 +2548,8 @@ async function testSimpleAPI() {
 function testImagePreview() {
   console.log('🧪 開始測試圖片預覽功能...');
   
-  const testUrl = '@20250608-test1.png';
+  // 使用真實的Supabase圖片URL進行測試
+  const testUrl = 'https://juazjpzgsxfkfmundr.supabase.co/storage/v1/object/public/n/test.png';
   const mainImageUrl = document.getElementById('main_image_url');
   
   console.log('🔧 設定測試URL:', testUrl);
