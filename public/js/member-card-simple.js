@@ -94,9 +94,34 @@ function setImageDefaultStyle(img, defaultUrl) {
   img.style.display = 'block';
 }
 function setImageUserStyle(img, url) {
-  img.src = url;
-  img.style.border = '2px solid #4caf50';
+  // 🔧 重要修復：先設定樣式，再設定圖片URL
   img.style.display = 'block';
+  img.style.maxWidth = '200px';
+  img.style.maxHeight = '200px';
+  img.style.borderRadius = '4px';
+  img.style.objectFit = 'cover';
+  
+  // 🆕 為圖片添加載入狀態處理
+  img.style.border = '2px solid #ffc107'; // 黃色表示載入中
+  img.title = '圖片載入中...';
+  
+  // 🆕 添加載入成功和失敗的事件處理
+  img.onload = function() {
+    console.log('🖼️ 預覽圖片載入成功:', url);
+    img.style.border = '2px solid #4caf50'; // 綠色表示成功
+    img.title = '圖片載入成功';
+  };
+  
+  img.onerror = function() {
+    console.log('❌ 預覽圖片載入失敗:', url);
+    img.style.border = '2px solid #f44336'; // 紅色表示失敗
+    img.title = '圖片載入失敗，請檢查URL';
+    // 🔧 顯示錯誤佔位符
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZlYmVlIi8+PHRleHQgeD0iNTAlIiB5PSI0NSUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Y0NDMzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWcluePh+eEoeazleiyn+WFpTwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjU1JSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZjQ0MzM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+6KuL5qOA5p+lVVJMPC90ZXh0Pjwvc3ZnPg==';
+  };
+  
+  // 最後設定圖片URL觸發載入
+  img.src = url;
 }
 
 // **新增：清理FLEX JSON用於分享，移除自定義欄位確保符合LINE標準**
@@ -284,18 +309,56 @@ function initImagePreviews() {
             
             // 🆕 預載圖片以檢查是否能正常載入
             const testImg = new Image();
+            
+            // 🔧 重要：設定crossOrigin屬性以避免CORS問題
+            testImg.crossOrigin = 'anonymous';
+            
             testImg.onload = function() {
               console.log(`✅ 圖片載入成功 [${field.urlId}]:`, url);
               // 圖片載入成功，確保預覽顯示正確
               setImageUserStyle(preview, url);
+              // 🆕 移除錯誤樣式
+              preview.style.border = '2px solid #4caf50';
+              preview.title = '圖片載入成功';
             };
-            testImg.onerror = function() {
-              console.log(`❌ 圖片載入失敗 [${field.urlId}]:`, url);
-              // 圖片載入失敗，顯示佔位符
+            
+            testImg.onerror = function(error) {
+              console.log(`❌ 圖片載入失敗 [${field.urlId}]:`, url, error);
+              
+              // 🔧 修復：不管預載是否成功，都直接顯示圖片
+              // 有些圖片雖然預載失敗，但在實際顯示時可能成功
+              console.log(`🔧 預載失敗，但仍嘗試直接顯示圖片 [${field.urlId}]`);
+              
+              // 設定圖片並加上錯誤樣式
+              preview.src = url;
               preview.style.display = 'block';
-              preview.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWcluePh+eEoeazleiyn+WFpTwvdGV4dD48L3N2Zz4=';
-              preview.style.border = '2px dashed #ccc';
+              preview.style.border = '2px solid #ff9800'; // 橙色邊框表示警告
+              preview.title = '圖片可能載入有問題，請檢查URL';
+              
+              // 🆕 為實際預覽圖片添加錯誤處理
+              preview.onerror = function() {
+                console.log(`❌ 實際預覽也失敗 [${field.urlId}]:`, url);
+                // 只有在實際預覽也失敗時才顯示佔位符
+                preview.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWcluePh+eEoeazleiyn+WFpTwvdGV4dD48L3N2Zz4=';
+                preview.style.border = '2px dashed #f44336';
+                preview.title = '圖片載入失敗';
+              };
+              
+              preview.onload = function() {
+                console.log(`✅ 實際預覽載入成功 [${field.urlId}]:`, url);
+                preview.style.border = '2px solid #4caf50';
+                preview.title = '圖片載入成功';
+              };
             };
+            
+            // 🔧 增加載入超時處理
+            setTimeout(function() {
+              if (!testImg.complete) {
+                console.log(`⏰ 圖片載入超時 [${field.urlId}]:`, url);
+                testImg.onerror(new Error('載入超時'));
+              }
+            }, 5000); // 5秒超時
+            
             testImg.src = url;
           } else {
             console.log(`❌ URL格式無效 [${field.urlId}]:`, url);
@@ -2548,19 +2611,49 @@ async function testSimpleAPI() {
 function testImagePreview() {
   console.log('🧪 開始測試圖片預覽功能...');
   
-  // 使用真實的Supabase圖片URL進行測試
-  const testUrl = 'https://juazjpzgsxfkfmundr.supabase.co/storage/v1/object/public/n/test.png';
-  const mainImageUrl = document.getElementById('main_image_url');
+  // 🔧 使用多個測試URL，從可靠的來源開始
+  const testUrls = [
+    'https://barv3.vercel.app/uploads/vip/TS-B1.png', // 本站圖片
+    'https://via.placeholder.com/300x300/4CAF50/FFFFFF?text=TEST', // 可靠的測試圖片
+    'https://juazjpzgsxfkfmundr.supabase.co/storage/v1/object/public/n/test.png' // 原URL
+  ];
   
-  console.log('🔧 設定測試URL:', testUrl);
-  mainImageUrl.value = testUrl;
+  let currentTestIndex = 0;
   
-  // 觸發input事件
-  const inputEvent = new Event('input', { bubbles: true });
-  mainImageUrl.dispatchEvent(inputEvent);
+  function tryNextUrl() {
+    if (currentTestIndex >= testUrls.length) {
+      alert('❌ 所有測試URL都失敗了');
+      return;
+    }
+    
+    const testUrl = testUrls[currentTestIndex];
+    const mainImageUrl = document.getElementById('main_image_url');
+    
+    console.log(`🔧 測試URL ${currentTestIndex + 1}:`, testUrl);
+    mainImageUrl.value = testUrl;
+    
+    // 觸發input事件
+    const inputEvent = new Event('input', { bubbles: true });
+    mainImageUrl.dispatchEvent(inputEvent);
+    
+    // 檢查預覽是否成功
+    const preview = document.getElementById('main_image_preview');
+    if (preview) {
+      // 等待一段時間後檢查載入狀態
+      setTimeout(() => {
+        if (preview.style.border.includes('rgb(244, 67, 54)') || preview.style.border.includes('#f44336')) {
+          console.log(`❌ URL ${currentTestIndex + 1} 失敗，嘗試下一個...`);
+          currentTestIndex++;
+          tryNextUrl();
+        } else {
+          console.log(`✅ URL ${currentTestIndex + 1} 成功！`);
+          alert(`🧪 測試成功！\n\n使用的URL: ${testUrl}\n\n請檢查主圖預覽是否正確顯示`);
+        }
+      }, 2000);
+    }
+  }
   
-  console.log('✅ 測試完成，請檢查預覽圖片是否顯示');
-  alert('🧪 已設定測試圖片: ' + testUrl + '\n\n請檢查主圖預覽是否顯示\n按F12查看詳細日誌');
+  tryNextUrl();
 }
 
 // 在全域作用域添加測試說明
