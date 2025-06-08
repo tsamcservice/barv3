@@ -1206,6 +1206,33 @@ window.onload = async function() {
         }
       });
       await fillAllFieldsWithProfile();
+    } else {
+      // 🎯 有卡片資料時也要初始化圖片預覽
+      console.log('🎯 載入現有卡片資料，開始初始化圖片預覽...');
+      initImagePreviews();
+      
+      // 🔧 強制觸發所有現有圖片的預覽顯示
+      setTimeout(() => {
+        const imageFields = [
+          { urlId: 'main_image_url', previewId: 'main_image_preview' },
+          { urlId: 'snow_image_url', previewId: 'snow_image_preview' },
+          { urlId: 'calendar_image_url', previewId: 'calendar_image_preview' },
+          { urlId: 'love_icon_url', previewId: 'love_icon_preview' },
+          { urlId: 'member_image_url', previewId: 'member_image_preview' }
+        ];
+        
+        imageFields.forEach(field => {
+          const urlInput = document.getElementById(field.urlId);
+          const preview = document.getElementById(field.previewId);
+          
+          if (urlInput && preview && urlInput.value && urlInput.value.trim() !== '') {
+            console.log(`🎯 強制顯示載入的圖片預覽 [${field.urlId}]:`, urlInput.value);
+            setImageUserStyle(preview, urlInput.value);
+          }
+        });
+        
+        console.log('✅ 載入卡片資料的圖片預覽初始化完成');
+      }, 100); // 短暫延遲確保DOM更新
     }
     // 5. 掛 input 監聽 - 已移到DOMContentLoaded中統一處理
     // if(document.getElementById('display_name'))
