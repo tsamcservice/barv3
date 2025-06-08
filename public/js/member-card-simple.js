@@ -271,18 +271,26 @@ function initImagePreviews() {
       // 🆕 新增：即時圖片預覽功能
       function updatePreview() {
         const url = urlInput.value.trim();
+        console.log(`🖼️ 即時預覽觸發 [${field.urlId}]:`, url);
+        
         if (url !== '') {
           // 檢查是否為有效的圖片URL格式
           if (isValidImageUrl(url)) {
+            console.log(`✅ URL格式有效 [${field.urlId}]:`, url);
+            
+            // 🔧 修復：立即顯示預覽，不等待預載
             setImageUserStyle(preview, url);
+            console.log(`🖼️ 已設定預覽圖片 [${field.urlId}]`);
             
             // 🆕 預載圖片以檢查是否能正常載入
             const testImg = new Image();
             testImg.onload = function() {
-              // 圖片載入成功，顯示預覽
+              console.log(`✅ 圖片載入成功 [${field.urlId}]:`, url);
+              // 圖片載入成功，確保預覽顯示正確
               setImageUserStyle(preview, url);
             };
             testImg.onerror = function() {
+              console.log(`❌ 圖片載入失敗 [${field.urlId}]:`, url);
               // 圖片載入失敗，顯示佔位符
               preview.style.display = 'block';
               preview.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWcluePh+eEoeazleiyn+WFpTwvdGV4dD48L3N2Zz4=';
@@ -290,22 +298,45 @@ function initImagePreviews() {
             };
             testImg.src = url;
           } else {
-            // URL格式不正確，隱藏預覽
-            preview.style.display = 'none';
+            console.log(`❌ URL格式無效 [${field.urlId}]:`, url);
+            // 🔧 修復：即使格式檢測失敗，也嘗試顯示圖片
+            console.log(`🔧 嘗試強制顯示圖片 [${field.urlId}]`);
+            setImageUserStyle(preview, url);
           }
         } else {
+          console.log(`🔄 清空預覽 [${field.urlId}]`);
           // 空白URL，隱藏預覽
           preview.style.display = 'none';
         }
       }
       
       // 🆕 綁定即時更新事件
-      urlInput.addEventListener('input', updatePreview);
-      urlInput.addEventListener('paste', function() {
-        // 延遲處理貼上事件，確保值已更新
-        setTimeout(updatePreview, 100);
+      console.log(`🔧 綁定事件監聽器 [${field.urlId}]`);
+      
+      urlInput.addEventListener('input', function(e) {
+        console.log(`📝 input事件觸發 [${field.urlId}]:`, e.target.value);
+        updatePreview();
       });
-      urlInput.addEventListener('blur', updatePreview);
+      
+      urlInput.addEventListener('paste', function(e) {
+        console.log(`📋 paste事件觸發 [${field.urlId}]`);
+        // 延遲處理貼上事件，確保值已更新
+        setTimeout(function() {
+          console.log(`📋 paste延遲處理 [${field.urlId}]:`, urlInput.value);
+          updatePreview();
+        }, 100);
+      });
+      
+      urlInput.addEventListener('blur', function(e) {
+        console.log(`🔍 blur事件觸發 [${field.urlId}]:`, e.target.value);
+        updatePreview();
+      });
+      
+      // 🆕 立即觸發一次檢查
+      if (urlInput.value && urlInput.value.trim() !== '') {
+        console.log(`🔄 初始化觸發預覽 [${field.urlId}]:`, urlInput.value);
+        updatePreview();
+      }
     }
   });
 }
@@ -313,16 +344,43 @@ function initImagePreviews() {
 // 🆕 新增：檢查是否為有效的圖片URL格式
 function isValidImageUrl(url) {
   try {
-    new URL(url);
+    // 🔧 修復：允許相對路徑和特殊格式
+    if (url.startsWith('data:image/')) {
+      return true; // Base64圖片
+    }
+    
+    // 🔧 修復：放寬URL檢測，允許相對路徑
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
+      // 如果不是絕對URL也不是相對路徑，可能是特殊格式，嘗試檢測副檔名
+      const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i;
+      return imageExtensions.test(url);
+    }
+    
     // 檢查是否包含常見圖片格式
     const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$/i;
     const isImageExtension = imageExtensions.test(url);
+    
     // 或者是包含圖片服務的URL（如imgur、vercel等）
     const isImageService = /\/(uploads|images|img|static|assets)\//i.test(url) || 
                           /(imgur|vercel|cloudinary|unsplash|pexels)\./.test(url);
-    return isImageExtension || isImageService;
-  } catch {
-    return false;
+    
+    // 🔧 修復：如果有@符號，可能是特殊命名格式，放行
+    const hasSpecialNaming = /@.*\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(url);
+    
+    console.log('🔍 URL檢測:', {
+      url,
+      isImageExtension,
+      isImageService,
+      hasSpecialNaming,
+      result: isImageExtension || isImageService || hasSpecialNaming
+    });
+    
+    return isImageExtension || isImageService || hasSpecialNaming;
+  } catch (error) {
+    console.log('🔍 URL檢測異常:', url, error);
+    // 🔧 修復：如果URL檢測失敗，仍然嘗試按圖片格式判斷
+    const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i;
+    return imageExtensions.test(url);
   }
 }
 
@@ -1458,7 +1516,13 @@ function useLINEProfile(urlId, previewId, infoId) {
     }
     
     console.log('✅ 已設定LINE頭貼:', liffProfile.pictureUrl);
+    
+    // 🔧 修復：確保LINE頭貼被包含在表單資料中
+    const formEvent = new Event('input', { bubbles: true });
+    urlInput.dispatchEvent(formEvent);
+    
     renderPreview();
+    renderShareJsonBox();
   } else {
     alert('無法取得LINE頭貼，請確認已登入LINE');
   }
@@ -2469,12 +2533,31 @@ async function testSimpleAPI() {
   }
 }
 
+// 🧪 新增：測試圖片預覽功能
+function testImagePreview() {
+  console.log('🧪 開始測試圖片預覽功能...');
+  
+  const testUrl = '@20250608-test1.png';
+  const mainImageUrl = document.getElementById('main_image_url');
+  
+  console.log('🔧 設定測試URL:', testUrl);
+  mainImageUrl.value = testUrl;
+  
+  // 觸發input事件
+  const inputEvent = new Event('input', { bubbles: true });
+  mainImageUrl.dispatchEvent(inputEvent);
+  
+  console.log('✅ 測試完成，請檢查預覽圖片是否顯示');
+  alert('🧪 已設定測試圖片: ' + testUrl + '\n\n請檢查主圖預覽是否顯示\n按F12查看詳細日誌');
+}
+
 // 在全域作用域添加測試說明
-console.log('🧪 圖片庫測試說明：');
-console.log('1. 按F12開啟開發者工具');
-console.log('2. 切換到Console標籤');
-console.log('3a. 簡單測試: testSimpleAPI()');
-console.log('3b. 基本測試: testImageLibrary()');
-console.log('3c. 深度診斷: testImageLibraryDeep()');
+console.log('🧪 圖片預覽測試說明：');
+console.log('1. 點擊【🧪測試預覽】按鈕測試即時預覽');
+console.log('2. 或按F12開啟開發者工具觀察詳細日誌');
+console.log('3a. 圖片預覽測試: testImagePreview()');
+console.log('3b. 簡單API測試: testSimpleAPI()');
+console.log('3c. 圖片庫測試: testImageLibrary()');
+console.log('3d. 深度診斷: testImageLibraryDeep()');
 console.log('4. 按Enter執行測試');
 console.log('5. 觀察詳細的調試信息'); 
