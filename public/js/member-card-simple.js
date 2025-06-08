@@ -101,6 +101,18 @@ function setImageUserStyle(img, url) {
   img.style.borderRadius = '4px';
   img.style.objectFit = 'cover';
   
+  // 🎨 根據圖片類型設定背景色
+  const imgId = img.id;
+  if (imgId === 'snow_image_preview') {
+    img.style.backgroundColor = '#000000'; // 雪花動畫：黑色背景
+  } else if (imgId === 'calendar_image_preview') {
+    img.style.backgroundColor = '#A4924A'; // 行事曆：金色背景
+  } else if (imgId === 'love_icon_preview') {
+    img.style.backgroundColor = '#d00308'; // 愛心：紅色背景
+  } else {
+    img.style.backgroundColor = 'transparent'; // 其他：透明背景
+  }
+  
   // 🆕 為圖片添加載入狀態處理
   img.style.border = '3px solid #FFC107'; // 黃色表示載入中
   img.style.padding = '4px';
@@ -109,7 +121,7 @@ function setImageUserStyle(img, url) {
   img.style.boxSizing = 'border-box';
   img.title = '圖片載入中...';
   
-  console.log('🎨 設定載入中樣式（黃色邊框）for:', url);
+  console.log('🎨 設定載入中樣式（黃色邊框）for:', url, '背景色:', img.style.backgroundColor);
   
   // 🆕 添加載入成功和失敗的事件處理
   img.onload = function() {
@@ -2685,85 +2697,4 @@ async function testSimpleAPI() {
   }
 }
 
-// 🧪 新增：測試圖片預覽功能
-function testImagePreview() {
-  console.log('🧪 開始測試圖片預覽功能...');
-  
-  // 🔧 保存原始URL，測試結束後恢復
-  const mainImageUrl = document.getElementById('main_image_url');
-  const originalUrl = mainImageUrl.value;
-  
-  // 🔧 使用多個測試URL，從可靠的來源開始
-  const testUrls = [
-    'https://barv3.vercel.app/uploads/vip/TS-B1.png', // 本站圖片
-    'https://via.placeholder.com/300x300/4CAF50/FFFFFF?text=TEST', // 可靠的測試圖片
-    'https://juazjpzgsxfkfmundr.supabase.co/storage/v1/object/public/n/test.png' // 原URL
-  ];
-  
-  let currentTestIndex = 0;
-  
-  function tryNextUrl() {
-    if (currentTestIndex >= testUrls.length) {
-      // 恢復原始URL
-      mainImageUrl.value = originalUrl;
-      const inputEvent = new Event('input', { bubbles: true });
-      mainImageUrl.dispatchEvent(inputEvent);
-      alert('❌ 所有測試URL都失敗了\n\n已恢復原始URL');
-      return;
-    }
-    
-    const testUrl = testUrls[currentTestIndex];
-    
-    console.log(`🔧 測試URL ${currentTestIndex + 1}:`, testUrl);
-    mainImageUrl.value = testUrl;
-    
-    // 觸發input事件
-    const inputEvent = new Event('input', { bubbles: true });
-    mainImageUrl.dispatchEvent(inputEvent);
-    
-    // 檢查預覽是否成功
-    const preview = document.getElementById('main_image_preview');
-    if (preview) {
-      // 等待一段時間後檢查載入狀態
-      setTimeout(() => {
-        const isError = preview.style.border.includes('rgb(244, 67, 54)') || 
-                       preview.style.border.includes('#f44336') ||
-                       preview.style.border.includes('red');
-                       
-        if (isError) {
-          console.log(`❌ URL ${currentTestIndex + 1} 失敗，嘗試下一個...`);
-          currentTestIndex++;
-          tryNextUrl();
-        } else {
-          console.log(`✅ URL ${currentTestIndex + 1} 成功！`);
-          
-          // 詢問用戶是否要保留測試URL
-          const keepUrl = confirm(`🧪 測試成功！\n\n測試URL: ${testUrl}\n\n是否要保留這個測試URL？\n\n點擊「確定」保留，點擊「取消」恢復原始URL`);
-          
-          if (!keepUrl) {
-            // 恢復原始URL
-            mainImageUrl.value = originalUrl;
-            const restoreEvent = new Event('input', { bubbles: true });
-            mainImageUrl.dispatchEvent(restoreEvent);
-            alert('✅ 已恢復原始URL');
-          } else {
-            alert('✅ 已保留測試URL');
-          }
-        }
-      }, 3000); // 增加等待時間到3秒
-    }
-  }
-  
-  tryNextUrl();
-}
-
-// 在全域作用域添加測試說明
-console.log('🧪 圖片預覽測試說明：');
-console.log('1. 點擊【🧪測試預覽】按鈕測試即時預覽');
-console.log('2. 或按F12開啟開發者工具觀察詳細日誌');
-console.log('3a. 圖片預覽測試: testImagePreview()');
-console.log('3b. 簡單API測試: testSimpleAPI()');
-console.log('3c. 圖片庫測試: testImageLibrary()');
-console.log('3d. 深度診斷: testImageLibraryDeep()');
-console.log('4. 按Enter執行測試');
-console.log('5. 觀察詳細的調試信息'); 
+ 
