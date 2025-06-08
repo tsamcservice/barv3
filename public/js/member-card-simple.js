@@ -259,14 +259,71 @@ function initImagePreviews() {
   imageFields.forEach(field => {
     const urlInput = document.getElementById(field.urlId);
     const preview = document.getElementById(field.previewId);
-    if (urlInput && preview && urlInput.value) {
-      if (urlInput.value.trim() !== '') {
+    
+    if (urlInput && preview) {
+      // 🔄 初始化時顯示現有圖片
+      if (urlInput.value && urlInput.value.trim() !== '') {
         setImageUserStyle(preview, urlInput.value);
       } else {
-        setImageDefaultStyle(preview, preview.src);
+        preview.style.display = 'none';
       }
+      
+      // 🆕 新增：即時圖片預覽功能
+      function updatePreview() {
+        const url = urlInput.value.trim();
+        if (url !== '') {
+          // 檢查是否為有效的圖片URL格式
+          if (isValidImageUrl(url)) {
+            setImageUserStyle(preview, url);
+            
+            // 🆕 預載圖片以檢查是否能正常載入
+            const testImg = new Image();
+            testImg.onload = function() {
+              // 圖片載入成功，顯示預覽
+              setImageUserStyle(preview, url);
+            };
+            testImg.onerror = function() {
+              // 圖片載入失敗，顯示佔位符
+              preview.style.display = 'block';
+              preview.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWcluePh+eEoeazleiyn+WFpTwvdGV4dD48L3N2Zz4=';
+              preview.style.border = '2px dashed #ccc';
+            };
+            testImg.src = url;
+          } else {
+            // URL格式不正確，隱藏預覽
+            preview.style.display = 'none';
+          }
+        } else {
+          // 空白URL，隱藏預覽
+          preview.style.display = 'none';
+        }
+      }
+      
+      // 🆕 綁定即時更新事件
+      urlInput.addEventListener('input', updatePreview);
+      urlInput.addEventListener('paste', function() {
+        // 延遲處理貼上事件，確保值已更新
+        setTimeout(updatePreview, 100);
+      });
+      urlInput.addEventListener('blur', updatePreview);
     }
   });
+}
+
+// 🆕 新增：檢查是否為有效的圖片URL格式
+function isValidImageUrl(url) {
+  try {
+    new URL(url);
+    // 檢查是否包含常見圖片格式
+    const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$/i;
+    const isImageExtension = imageExtensions.test(url);
+    // 或者是包含圖片服務的URL（如imgur、vercel等）
+    const isImageService = /\/(uploads|images|img|static|assets)\//i.test(url) || 
+                          /(imgur|vercel|cloudinary|unsplash|pexels)\./.test(url);
+    return isImageExtension || isImageService;
+  } catch {
+    return false;
+  }
 }
 
 function getFormData() {
@@ -1390,6 +1447,10 @@ function useLINEProfile(urlId, previewId, infoId) {
     urlInput.value = liffProfile.pictureUrl;
     setImageUserStyle(preview, liffProfile.pictureUrl);
     
+    // 🆕 觸發input事件，啟動即時預覽系統
+    const inputEvent = new Event('input', { bubbles: true });
+    urlInput.dispatchEvent(inputEvent);
+    
     // 顯示LINE頭貼資訊
     if (infoDiv) {
       infoDiv.innerHTML = `📱 LINE頭貼 | 👤 ${liffProfile.displayName}`;
@@ -1678,6 +1739,10 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
         if (data.data?.url) {
           urlInput.value = data.data.url;
           setImageUserStyle(preview, data.data.url);
+          
+          // 🆕 觸發input事件，啟動即時預覽系統
+          const inputEvent = new Event('input', { bubbles: true });
+          urlInput.dispatchEvent(inputEvent);
           
           // 顯示完整的圖片資訊
           showImageInfo(
@@ -2257,6 +2322,10 @@ function selectImage(imageUrl) {
     
     // 更新預覽圖片
     setImageUserStyle(currentSelectTarget.preview, imageUrl);
+    
+    // 🆕 觸發input事件，啟動即時預覽系統
+    const inputEvent = new Event('input', { bubbles: true });
+    currentSelectTarget.urlInput.dispatchEvent(inputEvent);
     
     // 觸發預覽更新
     renderPreview();
