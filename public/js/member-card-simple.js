@@ -243,8 +243,8 @@ async function fillAllFieldsWithProfile() {
     }
   });
   
-  // 初始化圖片預覽
-  initImagePreviews();
+  // 🔧 移除重複的initImagePreviews調用，讓DOMContentLoaded統一處理
+  // initImagePreviews(); // 已移至DOMContentLoaded
   
   // 再用 LINE 資訊覆蓋會員圖片與名字（不動 card_alt_title）
   if (window.liff && liff.getProfile) {
@@ -1811,9 +1811,33 @@ window.addEventListener('DOMContentLoaded', function() {
   // 8. 初始化圖片庫模態框
   initImageLibraryModal();
   
-  // 🔧 重要修復：初始化圖片預覽功能
-  console.log('🔧 正在初始化圖片即時預覽功能...');
-  initImagePreviews();
+  // 🔧 重要修復：延遲初始化圖片預覽功能，確保表單資料已填入
+  console.log('🔧 等待表單資料填入後再初始化圖片預覽...');
+  setTimeout(() => {
+    console.log('🔧 延遲初始化圖片即時預覽功能...');
+    initImagePreviews();
+    
+    // 🔧 強制觸發所有現有圖片的預覽顯示
+    const imageFields = [
+      { urlId: 'main_image_url', previewId: 'main_image_preview' },
+      { urlId: 'snow_image_url', previewId: 'snow_image_preview' },
+      { urlId: 'calendar_image_url', previewId: 'calendar_image_preview' },
+      { urlId: 'love_icon_url', previewId: 'love_icon_preview' },
+      { urlId: 'member_image_url', previewId: 'member_image_preview' }
+    ];
+    
+    imageFields.forEach(field => {
+      const urlInput = document.getElementById(field.urlId);
+      const preview = document.getElementById(field.previewId);
+      
+      if (urlInput && preview && urlInput.value && urlInput.value.trim() !== '') {
+        console.log(`🔧 強制顯示現有圖片預覽 [${field.urlId}]:`, urlInput.value);
+        setImageUserStyle(preview, urlInput.value);
+      }
+    });
+    
+    console.log('✅ 圖片預覽強制初始化完成');
+  }, 500); // 延遲500ms確保表單資料已填入
   
   console.log('✅ DOMContentLoaded: 初始化完成');
 });
