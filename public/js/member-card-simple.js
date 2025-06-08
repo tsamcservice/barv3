@@ -102,19 +102,25 @@ function setImageUserStyle(img, url) {
   img.style.objectFit = 'cover';
   
   // 🆕 為圖片添加載入狀態處理
-  img.style.border = '2px solid #ffc107'; // 黃色表示載入中
+  img.style.border = '3px solid #FFC107'; // 黃色表示載入中
+  img.style.padding = '4px';
+  img.style.borderRadius = '8px';
+  img.style.margin = '8px 0';
+  img.style.boxSizing = 'border-box';
   img.title = '圖片載入中...';
+  
+  console.log('🎨 設定載入中樣式（黃色邊框）for:', url);
   
   // 🆕 添加載入成功和失敗的事件處理
   img.onload = function() {
     console.log('🖼️ 預覽圖片載入成功:', url);
-    img.style.border = '2px solid #4caf50'; // 綠色表示成功
+    img.style.border = '3px solid #4CAF50'; // 綠色表示成功
     img.title = '圖片載入成功';
   };
   
   img.onerror = function() {
     console.log('❌ 預覽圖片載入失敗:', url);
-    img.style.border = '2px solid #f44336'; // 紅色表示失敗
+    img.style.border = '3px solid #F44336'; // 紅色表示失敗
     img.title = '圖片載入失敗，請檢查URL';
     // 🔧 顯示錯誤佔位符
     img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZlYmVlIi8+PHRleHQgeD0iNTAlIiB5PSI0NSUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Y0NDMzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWcluePh+eEoeazleiyn+WFpTwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjU1JSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZjQ0MzM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+6KuL5qOA5p+lVVJMPC90ZXh0Pjwvc3ZnPg==';
@@ -273,6 +279,14 @@ async function fillAllFieldsWithProfile() {
 
 // 新增：初始化所有圖片預覽
 function initImagePreviews() {
+  // 🔧 防止重複初始化
+  if (window.imagePreviewsInitialized) {
+    console.log('⚠️ 圖片預覽已初始化，跳過重複初始化');
+    return;
+  }
+  
+  console.log('🔄 開始初始化圖片預覽功能');
+  
   const imageFields = [
     { urlId: 'main_image_url', previewId: 'main_image_preview' },
     { urlId: 'snow_image_url', previewId: 'snow_image_preview' },
@@ -287,9 +301,12 @@ function initImagePreviews() {
     
     if (urlInput && preview) {
       // 🔄 初始化時顯示現有圖片
+      console.log(`🔄 初始化檢查 [${field.urlId}]:`, urlInput.value);
       if (urlInput.value && urlInput.value.trim() !== '') {
+        console.log(`✅ 發現現有圖片URL，立即顯示預覽 [${field.urlId}]:`, urlInput.value);
         setImageUserStyle(preview, urlInput.value);
       } else {
+        console.log(`🔄 沒有圖片URL，隱藏預覽 [${field.urlId}]`);
         preview.style.display = 'none';
       }
       
@@ -402,6 +419,10 @@ function initImagePreviews() {
       }
     }
   });
+  
+  // 🔧 設置初始化完成標誌
+  window.imagePreviewsInitialized = true;
+  console.log('✅ 圖片預覽功能初始化完成');
 }
 
 // 🆕 新增：檢查是否為有效的圖片URL格式
@@ -746,11 +767,15 @@ function getMainBubble(cardData) {
     bubble.footer.contents[0].action.uri = originalUri + `?cardType=main&pageId=${pageId}`;
   }
   
-  console.log('🏷️ 生成主卡片，加入標識:', {
-    _cardId: bubble._cardId,
-    _cardType: bubble._cardType,
-    footerUri: bubble.footer?.contents?.[0]?.action?.uri
-  });
+      // 只記錄一次，避免重複日誌
+    if (!bubble._logged) {
+      console.log('🏷️ 生成主卡片，加入標識:', {
+        _cardId: bubble._cardId,
+        _cardType: bubble._cardType,
+        footerUri: bubble.footer?.contents?.[0]?.action?.uri
+      });
+      bubble._logged = true;
+    }
   
   return bubble;
 }
@@ -2611,6 +2636,10 @@ async function testSimpleAPI() {
 function testImagePreview() {
   console.log('🧪 開始測試圖片預覽功能...');
   
+  // 🔧 保存原始URL，測試結束後恢復
+  const mainImageUrl = document.getElementById('main_image_url');
+  const originalUrl = mainImageUrl.value;
+  
   // 🔧 使用多個測試URL，從可靠的來源開始
   const testUrls = [
     'https://barv3.vercel.app/uploads/vip/TS-B1.png', // 本站圖片
@@ -2622,12 +2651,15 @@ function testImagePreview() {
   
   function tryNextUrl() {
     if (currentTestIndex >= testUrls.length) {
-      alert('❌ 所有測試URL都失敗了');
+      // 恢復原始URL
+      mainImageUrl.value = originalUrl;
+      const inputEvent = new Event('input', { bubbles: true });
+      mainImageUrl.dispatchEvent(inputEvent);
+      alert('❌ 所有測試URL都失敗了\n\n已恢復原始URL');
       return;
     }
     
     const testUrl = testUrls[currentTestIndex];
-    const mainImageUrl = document.getElementById('main_image_url');
     
     console.log(`🔧 測試URL ${currentTestIndex + 1}:`, testUrl);
     mainImageUrl.value = testUrl;
@@ -2641,15 +2673,31 @@ function testImagePreview() {
     if (preview) {
       // 等待一段時間後檢查載入狀態
       setTimeout(() => {
-        if (preview.style.border.includes('rgb(244, 67, 54)') || preview.style.border.includes('#f44336')) {
+        const isError = preview.style.border.includes('rgb(244, 67, 54)') || 
+                       preview.style.border.includes('#f44336') ||
+                       preview.style.border.includes('red');
+                       
+        if (isError) {
           console.log(`❌ URL ${currentTestIndex + 1} 失敗，嘗試下一個...`);
           currentTestIndex++;
           tryNextUrl();
         } else {
           console.log(`✅ URL ${currentTestIndex + 1} 成功！`);
-          alert(`🧪 測試成功！\n\n使用的URL: ${testUrl}\n\n請檢查主圖預覽是否正確顯示`);
+          
+          // 詢問用戶是否要保留測試URL
+          const keepUrl = confirm(`🧪 測試成功！\n\n測試URL: ${testUrl}\n\n是否要保留這個測試URL？\n\n點擊「確定」保留，點擊「取消」恢復原始URL`);
+          
+          if (!keepUrl) {
+            // 恢復原始URL
+            mainImageUrl.value = originalUrl;
+            const restoreEvent = new Event('input', { bubbles: true });
+            mainImageUrl.dispatchEvent(restoreEvent);
+            alert('✅ 已恢復原始URL');
+          } else {
+            alert('✅ 已保留測試URL');
+          }
         }
-      }, 2000);
+      }, 3000); // 增加等待時間到3秒
     }
   }
   
