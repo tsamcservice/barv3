@@ -101,14 +101,25 @@ function setImageUserStyle(img, url) {
   img.style.borderRadius = '4px';
   img.style.objectFit = 'cover';
   
-  // 🎨 根據圖片類型設定背景色
+  // 🎨 根據圖片類型設定背景色、大小和形狀
   const imgId = img.id;
   if (imgId === 'snow_image_preview') {
     img.style.backgroundColor = '#000000'; // 雪花動畫：黑色背景
   } else if (imgId === 'calendar_image_preview') {
     img.style.backgroundColor = '#A4924A'; // 行事曆：金色背景
+    img.style.maxWidth = '100px'; // 縮小50%
+    img.style.maxHeight = '100px';
+    img.style.borderRadius = '50%'; // 正圓形
   } else if (imgId === 'love_icon_preview') {
     img.style.backgroundColor = '#d00308'; // 愛心：紅色背景
+    img.style.maxWidth = '100px'; // 縮小50%
+    img.style.maxHeight = '100px';
+    img.style.borderRadius = '50%'; // 正圓形
+  } else if (imgId === 'member_image_preview') {
+    img.style.backgroundColor = 'transparent'; // 會員圖片：透明背景
+    img.style.maxWidth = '100px'; // 縮小50%
+    img.style.maxHeight = '100px';
+    img.style.borderRadius = '50%'; // 正圓形
   } else {
     img.style.backgroundColor = 'transparent'; // 其他：透明背景
   }

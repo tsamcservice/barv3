@@ -1,0 +1,149 @@
+🚀 DOMContentLoaded: 開始初始化...
+member-card-simple.js:1714 🔧 綁定即時預覽，找到欄位數量: 24
+member-card-simple.js:1717 🔧 綁定欄位 1: card_alt_title
+member-card-simple.js:1717 🔧 綁定欄位 2: main_image_url
+member-card-simple.js:1717 🔧 綁定欄位 3: snow_image_url
+member-card-simple.js:1717 🔧 綁定欄位 4: main_image_link
+member-card-simple.js:1717 🔧 綁定欄位 5: calendar_image_url
+member-card-simple.js:1717 🔧 綁定欄位 6: calendar_image_link
+member-card-simple.js:1717 🔧 綁定欄位 7: amember_id
+member-card-simple.js:1717 🔧 綁定欄位 8: love_icon_url
+member-card-simple.js:1717 🔧 綁定欄位 9: love_icon_link
+member-card-simple.js:1717 🔧 綁定欄位 10: pageview
+member-card-simple.js:1717 🔧 綁定欄位 11: main_title_1
+member-card-simple.js:1717 🔧 綁定欄位 12: main_title_1_color
+member-card-simple.js:1717 🔧 綁定欄位 13: main_title_2
+member-card-simple.js:1717 🔧 綁定欄位 14: main_title_2_color
+member-card-simple.js:1717 🔧 綁定欄位 15: member_image_url
+member-card-simple.js:1717 🔧 綁定欄位 16: member_image_link
+member-card-simple.js:1717 🔧 綁定欄位 17: display_name
+member-card-simple.js:1717 🔧 綁定欄位 18: name_color1
+member-card-simple.js:1717 🔧 綁定欄位 19: button_1_text
+member-card-simple.js:1717 🔧 綁定欄位 20: button_1_url
+member-card-simple.js:1717 🔧 綁定欄位 21: button_1_color
+member-card-simple.js:1717 🔧 綁定欄位 22: s_button_text
+member-card-simple.js:1717 🔧 綁定欄位 23: s_button_url
+member-card-simple.js:1717 🔧 綁定欄位 24: s_button_color
+member-card-simple.js:1828 ✅ 表單提交監聽器已綁定
+member-card-simple.js:2335 🔍 綁定圖片選擇按鈕: main_image_select_btn 找到元素: true
+member-card-simple.js:2335 🔍 綁定圖片選擇按鈕: snow_image_select_btn 找到元素: true
+member-card-simple.js:2335 🔍 綁定圖片選擇按鈕: calendar_image_select_btn 找到元素: true
+member-card-simple.js:2335 🔍 綁定圖片選擇按鈕: love_icon_select_btn 找到元素: true
+member-card-simple.js:2335 🔍 綁定圖片選擇按鈕: member_image_select_btn 找到元素: true
+member-card-simple.js:1853 ✅ LINE頭貼按鈕已綁定
+member-card-simple.js:2178 ⚠️ 預覽導航元素未找到: ObjectleftBtn: falsepreviewContainer: truepreviewElement: truerightBtn: false[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+member-card-simple.js:2393 ✅ 圖片庫模態框已初始化
+member-card-simple.js:1881 🔧 圖片預覽初始化將在表單資料填入後執行...
+member-card-simple.js:1883 ✅ DOMContentLoaded: 初始化完成
+member-card-simple.js:811 🏷️ 生成主卡片，加入標識: ObjectfooterUri: "https://lihi3.cc/LY5qf?cardType=main&pageId=M01001"_cardId: "M01001"_cardType: "main"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+member-card-simple.js:811 🏷️ 生成主卡片，加入標識: ObjectfooterUri: "https://lihi3.cc/LY5qf?cardType=main&pageId=M01001"_cardId: "M01001"_cardType: "main"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+member-card-simple.js:165 🧹 清理FLEX JSON，移除自定義欄位
+member-card-simple.js:2083 沒有找到暫存的卡片資料
+member-card-simple.js:1223 🎯 載入現有卡片資料，開始初始化圖片預覽...
+member-card-simple.js:327 🔄 開始初始化圖片預覽功能
+member-card-simple.js:343 🔄 初始化檢查 [main_image_url]: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:345 ✅ 發現現有圖片URL，立即顯示預覽 [main_image_url]: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png 背景色: transparent
+member-card-simple.js:433 🔧 綁定事件監聽器 [main_image_url]
+member-card-simple.js:456 🔄 初始化觸發預覽 [main_image_url]: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:355 🖼️ 即時預覽觸發 [main_image_url]: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:500 🔍 URL檢測: Object
+member-card-simple.js:360 ✅ URL格式有效 [main_image_url]: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png 背景色: transparent
+member-card-simple.js:364 🖼️ 已設定預覽圖片 [main_image_url]
+member-card-simple.js:343 🔄 初始化檢查 [snow_image_url]: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:345 ✅ 發現現有圖片URL，立即顯示預覽 [snow_image_url]: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/APNG1.png 背景色: rgb(0, 0, 0)
+member-card-simple.js:433 🔧 綁定事件監聽器 [snow_image_url]
+member-card-simple.js:456 🔄 初始化觸發預覽 [snow_image_url]: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:355 🖼️ 即時預覽觸發 [snow_image_url]: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:500 🔍 URL檢測: Object
+member-card-simple.js:360 ✅ URL格式有效 [snow_image_url]: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/APNG1.png 背景色: rgb(0, 0, 0)
+member-card-simple.js:364 🖼️ 已設定預覽圖片 [snow_image_url]
+member-card-simple.js:343 🔄 初始化檢查 [calendar_image_url]: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:345 ✅ 發現現有圖片URL，立即顯示預覽 [calendar_image_url]: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/icon_calendar.png 背景色: rgb(164, 146, 74)
+member-card-simple.js:433 🔧 綁定事件監聽器 [calendar_image_url]
+member-card-simple.js:456 🔄 初始化觸發預覽 [calendar_image_url]: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:355 🖼️ 即時預覽觸發 [calendar_image_url]: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:500 🔍 URL檢測: Object
+member-card-simple.js:360 ✅ URL格式有效 [calendar_image_url]: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/icon_calendar.png 背景色: rgb(164, 146, 74)
+member-card-simple.js:364 🖼️ 已設定預覽圖片 [calendar_image_url]
+member-card-simple.js:343 🔄 初始化檢查 [love_icon_url]: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:345 ✅ 發現現有圖片URL，立即顯示預覽 [love_icon_url]: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/loveicon.png 背景色: rgb(208, 3, 8)
+member-card-simple.js:433 🔧 綁定事件監聽器 [love_icon_url]
+member-card-simple.js:456 🔄 初始化觸發預覽 [love_icon_url]: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:355 🖼️ 即時預覽觸發 [love_icon_url]: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:500 🔍 URL檢測: Object
+member-card-simple.js:360 ✅ URL格式有效 [love_icon_url]: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/loveicon.png 背景色: rgb(208, 3, 8)
+member-card-simple.js:364 🖼️ 已設定預覽圖片 [love_icon_url]
+member-card-simple.js:343 🔄 初始化檢查 [member_image_url]: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
+member-card-simple.js:345 ✅ 發現現有圖片URL，立即顯示預覽 [member_image_url]: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851 背景色: transparent
+member-card-simple.js:433 🔧 綁定事件監聽器 [member_image_url]
+member-card-simple.js:456 🔄 初始化觸發預覽 [member_image_url]: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
+member-card-simple.js:355 🖼️ 即時預覽觸發 [member_image_url]: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
+member-card-simple.js:500 🔍 URL檢測: Object
+member-card-simple.js:360 ✅ URL格式有效 [member_image_url]: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851 背景色: transparent
+member-card-simple.js:364 🖼️ 已設定預覽圖片 [member_image_url]
+member-card-simple.js:464 ✅ 圖片預覽功能初始化完成
+member-card-simple.js:811 🏷️ 生成主卡片，加入標識: ObjectfooterUri: "https://lihi3.cc/LY5qf?cardType=main&pageId=M01001"_cardId: "M01001"_cardType: "main"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+member-card-simple.js:811 🏷️ 生成主卡片，加入標識: ObjectfooterUri: "https://lihi3.cc/LY5qf?cardType=main&pageId=M01001"_cardId: "M01001"_cardType: "main"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+member-card-simple.js:165 🧹 清理FLEX JSON，移除自定義欄位
+member-card-simple.js:811 🏷️ 生成主卡片，加入標識: ObjectfooterUri: "https://lihi3.cc/LY5qf?cardType=main&pageId=M01001"_cardId: "M01001"_cardType: "main"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+member-card-simple.js:165 🧹 清理FLEX JSON，移除自定義欄位
+member-card-simple.js:1272 按照card_order重建卡片: Array(2)
+member-card-simple.js:1293 🏷️ card_order重建：為宣傳卡片加入標識: 85aa0491-76fa-4833-b7b9-ffa6bbe41bbe
+member-card-simple.js:1302 加入宣傳卡片: 85aa0491-76fa-4833-b7b9-ffa6bbe41bbe 動物森友繪_油畫展
+member-card-simple.js:811 🏷️ 生成主卡片，加入標識: ObjectfooterUri: "https://lihi3.cc/LY5qf?cardType=main&pageId=M01001"_cardId: "M01001"_cardType: "main"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+member-card-simple.js:1284 加入主卡片
+member-card-simple.js:1309 最終卡片陣列: Array(2)
+member-card-simple.js:1310 最終選中的宣傳卡片: Array(1)
+member-card-simple.js:811 🏷️ 生成主卡片，加入標識: ObjectfooterUri: "https://lihi3.cc/LY5qf?cardType=main&pageId=M01001"_cardId: "M01001"_cardType: "main"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+member-card-simple.js:914 🔄 JSON更新：已更新主卡片內容
+member-card-simple.js:165 🧹 清理FLEX JSON，移除自定義欄位
+member-card-simple.js:1317 卡片排序處理完成
+member-card-simple.js:811 🏷️ 生成主卡片，加入標識: ObjectfooterUri: "https://lihi3.cc/LY5qf?cardType=main&pageId=M01001"_cardId: "M01001"_cardType: "main"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+member-card-simple.js:914 🔄 JSON更新：已更新主卡片內容
+member-card-simple.js:165 🧹 清理FLEX JSON，移除自定義欄位
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
+member-card-simple.js:373 ✅ 圖片載入成功 [member_image_url]: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851 背景色: transparent
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:373 ✅ 圖片載入成功 [main_image_url]: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png 背景色: transparent
+member-card-simple.js:373 ✅ 圖片載入成功 [calendar_image_url]: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/icon_calendar.png 背景色: rgb(164, 146, 74)
+member-card-simple.js:373 ✅ 圖片載入成功 [love_icon_url]: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/loveicon.png 背景色: rgb(208, 3, 8)
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:373 ✅ 圖片載入成功 [snow_image_url]: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/APNG1.png 背景色: rgb(0, 0, 0)
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:1241 🎯 強制顯示載入的圖片預覽 [main_image_url]: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png 背景色: transparent
+member-card-simple.js:1241 🎯 強制顯示載入的圖片預覽 [snow_image_url]: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/APNG1.png 背景色: rgb(0, 0, 0)
+member-card-simple.js:1241 🎯 強制顯示載入的圖片預覽 [calendar_image_url]: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/icon_calendar.png 背景色: rgb(164, 146, 74)
+member-card-simple.js:1241 🎯 強制顯示載入的圖片預覽 [love_icon_url]: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://barv3.vercel.app/uploads/vip/loveicon.png 背景色: rgb(208, 3, 8)
+member-card-simple.js:1241 🎯 強制顯示載入的圖片預覽 [member_image_url]: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
+member-card-simple.js:124 🎨 設定載入中樣式（黃色邊框）for: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851 背景色: transparent
+member-card-simple.js:1246 ✅ 載入卡片資料的圖片預覽初始化完成
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://ijuazjipzgsxtkfmundr.supabase.co/storage/v1/object/public/member-cards/1749301220251-TS-B1.png
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://barv3.vercel.app/uploads/vip/APNG1.png
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://barv3.vercel.app/uploads/vip/icon_calendar.png
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://barv3.vercel.app/uploads/vip/loveicon.png
+member-card-simple.js:128 🖼️ 預覽圖片載入成功: https://profile.line-scdn.net/ch/v2/p/u9b1a7cd4628730c3f25b08eaab2348f7/1355716850851
