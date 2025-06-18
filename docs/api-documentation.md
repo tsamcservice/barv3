@@ -1,196 +1,407 @@
-# API 文檔
+# 📚 API 文檔
 
-## 📡 **圖片管理相關API**
+## 🏷️ **版本**: `20250618-FINAL`
+**更新日期**: 2025-06-18  
+**基礎URL**: `https://barv3.vercel.app`
 
-### **1. 圖片上傳API**
-**端點**：`POST /api/upload`
+---
 
-**描述**：上傳圖片並自動記錄到資料庫
+## 🔗 **API 端點總覽**
 
-**配置**：
-```javascript
-// pages/api/upload/index.ts
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!  // 使用ANON_KEY
-);
-```
+### **會員卡管理**
+- `GET /api/cards` - 查詢會員卡
+- `POST /api/cards` - 儲存/更新會員卡
+- `POST /api/cards/pageview` - 更新瀏覽統計
+- `DELETE /api/cards/delete` - 刪除會員卡
+- `GET /api/cards/list` - 取得會員卡列表
 
-**請求參數**：
-```javascript
+### **點數系統** 🆕
+- `POST /api/cards/points` - 計算點數回饋
+- `GET /api/points-settings` - 取得點數設定
+- `POST /api/points-settings` - 更新點數設定
+
+### **圖片管理**
+- `POST /api/upload` - 圖片上傳
+- `GET /api/uploaded-images` - 取得已上傳圖片
+- `POST /api/image-management` - 圖片管理操作
+
+### **宣傳卡片**
+- `GET /api/promo-cards` - 取得宣傳卡片
+- `POST /api/promo-cards` - 新增/更新宣傳卡片
+
+---
+
+## 🎯 **點數系統 API** 
+
+### **POST /api/cards/points**
+計算宣傳卡片附加的點數回饋
+
+#### **請求格式**
+```json
 {
-  "file": "data:image/png;base64,...",  // Base64編碼的圖片
-  "fileName": "example.png",            // 原始檔名
-  "fileType": "image/png",              // MIME類型
-  "userId": "Ueb6db8be8de..."           // LINE用戶ID（可選）
+  "cardId": "string",           // 會員卡ID，使用 "temp-card-id" 為預覽模式
+  "promoPositions": [0, 2, 4]   // 附加位置陣列 (0-4)
 }
 ```
 
-**回應格式**：
-```javascript
+#### **回應格式**
+```json
 {
   "success": true,
-  "data": {
-    "url": "https://...supabase.co/storage/v1/object/public/member-cards/...",
-    "fileName": "example.png",
-    "fileSize": 123456,
-    "recorded": true  // 是否已記錄到資料庫
-  }
+  "oldPoints": 100,             // 原始點數
+  "reward": 30,                 // 總回饋點數
+  "newPoints": 130,             // 新的點數總計
+  "rewardDetails": [            // 詳細回饋明細
+    {
+      "position": 0,
+      "percentage": 15,
+      "reward": 15
+    },
+    {
+      "position": 2, 
+      "percentage": 10,
+      "reward": 10
+    },
+    {
+      "position": 4,
+      "percentage": 5,
+      "reward": 5
+    }
+  ]
 }
 ```
 
-### **2. 圖片庫查詢API**
-**端點**：`GET /api/uploaded-images?userId={userId}`
-
-**描述**：查詢用戶已上傳的圖片列表
-
-**配置**：
-```javascript
-// pages/api/uploaded-images.js
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY  // ⚠️ 改用ANON_KEY解決Vercel環境問題
-);
+#### **錯誤回應**
+```json
+{
+  "success": false,
+  "error": "點數不足，無法附加宣傳卡片"
+}
 ```
 
-**請求參數**：
-- `userId`：LINE用戶ID
-
-**回應格式**：
+#### **使用範例**
 ```javascript
+// 計算位置1,3,5的點數回饋
+const response = await fetch('/api/cards/points', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    cardId: 'M01001_user123',
+    promoPositions: [0, 2, 4]
+  })
+});
+
+const result = await response.json();
+if (result.success) {
+  console.log(`獲得 ${result.reward} 點回饋！`);
+}
+```
+
+---
+
+### **GET /api/points-settings**
+取得點數回饋設定
+
+#### **回應格式**
+```json
 {
   "success": true,
   "data": [
     {
-      "name": "TS-B1.png",
-      "url": "https://...supabase.co/storage/v1/object/public/member-cards/...",
-      "created_at": "2025-06-07T09:48:28.973166+00:00",
-      "file_size": 816333,
-      "file_type": "image/png",
-      "usage_count": 0,
-      "type": "uploaded"
-    }
-  ],
-  "total": 2,
-  "message": "找到 2 張已上傳的圖片"
-}
-```
-
-### **3. 圖片管理API**
-**端點**：`POST /api/image-management`
-
-**描述**：刪除圖片記錄和檔案
-
-**請求參數**：
-```javascript
-{
-  "userId": "Ueb6db8be8de...",
-  "action": "delete",
-  "imageUrl": "https://...supabase.co/storage/v1/object/public/member-cards/..."
+      "position_index": 0,
+      "reward_percentage": 15.0,
+      "updated_at": "2025-06-18T12:28:06.599848+00:00"
+    },
+    {
+      "position_index": 1,
+      "reward_percentage": 12.0,
+      "updated_at": "2025-06-18T12:28:06.599848+00:00"
+    },
+    // ... 其他位置設定
+  ]
 }
 ```
 
 ---
 
-## 🧪 **測試API**
+### **POST /api/points-settings**
+更新點數回饋設定
 
-### **1. 簡單測試API**
-**端點**：`GET /api/simple-test`
+#### **請求格式**
+```json
+[
+  {
+    "position_index": 0,
+    "reward_percentage": 20.0
+  },
+  {
+    "position_index": 1,
+    "reward_percentage": 15.0
+  }
+  // ... 其他位置設定
+]
+```
 
-**描述**：測試API基礎功能和環境變數
-
-**回應格式**：
-```javascript
+#### **回應格式**
+```json
 {
   "success": true,
-  "message": "簡單測試成功",
-  "environment": {
-    "SUPABASE_URL": true,
-    "ANON_KEY": true,
-    "SERVICE_ROLE_KEY": false  // ⚠️ Vercel環境常見問題
+  "message": "Settings updated successfully"
+}
+```
+
+---
+
+## 📊 **會員卡管理 API**
+
+### **GET /api/cards**
+查詢會員卡資料
+
+#### **查詢參數**
+- `pageId` (必填): 會員卡頁面ID
+- `userId` (選填): 使用者ID，用於個人化查詢
+
+#### **回應格式**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "M01001_user123",
+    "page_id": "M01001",
+    "user_id": "user123",
+    "user_points": 150.0,        // 🆕 點數欄位
+    "card_data": {
+      "type": "flex",
+      "altText": "會員卡",
+      "contents": { /* FLEX JSON */ }
+    },
+    "view_count": 25,
+    "created_at": "2025-06-18T10:00:00Z",
+    "updated_at": "2025-06-18T12:00:00Z"
   }
 }
 ```
 
-### **2. 深度診斷API**
-**端點**：`GET /api/test-uploaded-images?userId={userId}`
-
-**描述**：測試圖片庫相關功能，診斷權限問題
-
 ---
 
-## ⚙️ **環境變數配置**
+### **POST /api/cards**
+儲存或更新會員卡
 
-### **必要變數**
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+#### **請求格式**
+```json
+{
+  "pageId": "M01001",
+  "userId": "user123",
+  "cardData": {
+    "type": "flex",
+    "altText": "會員卡",
+    "contents": { /* FLEX JSON */ }
+  },
+  "userPoints": 150.0           // 🆕 點數欄位
+}
 ```
 
-### **可選變數**
-```env
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-**注意**：SERVICE_ROLE_KEY在Vercel環境中可能無法正確讀取，建議優先使用ANON_KEY + 適當的RLS政策
-
----
-
-## 🔒 **資料庫配置**
-
-### **必要表格**
-```sql
--- 用戶上傳圖片記錄表
-CREATE TABLE uploaded_images (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  line_user_id text NOT NULL,
-  image_url text NOT NULL,
-  original_filename text,
-  file_size integer,
-  file_type text,
-  storage_path text,
-  created_at timestamp with time zone DEFAULT now(),
-  last_used_at timestamp with time zone,
-  usage_count integer DEFAULT 0,
-  is_active boolean DEFAULT true
-);
-```
-
-### **RLS政策**
-```sql
--- 適用於ANON_KEY的開放政策
-CREATE POLICY "Allow all read operations on uploaded_images" ON uploaded_images
-FOR SELECT USING (true);
-
-CREATE POLICY "Allow all insert operations on uploaded_images" ON uploaded_images
-FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Allow all update operations on uploaded_images" ON uploaded_images
-FOR UPDATE USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow all delete operations on uploaded_images" ON uploaded_images
-FOR DELETE USING (true);
+#### **回應格式**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "M01001_user123",
+    "message": "會員卡已成功儲存"
+  }
+}
 ```
 
 ---
 
-## 📋 **最佳實踐**
+## 🖼️ **圖片管理 API**
 
-### **API設計原則**
-1. **環境適應性**：支援ANON_KEY和SERVICE_ROLE_KEY
-2. **錯誤處理**：提供詳細的錯誤信息
-3. **日誌記錄**：包含充分的調試信息
+### **POST /api/upload**
+上傳圖片檔案
 
-### **安全考量**
-1. **RLS政策**：使用適當的行級安全政策
-2. **輸入驗證**：驗證檔案類型和大小
-3. **權限最小化**：僅給予必要的權限
+#### **請求格式**
+```
+Content-Type: multipart/form-data
 
-### **環境變數管理**
-1. **前端變數**：使用`NEXT_PUBLIC_*`確保可讀取
-2. **備用方案**：準備ANON_KEY和SERVICE_ROLE_KEY兩套配置
-3. **定期測試**：使用`testSimpleAPI()`檢查環境狀態
+file: [圖片檔案]
+folder: "vip" | "public" | "templates"
+```
+
+#### **回應格式**
+```json
+{
+  "success": true,
+  "data": {
+    "url": "https://supabase-url/storage/v1/object/public/uploads/vip/filename.jpg",
+    "filename": "filename.jpg",
+    "size": 1024000,
+    "width": 800,               // 🆕 圖片寬度
+    "height": 600               // 🆕 圖片高度
+  }
+}
+```
 
 ---
 
-*最後更新：2025-06-07*  
-*狀態：SERVICE_ROLE_KEY問題已修復，改用ANON_KEY* 
+## 📈 **統計 API**
+
+### **POST /api/cards/pageview**
+批次更新頁面瀏覽統計
+
+#### **請求格式**
+```json
+{
+  "updates": [
+    {
+      "pageId": "M01001",
+      "userId": "user123",
+      "increment": 1
+    }
+  ]
+}
+```
+
+#### **回應格式**
+```json
+{
+  "success": true,
+  "results": [
+    {
+      "pageId": "M01001",
+      "userId": "user123", 
+      "newViewCount": 26,
+      "success": true
+    }
+  ]
+}
+```
+
+---
+
+## 🛡️ **錯誤處理**
+
+### **通用錯誤格式**
+```json
+{
+  "success": false,
+  "error": "錯誤訊息描述",
+  "code": "ERROR_CODE"        // 選填
+}
+```
+
+### **常見錯誤代碼**
+- `400` - 請求參數錯誤
+- `401` - 未授權存取
+- `404` - 資源不存在
+- `405` - 方法不允許
+- `500` - 伺服器內部錯誤
+
+### **點數系統特定錯誤**
+- `INSUFFICIENT_POINTS` - 點數不足
+- `INVALID_POSITION` - 無效的附加位置
+- `CALCULATION_ERROR` - 點數計算錯誤
+
+---
+
+## 🔐 **認證與權限**
+
+### **資料庫權限 (RLS)**
+- **會員卡**: 基於 `user_id` 的行級安全
+- **宣傳卡片**: 公開讀取，限制寫入
+- **點數設定**: 管理員權限控制
+- **圖片**: 基於資料夾的權限控制
+
+### **API 權限**
+- **公開端點**: `/api/cards` (GET), `/api/promo-cards` (GET)
+- **使用者端點**: `/api/cards` (POST), `/api/upload`
+- **管理員端點**: `/api/points-settings` (POST)
+
+---
+
+## 📝 **使用範例**
+
+### **完整的點數計算流程**
+```javascript
+// 1. 取得當前點數設定
+const settings = await fetch('/api/points-settings').then(r => r.json());
+
+// 2. 計算點數回饋
+const pointsResult = await fetch('/api/cards/points', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    cardId: 'M01001_user123',
+    promoPositions: [0, 1, 2] // 前三個位置
+  })
+});
+
+// 3. 處理結果
+const points = await pointsResult.json();
+if (points.success) {
+  alert(`恭喜！獲得 ${points.reward} 點回饋，總點數：${points.newPoints}`);
+} else {
+  alert(`錯誤：${points.error}`);
+}
+```
+
+### **會員卡儲存與點數更新**
+```javascript
+// 儲存會員卡並更新點數
+const saveResult = await fetch('/api/cards', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    pageId: 'M01001',
+    userId: 'user123',
+    cardData: flexJsonData,
+    userPoints: newPointsValue
+  })
+});
+```
+
+---
+
+## 🔧 **開發工具**
+
+### **測試端點**
+- `/admin-points.html` - 點數設定管理介面
+- `/test-share-debug.html` - 分享功能診斷工具
+
+### **API 測試工具**
+```javascript
+// 在瀏覽器控制台中測試
+// 測試點數API
+fetch('/api/cards/points', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    cardId: 'temp-card-id',
+    promoPositions: [0, 2, 4]
+  })
+}).then(r => r.json()).then(console.log);
+```
+
+---
+
+## 📋 **更新記錄**
+
+### **2025-06-18 - 點數系統上線**
+- ✅ 新增點數計算API
+- ✅ 新增點數設定管理API  
+- ✅ 會員卡表新增點數欄位
+- ✅ 宣傳卡表新增點數欄位
+- ✅ 完整的API測試驗證
+
+### **2025-06-08 - 分享功能修復**
+- ✅ 修復JSON清理問題
+- ✅ 移除 `_logged` 欄位污染
+
+### **2025-06-07 - 圖片功能擴展**
+- ✅ 圖片尺寸自動檢測
+- ✅ 新增 `image_width`, `image_height` 欄位
+
+---
+
+**最後更新**: 2025-06-18  
+**API版本**: v1.2.0  
+**狀態**: 穩定 - 點數系統完整上線 
