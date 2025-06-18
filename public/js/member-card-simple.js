@@ -176,6 +176,7 @@ function cleanFlexJsonForShare(flexJson) {
     // 移除自定義欄位
     delete obj._cardId;
     delete obj._cardType;
+    delete obj._logged;  // 🔧 修復：移除 _logged 欄位
     
     // 遞迴清理子物件
     if (Array.isArray(obj)) {
