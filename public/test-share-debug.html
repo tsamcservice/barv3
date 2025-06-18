@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 分享功能診斷工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid #667eea;
+        }
+        .test-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .test-btn:hover {
+            background: #5a6fd8;
+        }
+        .results {
+            background: #ffffff;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .warning { border-color: #ffc107; background: #fff3cd; }
+        .info { border-color: #17a2b8; background: #d1ecf1; }
+        
+        .json-viewer {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+        .json-key { color: #63b3ed; }
+        .json-string { color: #68d391; }
+        .json-number { color: #f6ad55; }
+        .json-boolean { color: #fc8181; }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-ok { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 分享功能診斷工具</h1>
+        
+        <div class="test-section">
+            <h3>📱 環境檢測</h3>
+            <button class="test-btn" onclick="checkEnvironment()">檢查瀏覽器環境</button>
+            <div id="envResults" class="results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 JSON清理測試</h3>
+            <p>測試 cleanFlexJsonForShare 函數是否正確清理多餘欄位</p>
+            <button class="test-btn" onclick="testJsonCleaning()">測試JSON清理</button>
+            <div id="jsonResults" class="results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 分享功能測試</h3>
+            <p>模擬分享流程，檢查各個步驟</p>
+            <button class="test-btn" onclick="testShareFlow()">測試分享流程</button>
+            <div id="shareResults" class="results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 LINE LIFF 測試</h3>
+            <p>檢查LINE環境和LIFF功能</p>
+            <button class="test-btn" onclick="testLineEnvironment()">測試LINE環境</button>
+            <div id="lineResults" class="results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 系統狀態</h3>
+            <button class="test-btn" onclick="checkSystemStatus()">檢查系統狀態</button>
+            <div id="systemResults" class="results"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模擬 cleanFlexJsonForShare 函數
+        function cleanFlexJsonForShare(flexJson) {
+            const cleanJson = JSON.parse(JSON.stringify(flexJson));
+            
+            function cleanObject(obj) {
+                if (typeof obj !== 'object' || obj === null) return;
+                
+                // 清理調試相關欄位
+                delete obj._logged;
+                delete obj.debug;
+                delete obj.temp;
+                delete obj._temp;
+                
+                // 遞歸清理子物件
+                for (const key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        if (Array.isArray(obj[key])) {
+                            obj[key].forEach(item => cleanObject(item));
+                        } else if (typeof obj[key] === 'object') {
+                            cleanObject(obj[key]);
+                        }
+                    }
+                }
+            }
+            
+            cleanObject(cleanJson);
+            return cleanJson;
+        }
+        
+        function checkEnvironment() {
+            const results = document.getElementById('envResults');
+            results.className = 'results info';
+            
+            const info = {
+                userAgent: navigator.userAgent,
+                isLineApp: /Line/i.test(navigator.userAgent),
+                isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+                supportsCopyToClipboard: !!navigator.clipboard,
+                supportsShare: !!navigator.share,
+                currentURL: window.location.href,
+                timestamp: new Date().toISOString()
+            };
+            
+            let output = '🌐 瀏覽器環境檢測結果:\n\n';
+            for (const [key, value] of Object.entries(info)) {
+                const indicator = value === true ? '✅' : value === false ? '❌' : '📋';
+                output += `${indicator} ${key}: ${value}\n`;
+            }
+            
+            results.textContent = output;
+        }
+        
+        function testJsonCleaning() {
+            const results = document.getElementById('jsonResults');
+            
+            // 建立測試用的髒JSON
+            const dirtyJson = {
+                type: "flex",
+                altText: "會員卡",
+                contents: {
+                    type: "bubble",
+                    body: {
+                        type: "box",
+                        layout: "vertical",
+                        contents: [
+                            {
+                                type: "text",
+                                text: "測試卡片",
+                                _logged: true,
+                                debug: "test data"
+                            }
+                        ]
+                    },
+                    _logged: true,
+                    temp: "should be removed"
+                }
+            };
+            
+            try {
+                const cleanJson = cleanFlexJsonForShare(dirtyJson);
+                
+                results.className = 'results success';
+                results.innerHTML = `
+                    <div><span class="status-indicator status-ok"></span><strong>JSON清理測試 - 成功</strong></div>
+                    
+                    <h4>🔴 清理前 (髒JSON):</h4>
+                    <div class="json-viewer">${JSON.stringify(dirtyJson, null, 2)}</div>
+                    
+                    <h4>🟢 清理後 (乾淨JSON):</h4>
+                    <div class="json-viewer">${JSON.stringify(cleanJson, null, 2)}</div>
+                    
+                    <h4>📊 清理結果:</h4>
+                    • 移除 _logged 欄位: ${!JSON.stringify(cleanJson).includes('_logged') ? '✅' : '❌'}
+                    • 移除 debug 欄位: ${!JSON.stringify(cleanJson).includes('debug') ? '✅' : '❌'}  
+                    • 移除 temp 欄位: ${!JSON.stringify(cleanJson).includes('temp') ? '✅' : '❌'}
+                    • JSON格式有效: ${isValidJson(cleanJson) ? '✅' : '❌'}
+                `;
+            } catch (error) {
+                results.className = 'results error';
+                results.innerHTML = `
+                    <div><span class="status-indicator status-error"></span><strong>JSON清理測試 - 失敗</strong></div>
+                    錯誤: ${error.message}
+                `;
+            }
+        }
+        
+        function testShareFlow() {
+            const results = document.getElementById('shareResults');
+            results.className = 'results info';
+            
+            let output = '🔄 分享流程測試:\n\n';
+            
+            // 步驟1: 檢查分享功能可用性
+            output += '1️⃣ 檢查分享API可用性:\n';
+            if (navigator.share) {
+                output += '   ✅ navigator.share 支援\n';
+            } else {
+                output += '   ❌ navigator.share 不支援 (將使用複製到剪貼板)\n';
+            }
+            
+            // 步驟2: 檢查剪貼板API
+            output += '\n2️⃣ 檢查剪貼板API:\n';
+            if (navigator.clipboard) {
+                output += '   ✅ navigator.clipboard 支援\n';
+            } else {
+                output += '   ❌ navigator.clipboard 不支援\n';
+            }
+            
+            // 步驟3: 模擬JSON處理
+            output += '\n3️⃣ 模擬JSON處理:\n';
+            try {
+                const testJson = { type: "flex", _logged: true, contents: { body: { _logged: true } } };
+                const cleaned = cleanFlexJsonForShare(testJson);
+                output += '   ✅ JSON清理成功\n';
+                output += `   📋 清理前大小: ${JSON.stringify(testJson).length} 字元\n`;
+                output += `   📋 清理後大小: ${JSON.stringify(cleaned).length} 字元\n`;
+            } catch (error) {
+                output += `   ❌ JSON處理失敗: ${error.message}\n`;
+            }
+            
+            // 步驟4: 檢查LINE環境
+            output += '\n4️⃣ 檢查LINE環境:\n';
+            const isLineApp = /Line/i.test(navigator.userAgent);
+            if (isLineApp) {
+                output += '   ✅ 在LINE App中\n';
+                if (typeof liff !== 'undefined') {
+                    output += '   ✅ LIFF SDK 已載入\n';
+                } else {
+                    output += '   ⚠️ LIFF SDK 未載入\n';
+                }
+            } else {
+                output += '   ℹ️ 不在LINE App中 (將使用一般分享)\n';
+            }
+            
+            results.textContent = output;
+        }
+        
+        function testLineEnvironment() {
+            const results = document.getElementById('lineResults');
+            results.className = 'results info';
+            
+            let output = '📱 LINE環境測試:\n\n';
+            
+            // 檢查User Agent
+            const isLineApp = /Line/i.test(navigator.userAgent);
+            output += `🔍 User Agent檢測: ${isLineApp ? '✅ LINE App' : '❌ 非LINE App'}\n`;
+            output += `📋 User Agent: ${navigator.userAgent}\n\n`;
+            
+            // 檢查LIFF
+            if (typeof liff !== 'undefined') {
+                output += '🟢 LIFF SDK狀態: 已載入\n';
+                try {
+                    output += `📋 LIFF版本: ${liff.getVersion()}\n`;
+                    if (liff.isLoggedIn()) {
+                        output += '✅ LIFF登入狀態: 已登入\n';
+                    } else {
+                        output += '❌ LIFF登入狀態: 未登入\n';
+                    }
+                } catch (error) {
+                    output += `⚠️ LIFF狀態檢查失敗: ${error.message}\n`;
+                }
+            } else {
+                output += '🔴 LIFF SDK狀態: 未載入\n';
+                output += '💡 建議: 確認LIFF SDK是否正確引入\n';
+            }
+            
+            // 檢查分享功能
+            output += '\n📤 分享功能檢測:\n';
+            if (isLineApp && typeof liff !== 'undefined') {
+                try {
+                    if (liff.isApiAvailable('shareTargetPicker')) {
+                        output += '✅ LIFF分享功能: 可用\n';
+                    } else {
+                        output += '❌ LIFF分享功能: 不可用\n';
+                    }
+                } catch (error) {
+                    output += `⚠️ LIFF分享檢查失敗: ${error.message}\n`;
+                }
+            } else {
+                output += 'ℹ️ 非LINE環境，將使用一般分享方式\n';
+            }
+            
+            results.textContent = output;
+        }
+        
+        function checkSystemStatus() {
+            const results = document.getElementById('systemResults');
+            results.className = 'results info';
+            
+            let output = '⚙️ 系統狀態檢查:\n\n';
+            
+            // 檢查關鍵函數
+            const functions = [
+                'cleanFlexJsonForShare',
+                'navigator.share',
+                'navigator.clipboard',
+                'JSON.parse',
+                'JSON.stringify'
+            ];
+            
+            output += '🔧 關鍵函數檢查:\n';
+            functions.forEach(funcName => {
+                try {
+                    const exists = eval(funcName) !== undefined;
+                    output += `   ${exists ? '✅' : '❌'} ${funcName}\n`;
+                } catch (error) {
+                    output += `   ❌ ${funcName} (錯誤: ${error.message})\n`;
+                }
+            });
+            
+            // 檢查本地存儲
+            output += '\n💾 本地存儲檢查:\n';
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                output += '   ✅ localStorage 可用\n';
+            } catch (error) {
+                output += `   ❌ localStorage 不可用: ${error.message}\n`;
+            }
+            
+            // 檢查網路狀態
+            output += '\n🌐 網路狀態:\n';
+            output += `   📡 線上狀態: ${navigator.onLine ? '✅ 線上' : '❌ 離線'}\n`;
+            
+            // 檢查效能
+            output += '\n⚡ 效能資訊:\n';
+            if (performance.memory) {
+                output += `   🧠 記憶體使用: ${Math.round(performance.memory.usedJSHeapSize / 1024 / 1024)}MB\n`;
+            }
+            output += `   ⏱️ 頁面載入時間: ${Math.round(performance.now())}ms\n`;
+            
+            results.textContent = output;
+        }
+        
+        function isValidJson(obj) {
+            try {
+                JSON.stringify(obj);
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+        
+        // 頁面載入時自動檢查環境
+        window.onload = function() {
+            checkEnvironment();
+        };
+    </script>
+</body>
+</html> 
