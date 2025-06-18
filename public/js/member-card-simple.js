@@ -1225,6 +1225,20 @@ window.onload = async function() {
       result = await res.json();
       if (result.success && result.data && result.data.length > 0) {
         const card = result.data[0];
+        
+        // 🆕 設定當前卡片ID供點數系統使用
+        window.currentCardId = card.id;
+        console.log('🆔 設定當前卡片ID:', card.id);
+        
+        // 🆕 載入並顯示用戶點數
+        if (card.user_points !== undefined) {
+          const pointsDisplay = document.getElementById('user-points');
+          if (pointsDisplay) {
+            pointsDisplay.textContent = formatPoints(card.user_points);
+            console.log('💰 載入用戶點數:', card.user_points);
+          }
+        }
+        
         Object.keys(defaultCard).forEach(key => {
           if (document.getElementById(key) && card[key] !== undefined && card[key] !== null) {
             setInputDefaultStyle(document.getElementById(key), card[key]);
@@ -1664,16 +1678,28 @@ async function shareToLine() {
     // **步驟6：清理FLEX JSON並分享**
     const cleanFlexJson = cleanFlexJsonForShare(flexJson);
     console.log('📤 分享清理後的FLEX JSON');
+    
+    // 檢查是否支援 shareTargetPicker
+    if (!liff.isApiAvailable('shareTargetPicker')) {
+      hideShareLoading();
+      alert('⚠️ 請在 LINE App 中開啟此頁面才能使用分享功能\n\n📱 複製連結到 LINE App 開啟：\n' + window.location.href);
+      return;
+    }
+    
     await liff.shareTargetPicker([cleanFlexJson])
-      .then(() => {
+      .then((result) => {
         hideShareLoading();
-        alert('✅ 分享會員卡成功！\n\n📝 請記得關閉本會員卡編修頁面');
+        if (result && result.status === 'success') {
+          alert('✅ 分享會員卡成功！\n\n📝 請記得關閉本會員卡編修頁面');
+        } else {
+          console.log('分享取消:', result);
+        }
         closeOrRedirect();
       })
       .catch((error) => {
         hideShareLoading();
-        console.log('分享取消或失敗:', error);
-        // 不顯示錯誤訊息，因為用戶可能主動取消分享
+        console.error('分享失敗:', error);
+        alert('❌ 分享失敗：' + error.message + '\n\n💡 請確認在 LINE App 中開啟此頁面');
         closeOrRedirect();
       });
   } catch (err) {
@@ -2184,8 +2210,13 @@ function formatPoints(val) {
 }
 
 async function updateUserPoints() {
-  const cardId = getCurrentCardId(); // 需要實作取得當前卡片ID的函數
-  if (!cardId) return;
+  const cardId = getCurrentCardId();
+  console.log('🎯 開始更新點數，cardId:', cardId);
+  
+  if (!cardId || cardId === 'temp-card-id') {
+    console.log('⚠️ 無有效cardId，跳過點數更新');
+    return;
+  }
   
   // 取得宣傳卡片位置陣列
   const promoPositions = [];
@@ -2193,9 +2224,15 @@ async function updateUserPoints() {
     promoPositions.push(index);
   });
   
-  if (promoPositions.length === 0) return;
+  console.log('🎯 宣傳卡片位置:', promoPositions);
+  
+  if (promoPositions.length === 0) {
+    console.log('📝 沒有宣傳卡片，跳過點數更新');
+    return;
+  }
   
   try {
+    console.log('🚀 發送點數更新請求...');
     const response = await fetch('/api/cards/points', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2206,24 +2243,48 @@ async function updateUserPoints() {
     });
     
     const result = await response.json();
+    console.log('📊 點數API回應:', result);
+    
     if (result.success) {
       // 更新點數顯示
-      document.getElementById('user-points').textContent = formatPoints(result.newPoints);
-      console.log(`點數更新: ${result.oldPoints} -> ${result.newPoints} (回饋: +${result.reward})`);
+      const pointsDisplay = document.getElementById('user-points');
+      if (pointsDisplay) {
+        pointsDisplay.textContent = formatPoints(result.newPoints);
+        console.log(`💰 點數更新成功: ${result.oldPoints} -> ${result.newPoints} (回饋: +${result.reward})`);
+        
+        // 顯示回饋通知
+        if (result.reward > 0) {
+          alert(`🎉 獲得點數回饋 +${result.reward} 點！\n目前點數：${result.newPoints} 點`);
+        }
+      }
     } else {
-      console.error('點數更新失敗:', result.error);
-      if (result.error.includes('點數不足')) {
+      console.error('❌ 點數更新失敗:', result.error);
+      if (result.error && result.error.includes('點數不足')) {
         alert('⚠️ ' + result.error);
       }
     }
   } catch (error) {
-    console.error('點數API呼叫失敗:', error);
+    console.error('❌ 點數API呼叫失敗:', error);
   }
 }
 
 function getCurrentCardId() {
-  // 從現有資料中取得卡片ID，這裡需要根據實際情況調整
-  return window.currentCardId || null;
+  // 從現有資料中取得卡片ID
+  if (window.currentCardId) {
+    return window.currentCardId;
+  }
+  
+  // 嘗試從 allCardsSortable 中取得主卡片ID
+  if (allCardsSortable && allCardsSortable.length > 0) {
+    const mainCard = allCardsSortable.find(c => c.type === 'main');
+    if (mainCard && mainCard.id && mainCard.id !== 'main') {
+      return mainCard.id;
+    }
+  }
+  
+  // 如果都沒有，返回一個臨時ID（用於API測試）
+  console.warn('⚠️ 無法取得cardId，使用臨時方案');
+  return 'temp-card-id';
 }
 
 // 在所有顯示 pageview 的地方補零

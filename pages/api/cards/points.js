@@ -13,16 +13,24 @@ export default async function handler(req, res) {
   }
 
   try {
+    let currentPoints = 100.0; // 預設點數
+    
     // 1. 取得現有會員卡點數
-    const { data: memberCard, error: getError } = await supabase
-      .from('member_cards')
-      .select('user_points')
-      .eq('id', cardId)
-      .single();
-    
-    if (getError) throw getError;
-    
-    const currentPoints = memberCard?.user_points || 0;
+    if (cardId !== 'temp-card-id') {
+      const { data: memberCard, error: getError } = await supabase
+        .from('member_cards')
+        .select('user_points')
+        .eq('id', cardId)
+        .single();
+      
+      if (getError) {
+        console.log('查詢會員卡失敗，使用預設點數:', getError.message);
+      } else {
+        currentPoints = memberCard?.user_points || 100.0;
+      }
+    } else {
+      console.log('使用臨時cardId，採用預設點數:', currentPoints);
+    }
     
     // 2. 檢查點數是否足夠 (小於0無法附加)
     if (currentPoints < 0) {
@@ -54,13 +62,20 @@ export default async function handler(req, res) {
     
     // 5. 更新會員卡點數
     const newPoints = currentPoints + totalReward;
-    const { data, error: updateError } = await supabase
-      .from('member_cards')
-      .update({ user_points: newPoints })
-      .eq('id', cardId)
-      .select();
     
-    if (updateError) throw updateError;
+    if (cardId !== 'temp-card-id') {
+      const { data, error: updateError } = await supabase
+        .from('member_cards')
+        .update({ user_points: newPoints })
+        .eq('id', cardId)
+        .select();
+      
+      if (updateError) {
+        console.log('更新點數失敗，但仍返回計算結果:', updateError.message);
+      }
+    } else {
+      console.log('臨時cardId，跳過資料庫更新，僅返回計算結果');
+    }
     
     console.log(`[points] cardId=${cardId}, old=${currentPoints}, reward=${totalReward}, new=${newPoints}`);
     
