@@ -1510,6 +1510,9 @@ function renderPromoCardSelector() {
       initAllCardsSortable();
       renderPromoCardSelector();
       renderPromoCardListSortable();
+      
+      // 🆕 點數系統：宣傳卡片變更時更新點數
+      updateUserPoints();
     };
     selector.appendChild(thumb);
   });
@@ -2173,6 +2176,54 @@ function renderShareJsonBoxWithPromoSortable(flexJson) {
     });
   };
   box.appendChild(copyBtn);
+}
+
+// 點數相關函數
+function formatPoints(val) {
+  return parseFloat(val || 0).toFixed(1);
+}
+
+async function updateUserPoints() {
+  const cardId = getCurrentCardId(); // 需要實作取得當前卡片ID的函數
+  if (!cardId) return;
+  
+  // 取得宣傳卡片位置陣列
+  const promoPositions = [];
+  selectedPromoCards.forEach((promoId, index) => {
+    promoPositions.push(index);
+  });
+  
+  if (promoPositions.length === 0) return;
+  
+  try {
+    const response = await fetch('/api/cards/points', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cardId: cardId,
+        promoPositions: promoPositions
+      })
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+      // 更新點數顯示
+      document.getElementById('user-points').textContent = formatPoints(result.newPoints);
+      console.log(`點數更新: ${result.oldPoints} -> ${result.newPoints} (回饋: +${result.reward})`);
+    } else {
+      console.error('點數更新失敗:', result.error);
+      if (result.error.includes('點數不足')) {
+        alert('⚠️ ' + result.error);
+      }
+    }
+  } catch (error) {
+    console.error('點數API呼叫失敗:', error);
+  }
+}
+
+function getCurrentCardId() {
+  // 從現有資料中取得卡片ID，這裡需要根據實際情況調整
+  return window.currentCardId || null;
 }
 
 // 在所有顯示 pageview 的地方補零

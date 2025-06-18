@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 點數回饋設定 - ADMIN</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 32px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .setting-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .setting-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+        .setting-card:hover {
+            border-color: #4caf50;
+            box-shadow: 0 2px 8px rgba(76,175,80,0.2);
+        }
+        .position-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .position-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4caf50;
+            margin-bottom: 16px;
+        }
+        .percentage-input {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .percentage-input:focus {
+            border-color: #4caf50;
+            outline: none;
+        }
+        .save-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+            transition: all 0.2s ease;
+        }
+        .save-btn:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 16px;
+            margin-bottom: 24px;
+            border-radius: 4px;
+        }
+        .preview-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+        .preview-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #495057;
+        }
+        .preview-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .preview-item:last-child {
+            border-bottom: none;
+        }
+        @media (max-width: 768px) {
+            .setting-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 宣傳卡片位置回饋設定</h1>
+        
+        <div class="info-box">
+            <strong>💡 說明：</strong>
+            會員附加宣傳卡片時，根據位置給予不同比例的點數回饋。越左邊的位置回饋比例越高。
+            <br><strong>基礎價值：</strong>每張宣傳卡片 = 10點，回饋 = 10點 × 設定比例
+        </div>
+        
+        <form id="settings-form">
+            <div class="setting-grid">
+                <div class="setting-card">
+                    <div class="position-label">第1個位置 (最左邊)</div>
+                    <div class="position-number">🥇</div>
+                    <input type="number" class="percentage-input" id="pos-0" step="0.1" min="0" max="100" value="15.0">
+                    <span>%</span>
+                </div>
+                
+                <div class="setting-card">
+                    <div class="position-label">第2個位置</div>
+                    <div class="position-number">🥈</div>
+                    <input type="number" class="percentage-input" id="pos-1" step="0.1" min="0" max="100" value="12.0">
+                    <span>%</span>
+                </div>
+                
+                <div class="setting-card">
+                    <div class="position-label">第3個位置</div>
+                    <div class="position-number">🥉</div>
+                    <input type="number" class="percentage-input" id="pos-2" step="0.1" min="0" max="100" value="10.0">
+                    <span>%</span>
+                </div>
+                
+                <div class="setting-card">
+                    <div class="position-label">第4個位置</div>
+                    <div class="position-number">4️⃣</div>
+                    <input type="number" class="percentage-input" id="pos-3" step="0.1" min="0" max="100" value="8.0">
+                    <span>%</span>
+                </div>
+                
+                <div class="setting-card">
+                    <div class="position-label">第5個位置</div>
+                    <div class="position-number">5️⃣</div>
+                    <input type="number" class="percentage-input" id="pos-4" step="0.1" min="0" max="100" value="5.0">
+                    <span>%</span>
+                </div>
+            </div>
+            
+            <button type="submit" class="save-btn">💾 儲存所有設定</button>
+        </form>
+        
+        <div class="preview-section">
+            <div class="preview-title">📊 回饋預覽 (基於10點基礎價值)</div>
+            <div id="preview-list">
+                <!-- 動態生成預覽 -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 載入現有設定
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/points-settings');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    result.data.forEach(setting => {
+                        const input = document.getElementById(`pos-${setting.position_index}`);
+                        if (input) {
+                            input.value = setting.reward_percentage;
+                        }
+                    });
+                }
+                updatePreview();
+            } catch (error) {
+                console.error('載入設定失敗:', error);
+            }
+        }
+        
+        // 更新預覽
+        function updatePreview() {
+            const previewList = document.getElementById('preview-list');
+            previewList.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                const percentage = parseFloat(document.getElementById(`pos-${i}`).value) || 0;
+                const reward = (10 * percentage / 100).toFixed(1);
+                
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+                item.innerHTML = `
+                    <span>位置 ${i + 1}：${percentage}%</span>
+                    <span><strong>+${reward} 點</strong></span>
+                `;
+                previewList.appendChild(item);
+            }
+        }
+        
+        // 儲存設定
+        document.getElementById('settings-form').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const updates = [];
+            for (let i = 0; i < 5; i++) {
+                const value = parseFloat(document.getElementById(`pos-${i}`).value) || 0;
+                updates.push({
+                    position_index: i,
+                    reward_percentage: value
+                });
+            }
+            
+            try {
+                const response = await fetch('/api/points-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ 設定已儲存成功！');
+                    updatePreview();
+                } else {
+                    alert('❌ 儲存失敗：' + result.error);
+                }
+            } catch (error) {
+                alert('❌ 儲存失敗：' + error.message);
+            }
+        };
+        
+        // 監聽輸入變化，即時更新預覽
+        for (let i = 0; i < 5; i++) {
+            document.getElementById(`pos-${i}`).addEventListener('input', updatePreview);
+        }
+        
+        // 頁面載入時執行
+        window.onload = loadSettings;
+    </script>
+</body>
+</html> 
