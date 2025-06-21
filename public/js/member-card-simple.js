@@ -1554,41 +1554,131 @@ async function shareToLine() {
       return;
     }
     
-    // **修復問題3：先批次更新pageview，再生成flexJson**
-    // 步驟1：分享時批次更新 pageview
+    // **步驟1：準備分享資料並檢查點數**
     let mainCardId = null;
+    let currentPoints = 0;
     try {
       const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
       const result = await res.json();
       if (result.success && result.data && result.data.length > 0) {
         mainCardId = result.data[0].id;
+        currentPoints = result.data[0].user_points || 0;
       }
-    } catch (e) {}
-    
-    const cardIdTypeArr = allCardsSortable.map((c, i) => ({ id: c.id === 'main' ? mainCardId : c.id, type: c.type })).filter(c => c.id);
-    if (cardIdTypeArr.length > 0) {
-      await fetch('/api/cards/pageview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cardIdTypeArr })
-      });
+    } catch (e) {
+      console.error('取得主卡資料失敗:', e);
     }
     
-    // 步驟2：取得最新 pageview（更新後的）
+    // 建立卡片ID清單並加入位置資訊
+    const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
+      id: c.id === 'main' ? mainCardId : c.id, 
+      type: c.type,
+      position: c.type === 'promo' ? i - 1 : null // 宣傳卡位置 (扣除主卡)
+    })).filter(c => c.id);
+    
+    // 計算所需點數 (每張卡片10點)
+    const requiredPoints = cardIdTypeArr.length * 10;
+    
+    // **點數檢查與確認**
+    if (currentPoints < requiredPoints) {
+      hideShareLoading();
+      alert(`❌ 點數不足無法分享\n\n目前點數: ${currentPoints}點\n需要點數: ${requiredPoints}點\n不足點數: ${requiredPoints - currentPoints}點`);
+      return;
+    }
+    
+    // 詢問用戶是否確認分享並扣點
+    const promoCount = cardIdTypeArr.filter(c => c.type === 'promo').length;
+    let confirmMessage = `🎯 確認分享會員卡？\n\n`;
+    confirmMessage += `📊 分享內容：\n`;
+    confirmMessage += `• 主卡：1張\n`;
+    if (promoCount > 0) {
+      confirmMessage += `• 附加卡：${promoCount}張\n`;
+    }
+    confirmMessage += `\n💰 點數計算：\n`;
+    confirmMessage += `• 扣除：${requiredPoints}點 (每張10點)\n`;
+    
+    // 計算預期回饋
+    let expectedReward = 0;
+    const promoCards = cardIdTypeArr.filter(c => c.type === 'promo');
+    if (promoCards.length > 0) {
+      try {
+        const settingsRes = await fetch('/api/points-settings');
+        const settingsResult = await settingsRes.json();
+        if (settingsResult.success) {
+          for (const promoCard of promoCards) {
+            const setting = settingsResult.data.find(s => s.position_index === promoCard.position);
+            const percentage = setting?.reward_percentage || 10.0;
+            expectedReward += 10 * (percentage / 100);
+          }
+        }
+      } catch (e) {
+        console.error('取得回饋設定失敗:', e);
+      }
+    }
+    
+    if (expectedReward > 0) {
+      confirmMessage += `• 回饋：+${expectedReward.toFixed(1)}點\n`;
+      confirmMessage += `• 淨支出：${(requiredPoints - expectedReward).toFixed(1)}點\n`;
+    }
+    confirmMessage += `\n剩餘點數：${currentPoints - requiredPoints + expectedReward}點`;
+    
+    if (!confirm(confirmMessage)) {
+      hideShareLoading();
+      return;
+    }
+    
+    // **步驟2：執行分享交易 (包含pageview更新和點數處理)**
+    let shareResult = null;
+    if (cardIdTypeArr.length > 0) {
+      try {
+        const response = await fetch('/api/cards/pageview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            cardIdTypeArr,
+            includePointsTransaction: true,
+            userId: liffProfile.userId
+          })
+        });
+        
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || '點數交易失敗');
+        }
+        
+        shareResult = result.pointsTransaction;
+        console.log('✅ 分享交易完成:', shareResult);
+        
+      } catch (e) {
+        hideShareLoading();
+        alert('❌ 分享交易失敗：' + e.message);
+        return;
+      }
+    }
+    
+    // **步驟3：取得更新後的卡片資料**
     let latestPageview = getFormData().pageview;
+    let latestPoints = currentPoints;
     try {
       const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
       const result = await res.json();
       if (result.success && result.data && result.data.length > 0) {
         latestPageview = result.data[0].pageview;
-        console.log('ShareToLine: 取得更新後的pageview:', latestPageview);
+        latestPoints = result.data[0].user_points || 0;
+        console.log('ShareToLine: 取得更新後資料 - pageview:', latestPageview, 'points:', latestPoints);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('取得更新後資料失敗:', e);
+    }
     
-    // 步驟3：用最新pageview重新生成flexJson
+    // **步驟4：用最新資料重新生成flexJson**
     const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
     if (mainIdx !== -1) {
-      allCardsSortable[mainIdx].flex_json = getMainBubble({ ...getFormData(), pageview: latestPageview, page_id: 'M01001' });
+      allCardsSortable[mainIdx].flex_json = getMainBubble({ 
+        ...getFormData(), 
+        pageview: latestPageview, 
+        user_points: latestPoints,
+        page_id: 'M01001' 
+      });
       allCardsSortable[mainIdx].img = getFormData().main_image_url || defaultCard.main_image_url;
     }
     
@@ -1665,7 +1755,21 @@ async function shareToLine() {
     await liff.shareTargetPicker([cleanFlexJson])
       .then(() => {
         hideShareLoading();
-        alert('✅ 分享會員卡成功！\n\n📝 請記得關閉本會員卡編修頁面');
+        
+        // 顯示分享成功與點數交易結果
+        let successMessage = '✅ 分享會員卡成功！\n\n';
+        if (shareResult) {
+          successMessage += '💰 點數交易結果：\n';
+          successMessage += `• 扣除：${shareResult.totalDeducted}點\n`;
+          if (shareResult.totalRewarded > 0) {
+            successMessage += `• 回饋：+${shareResult.totalRewarded.toFixed(1)}點\n`;
+          }
+          successMessage += `• 淨支出：${(shareResult.totalDeducted - shareResult.totalRewarded).toFixed(1)}點\n`;
+          successMessage += `• 目前餘額：${latestPoints}點\n\n`;
+        }
+        successMessage += '📝 請記得關閉本會員卡編修頁面';
+        
+        alert(successMessage);
         closeOrRedirect();
       })
       .catch((error) => {

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>點數交易記錄 - 會員卡系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .search-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stats-section {
+            padding: 30px;
+            background: #f8f9fa;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .deducted { color: #e53e3e; }
+        .rewarded { color: #38a169; }
+        .total { color: #667eea; }
+        
+        .history-section {
+            padding: 30px;
+        }
+        
+        .transaction-item {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .transaction-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .transaction-type {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .type-deduct {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        
+        .type-reward {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+        
+        .transaction-amount {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .amount-negative {
+            color: #e53e3e;
+        }
+        
+        .amount-positive {
+            color: #38a169;
+        }
+        
+        .transaction-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .detail-item {
+            text-align: center;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px;
+            text-align: center;
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #e1e5e9;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .page-btn:hover {
+            background: #f8f9fa;
+        }
+        
+        .page-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        @media (max-width: 600px) {
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .form-group {
+                min-width: 100%;
+            }
+            
+            .stats-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .transaction-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .transaction-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 點數交易記錄</h1>
+            <p>查詢您的分享點數扣除與回饋明細</p>
+        </div>
+        
+        <div class="search-section">
+            <div class="search-form">
+                <div class="form-group">
+                    <label for="cardId">🎫 卡片ID</label>
+                    <input type="text" id="cardId" placeholder="輸入卡片ID查詢特定卡片記錄">
+                </div>
+                <div class="form-group">
+                    <label for="sessionId">🔗 分享會話ID</label>
+                    <input type="text" id="sessionId" placeholder="輸入分享會話ID查詢特定分享">
+                </div>
+                <button class="btn" onclick="searchTransactions()">🔍 查詢</button>
+            </div>
+        </div>
+        
+        <div class="stats-section" id="statsSection" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value total" id="totalTransactions">0</div>
+                <div class="stat-label">總交易數</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value deducted" id="totalDeducted">0</div>
+                <div class="stat-label">總扣除點數</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value rewarded" id="totalRewarded">0</div>
+                <div class="stat-label">總回饋點數</div>
+            </div>
+        </div>
+        
+        <div class="history-section">
+            <div id="loadingDiv" class="loading">
+                <p>🔄 載入交易記錄中...</p>
+            </div>
+            
+            <div id="errorDiv" class="error" style="display: none;">
+                <p id="errorMessage"></p>
+            </div>
+            
+            <div id="emptyDiv" class="empty" style="display: none;">
+                <p>📭 沒有找到交易記錄</p>
+                <p style="margin-top: 10px; font-size: 14px; color: #999;">請嘗試調整查詢條件</p>
+            </div>
+            
+            <div id="transactionsList"></div>
+            
+            <div id="pagination" class="pagination" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 0;
+        const pageSize = 10;
+        
+        // 頁面載入時執行初始查詢
+        document.addEventListener('DOMContentLoaded', function() {
+            searchTransactions();
+        });
+        
+        async function searchTransactions(page = 0) {
+            const cardId = document.getElementById('cardId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+            
+            // 顯示載入狀態
+            showLoading();
+            
+            try {
+                let url = `/api/points-history?limit=${pageSize}&offset=${page * pageSize}`;
+                if (cardId) url += `&cardId=${encodeURIComponent(cardId)}`;
+                if (sessionId) url += `&sessionId=${encodeURIComponent(sessionId)}`;
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '查詢失敗');
+                }
+                
+                currentPage = page;
+                displayResults(result.data);
+                
+            } catch (error) {
+                showError('查詢失敗：' + error.message);
+            }
+        }
+        
+        function displayResults(data) {
+            hideLoading();
+            
+            const { transactions, cardInfo, stats, pagination } = data;
+            
+            // 顯示統計資訊
+            if (stats) {
+                document.getElementById('totalTransactions').textContent = stats.totalTransactions;
+                document.getElementById('totalDeducted').textContent = stats.totalDeducted;
+                document.getElementById('totalRewarded').textContent = stats.totalRewarded.toFixed(1);
+                document.getElementById('statsSection').style.display = 'block';
+            }
+            
+            // 顯示交易列表
+            if (transactions && transactions.length > 0) {
+                displayTransactions(transactions);
+                updatePagination(pagination);
+            } else {
+                showEmpty();
+            }
+        }
+        
+        function displayTransactions(transactions) {
+            const container = document.getElementById('transactionsList');
+            container.innerHTML = '';
+            
+            transactions.forEach(transaction => {
+                const item = createTransactionItem(transaction);
+                container.appendChild(item);
+            });
+        }
+        
+        function createTransactionItem(transaction) {
+            const div = document.createElement('div');
+            div.className = 'transaction-item';
+            
+            const isDeduct = transaction.transaction_type === 'deduct_share';
+            const amount = Math.abs(transaction.amount);
+            const amountClass = isDeduct ? 'amount-negative' : 'amount-positive';
+            const typeClass = isDeduct ? 'type-deduct' : 'type-reward';
+            const typeText = isDeduct ? '扣除' : '回饋';
+            const amountPrefix = isDeduct ? '-' : '+';
+            
+            div.innerHTML = `
+                <div class="transaction-header">
+                    <div>
+                        <div class="transaction-type ${typeClass}">${typeText}</div>
+                        <div style="margin-top: 8px; font-size: 14px; color: #666;">
+                            ${new Date(transaction.created_at).toLocaleString('zh-TW')}
+                        </div>
+                    </div>
+                    <div class="transaction-amount ${amountClass}">
+                        ${amountPrefix}${amount}點
+                    </div>
+                </div>
+                
+                <div class="transaction-details">
+                    <div class="detail-item">
+                        <div class="detail-label">卡片ID</div>
+                        <div class="detail-value">${transaction.card_id}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">卡片類型</div>
+                        <div class="detail-value">${transaction.card_type === 'main' ? '主卡' : '附加卡'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">交易前餘額</div>
+                        <div class="detail-value">${transaction.balance_before}點</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">交易後餘額</div>
+                        <div class="detail-value">${transaction.balance_after}點</div>
+                    </div>
+                    ${transaction.position_index !== null ? `
+                    <div class="detail-item">
+                        <div class="detail-label">附加位置</div>
+                        <div class="detail-value">位置 ${transaction.position_index}</div>
+                    </div>
+                    ` : ''}
+                    ${transaction.reward_percentage ? `
+                    <div class="detail-item">
+                        <div class="detail-label">回饋比例</div>
+                        <div class="detail-value">${transaction.reward_percentage}%</div>
+                    </div>
+                    ` : ''}
+                    <div class="detail-item">
+                        <div class="detail-label">分享會話</div>
+                        <div class="detail-value" style="font-size: 10px; word-break: break-all;">
+                            ${transaction.share_session_id.substring(0, 8)}...
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">總卡片數</div>
+                        <div class="detail-value">${transaction.share_sessions.total_cards}張</div>
+                    </div>
+                </div>
+            `;
+            
+            return div;
+        }
+        
+        function updatePagination(pagination) {
+            const container = document.getElementById('pagination');
+            
+            if (!pagination.hasMore && currentPage === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'flex';
+            container.innerHTML = '';
+            
+            // 上一頁按鈕
+            if (currentPage > 0) {
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'page-btn';
+                prevBtn.textContent = '← 上一頁';
+                prevBtn.onclick = () => searchTransactions(currentPage - 1);
+                container.appendChild(prevBtn);
+            }
+            
+            // 頁碼顯示
+            const pageInfo = document.createElement('span');
+            pageInfo.style.padding = '8px 16px';
+            pageInfo.style.color = '#666';
+            pageInfo.textContent = `第 ${currentPage + 1} 頁`;
+            container.appendChild(pageInfo);
+            
+            // 下一頁按鈕
+            if (pagination.hasMore) {
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'page-btn';
+                nextBtn.textContent = '下一頁 →';
+                nextBtn.onclick = () => searchTransactions(currentPage + 1);
+                container.appendChild(nextBtn);
+            }
+        }
+        
+        function showLoading() {
+            document.getElementById('loadingDiv').style.display = 'block';
+            document.getElementById('errorDiv').style.display = 'none';
+            document.getElementById('emptyDiv').style.display = 'none';
+            document.getElementById('transactionsList').innerHTML = '';
+            document.getElementById('pagination').style.display = 'none';
+            document.getElementById('statsSection').style.display = 'none';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingDiv').style.display = 'none';
+        }
+        
+        function showError(message) {
+            hideLoading();
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorDiv').style.display = 'block';
+            document.getElementById('emptyDiv').style.display = 'none';
+            document.getElementById('transactionsList').innerHTML = '';
+            document.getElementById('pagination').style.display = 'none';
+            document.getElementById('statsSection').style.display = 'none';
+        }
+        
+        function showEmpty() {
+            hideLoading();
+            document.getElementById('errorDiv').style.display = 'none';
+            document.getElementById('emptyDiv').style.display = 'block';
+            document.getElementById('transactionsList').innerHTML = '';
+            document.getElementById('pagination').style.display = 'none';
+        }
+        
+        // 允許 Enter 鍵觸發搜尋
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchTransactions();
+            }
+        });
+    </script>
+</body>
+</html> 
