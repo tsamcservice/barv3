@@ -118,9 +118,10 @@ export default async function handler(req, res) {
         totalDeducted += 10;
         
         // 2. 計算回饋 (僅主卡獲得回饋，根據所有卡片在5個位置的排列)
+        let mainCardTotalReward = 0;
+        let currentBalance = afterDeduct;
+        
         if (type === 'main') {
-          let mainCardTotalReward = 0;
-          let currentBalance = afterDeduct;
           
           // 🎯 新邏輯：根據5個位置(A,B,C,D,E)計算回饋
           // 找出主卡在整體排列中的位置
@@ -167,8 +168,14 @@ export default async function handler(req, res) {
           totalRewarded += mainCardTotalReward;
         }
         
-        const cardReward = type === 'main' ? mainCardTotalReward || 0 : 0;
-        const finalBalance = type === 'main' ? (currentBalance || afterDeduct) : afterDeduct;
+        // 修復變數作用域問題
+        let cardReward = 0;
+        let finalBalance = afterDeduct;
+        
+        if (type === 'main') {
+          cardReward = mainCardTotalReward || 0;
+          finalBalance = currentBalance || afterDeduct;
+        }
         
         pointsResults.push({
           cardId: id,
