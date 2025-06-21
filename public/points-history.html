@@ -61,6 +61,48 @@
             min-width: 200px;
         }
         
+        .card-selector {
+            position: relative;
+        }
+        
+        .card-dropdown {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .card-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+        }
+        
+        .card-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        
+        .card-info {
+            flex: 1;
+        }
+        
+        .card-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .card-id {
+            font-size: 12px;
+            color: #666;
+        }
+        
         .form-group label {
             display: block;
             margin-bottom: 8px;
@@ -290,13 +332,19 @@
         
         <div class="search-section">
             <div class="search-form">
-                <div class="form-group">
-                    <label for="cardId">🎫 卡片ID</label>
-                    <input type="text" id="cardId" placeholder="輸入卡片ID查詢特定卡片記錄">
+                <div class="form-group card-selector">
+                    <label for="cardSelector">🎫 選擇卡片</label>
+                    <select id="cardSelector" class="card-dropdown">
+                        <option value="">所有卡片</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="sessionId">🔗 分享會話ID</label>
-                    <input type="text" id="sessionId" placeholder="輸入分享會話ID查詢特定分享">
+                    <label for="dateFrom">📅 開始日期</label>
+                    <input type="date" id="dateFrom">
+                </div>
+                <div class="form-group">
+                    <label for="dateTo">📅 結束日期</label>
+                    <input type="date" id="dateTo">
                 </div>
                 <button class="btn" onclick="searchTransactions()">🔍 查詢</button>
             </div>
@@ -343,20 +391,48 @@
         
         // 頁面載入時執行初始查詢
         document.addEventListener('DOMContentLoaded', function() {
+            loadCardOptions();
             searchTransactions();
         });
         
+        async function loadCardOptions() {
+            try {
+                // 載入所有卡片選項（這裡可以從API獲取）
+                const selector = document.getElementById('cardSelector');
+                
+                // 暫時使用靜態選項，後續可從API動態載入
+                const defaultOptions = [
+                    { value: '', text: '所有卡片', image: '' },
+                    { value: 'main', text: '主卡 (分享卡)', image: '/uploads/vip/TS-VIP.png' },
+                    { value: 'promo', text: '附加卡 (活動卡)', image: '/uploads/vip/TS-LOGO.png' }
+                ];
+                
+                selector.innerHTML = '';
+                defaultOptions.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.text;
+                    selector.appendChild(optionElement);
+                });
+                
+            } catch (error) {
+                console.error('載入卡片選項失敗:', error);
+            }
+        }
+        
         async function searchTransactions(page = 0) {
-            const cardId = document.getElementById('cardId').value.trim();
-            const sessionId = document.getElementById('sessionId').value.trim();
+            const cardSelector = document.getElementById('cardSelector').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
             
             // 顯示載入狀態
             showLoading();
             
             try {
                 let url = `/api/points-history?limit=${pageSize}&offset=${page * pageSize}`;
-                if (cardId) url += `&cardId=${encodeURIComponent(cardId)}`;
-                if (sessionId) url += `&sessionId=${encodeURIComponent(sessionId)}`;
+                if (cardSelector) url += `&cardType=${encodeURIComponent(cardSelector)}`;
+                if (dateFrom) url += `&dateFrom=${encodeURIComponent(dateFrom)}`;
+                if (dateTo) url += `&dateTo=${encodeURIComponent(dateTo)}`;
                 
                 const response = await fetch(url);
                 const result = await response.json();

@@ -8,13 +8,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { cardId, limit = 20, offset = 0, sessionId } = req.query;
+    const { cardId, cardType, dateFrom, dateTo, limit = 20, offset = 0, sessionId } = req.query;
 
     // 查詢點數交易歷史
     let query = supabase
       .from('points_transactions')
       .select(`
-        *
+        *,
+        position_index,
+        reward_percentage
       `)
       .order('created_at', { ascending: false });
 
@@ -23,8 +25,20 @@ export default async function handler(req, res) {
       query = query.eq('card_id', cardId);
     }
 
+    if (cardType) {
+      query = query.eq('card_type', cardType);
+    }
+
     if (sessionId) {
       query = query.eq('share_session_id', sessionId);
+    }
+
+    if (dateFrom) {
+      query = query.gte('created_at', dateFrom + 'T00:00:00.000Z');
+    }
+
+    if (dateTo) {
+      query = query.lte('created_at', dateTo + 'T23:59:59.999Z');
     }
 
     // 分頁

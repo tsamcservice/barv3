@@ -130,23 +130,27 @@ export default async function handler(req, res) {
             totalReward += reward;
             
             console.log(`位置 ${promoCard.position}: ${percentage}% = +${reward.toFixed(2)} 點`);
+            
+            // 🔧 修復：為每個位置分別記錄回饋交易
+            if (reward > 0) {
+              await supabase.from('points_transactions').insert({
+                card_id: id,
+                card_type: type,
+                transaction_type: 'reward_share',
+                amount: reward,
+                balance_before: afterDeduct + (totalReward - reward), // 計算該筆回饋前的餘額
+                balance_after: afterDeduct + totalReward, // 所有回饋後的餘額
+                share_session_id: shareSessionId,
+                position_index: promoCard.position,
+                reward_percentage: percentage
+              });
+            }
           }
           
           if (totalReward > 0) {
             const afterReward = afterDeduct + totalReward;
             
             await supabase.from(table).update({ [pointsField]: afterReward }).eq('id', id);
-            
-            // 記錄回饋交易
-            await supabase.from('points_transactions').insert({
-              card_id: id,
-              card_type: type,
-              transaction_type: 'reward_share',
-              amount: totalReward,
-              balance_before: afterDeduct,
-              balance_after: afterReward,
-              share_session_id: shareSessionId
-            });
             
             totalRewarded += totalReward;
           }

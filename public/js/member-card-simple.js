@@ -1591,65 +1591,23 @@ async function shareToLine() {
     }
     
     // 建立卡片ID清單並加入位置資訊
+    let promoPosition = 0; // 宣傳卡位置計數器
     const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
       id: c.id === 'main' ? mainCardId : c.id, 
       type: c.type,
-      position: c.type === 'promo' ? i - 1 : null // 宣傳卡位置 (扣除主卡)
+      position: c.type === 'promo' ? promoPosition++ : null // 宣傳卡位置從0開始
     })).filter(c => c.id);
+    
+    console.log('🎯 卡片位置資訊:', cardIdTypeArr.map(c => ({ type: c.type, position: c.position })));
     
     // 計算所需點數 (每張卡片10點)
     const requiredPoints = cardIdTypeArr.length * 10;
     
-    // **點數檢查與確認**
+    // **點數檢查**
     if (currentPoints < requiredPoints) {
       hideShareLoading();
       alert(`❌ 點數不足無法分享\n\n目前點數: ${currentPoints}點\n需要點數: ${requiredPoints}點\n不足點數: ${requiredPoints - currentPoints}點`);
       return;
-    }
-    
-    // 詢問用戶是否確認分享並扣點
-    const promoCount = cardIdTypeArr.filter(c => c.type === 'promo').length;
-    let confirmMessage = `🎯 確認分享會員卡？\n\n`;
-    confirmMessage += `📊 分享內容：\n`;
-    confirmMessage += `• 主卡：1張\n`;
-    if (promoCount > 0) {
-      confirmMessage += `• 附加卡：${promoCount}張\n`;
-    }
-    confirmMessage += `\n💰 點數計算：\n`;
-    confirmMessage += `• 扣除：${requiredPoints}點 (每張10點)\n`;
-    
-    // 計算預期回饋
-    let expectedReward = 0;
-    const promoCards = cardIdTypeArr.filter(c => c.type === 'promo');
-    if (promoCards.length > 0) {
-      try {
-        const settingsRes = await fetch('/api/points-settings');
-        const settingsResult = await settingsRes.json();
-        if (settingsResult.success) {
-          for (const promoCard of promoCards) {
-            const setting = settingsResult.data.find(s => s.position_index === promoCard.position);
-            const percentage = setting?.reward_percentage || 10.0;
-            expectedReward += 10 * (percentage / 100);
-          }
-        }
-      } catch (e) {
-        console.error('取得回饋設定失敗:', e);
-      }
-    }
-    
-    if (expectedReward > 0) {
-      confirmMessage += `• 回饋：+${expectedReward.toFixed(1)}點\n`;
-      confirmMessage += `• 淨支出：${(requiredPoints - expectedReward).toFixed(1)}點\n`;
-    }
-    confirmMessage += `\n剩餘點數：${currentPoints - requiredPoints + expectedReward}點`;
-    
-    // 🔧 修復：使用標記避免重複確認
-    if (window.shareConfirmed !== true) {
-      if (!confirm(confirmMessage)) {
-        hideShareLoading();
-        return;
-      }
-      window.shareConfirmed = true; // 設定確認標記
     }
     
     // **步驟2：執行分享交易 (包含pageview更新和點數處理)**
@@ -1788,24 +1746,29 @@ async function shareToLine() {
         // 顯示分享成功與點數交易結果
         let successMessage = '✅ 分享會員卡成功！\n\n';
         if (shareResult) {
-          successMessage += '💰 點數交易結果：\n';
+          successMessage += '💰 分享結果：\n';
+          successMessage += `• 分享卡扣除點數：10點\n`;
           
-          // 詳細顯示每張卡片的扣點情況
-          const mainCards = cardIdTypeArr.filter(c => c.type === 'main').length;
-          const promoCards = cardIdTypeArr.filter(c => c.type === 'promo').length;
+          // 計算各位置的回饋點數
+          const promoCards = cardIdTypeArr.filter(c => c.type === 'promo');
+          let totalReward = 0;
           
-          if (mainCards > 0) {
-            successMessage += `• 主卡扣除：${mainCards * 10}點 (${mainCards}張 × 10點)\n`;
-          }
-          if (promoCards > 0) {
-            successMessage += `• 附加卡扣除：${promoCards * 10}點 (${promoCards}張 × 10點)\n`;
+          if (promoCards.length > 0) {
+            // 使用已有的shareResult中的回饋資訊，或從API結果計算
+            if (shareResult.totalRewarded) {
+              totalReward = shareResult.totalRewarded;
+              // 簡化顯示，直接顯示總回饋
+              successMessage += `• 賺取分享點：${totalReward.toFixed(1)}點\n`;
+            } else {
+              // 如果沒有回饋資訊，顯示預設訊息
+              successMessage += `• 賺取分享點：計算中...\n`;
+            }
           }
           
-          if (shareResult.totalRewarded > 0) {
-            successMessage += `• 主卡回饋：+${shareResult.totalRewarded.toFixed(1)}點\n`;
+          if (totalReward > 0) {
+            successMessage += `• 合計賺取：${totalReward.toFixed(1)}點\n`;
           }
-          successMessage += `• 主卡淨支出：${(10 - shareResult.totalRewarded).toFixed(1)}點\n`;
-          successMessage += `• 主卡目前餘額：${latestPoints}點\n\n`;
+          successMessage += `• 分享卡目前餘點：${latestPoints}點\n\n`;
         }
         successMessage += '📝 請記得關閉本會員卡編修頁面';
         
