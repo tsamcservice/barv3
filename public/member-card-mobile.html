@@ -368,6 +368,65 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* 💻 預覽區域樣式 */
+        .preview-container-mobile {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        #main-card-preview {
+            position: relative;
+            margin: 0 auto;
+            background: transparent;
+            min-height: 320px;
+            width: 100%;
+            max-width: 100%;
+            /* 🔧 強化水平滑動功能 */
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            /* 🔧 確保滑動軌跡可見 */
+            scrollbar-width: thin;
+            scrollbar-color: #4caf50 #f1f1f1;
+        }
+        
+        /* 🔧 WebKit 瀏覽器的滑動軌跡樣式 */
+        #main-card-preview::-webkit-scrollbar {
+            height: 8px;
+        }
+        #main-card-preview::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        #main-card-preview::-webkit-scrollbar-thumb {
+            background: #4caf50;
+            border-radius: 4px;
+        }
+        #main-card-preview::-webkit-scrollbar-thumb:hover {
+            background: #45a049;
+        }
+        
+        /* 確保chatbox內的內容正常顯示 */
+        #main-card-preview .chatbox {
+            background-color: #849ebf;
+            /* 🔧 關鍵修改：固定寬度320px，手機版最佳尺寸 */
+            width: 320px !important; /* 固定寬度確保不壓縮 */
+            height: auto;
+            min-height: 300px;
+            margin: 0; /* 🔧 移除auto居中，讓滑動正常 */
+            padding: 20px 10px;
+            border-radius: 8px;
+            /* 🔧 防止任何形式的縮放或壓縮 */
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        
         /* 🔄 隱藏的欄位（保留功能但不顯示） */
         .hidden-field {
             display: none !important;
@@ -694,6 +753,9 @@
                     <p style="color: #666; margin-bottom: 16px;">預覽您的會員卡效果，確認無誤後可分享到LINE或儲存設定。</p>
                     
                     <div class="preview-container-mobile">
+                        <div style="text-align: center; color: #666; margin-bottom: 16px; font-size: 14px;">
+                            👈 可左右滑動查看完整卡片 👉
+                        </div>
                         <div id="main-card-preview"></div>
                     </div>
                     
@@ -704,12 +766,6 @@
                         <button type="button" class="btn-save" onclick="saveCard()">
                             💾 儲存設定
                         </button>
-                    </div>
-                    
-                    <!-- JSON 顯示區域 -->
-                    <div id="shareJsonBox">
-                        <h3>🔧 FLEX JSON 內容</h3>
-                        <pre id="shareJsonContent">載入中...</pre>
                     </div>
                 </div>
             </section>
@@ -766,6 +822,12 @@
         <div class="promo-list" id="allPromoCards"></div>
         <div class="promo-selector" id="promoCardSelectorOld"></div>
         <div class="promo-selected" id="selectedPromoCardsOld"></div>
+        
+        <!-- 隱藏的JSON區域 -->
+        <div id="shareJsonBox">
+            <h3>🔧 FLEX JSON 內容</h3>
+            <pre id="shareJsonContent">載入中...</pre>
+        </div>
     </div>
 
     <script src="js/member-card-simple.js"></script>
@@ -914,17 +976,29 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📱 手機版會員卡頁面載入完成');
             
-            // 初始化原有功能
+            // 🔧 修復：確保LIFF正確初始化
             if (typeof initLiffAndLogin === 'function') {
+                console.log('🔧 開始初始化LIFF...');
                 initLiffAndLogin().then(success => {
+                    console.log('🔧 LIFF初始化結果:', success);
                     if (success && typeof liff !== 'undefined') {
+                        console.log('🔧 LIFF已就緒，獲取用戶資料...');
                         liff.getProfile().then(profile => {
+                            console.log('🔧 用戶資料:', profile);
                             liffProfile = profile;
                             renderLiffUserInfo(profile);
                             fillAllFieldsWithProfile();
+                        }).catch(error => {
+                            console.error('🔧 獲取用戶資料失敗:', error);
                         });
+                    } else {
+                        console.error('🔧 LIFF初始化失敗或LIFF未定義');
                     }
+                }).catch(error => {
+                    console.error('🔧 LIFF初始化錯誤:', error);
                 });
+            } else {
+                console.error('🔧 initLiffAndLogin函數未找到，請確認member-card-simple.js已載入');
             }
             
             // 載入宣傳卡片
