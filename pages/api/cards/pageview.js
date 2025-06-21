@@ -38,6 +38,25 @@ export default async function handler(req, res) {
     let totalRewarded = 0;
     let pointsResults = [];
     
+    // 取得回饋設定 (提前到外層，確保作用域)
+    let settingsData = null;
+    try {
+      const { data: settings, error: settingsError } = await supabase
+        .from('points_settings')
+        .select('*')
+        .order('position_index');
+        
+      if (settingsError) {
+        console.log('取得回饋設定失敗，使用預設值:', settingsError.message);
+        settingsData = null;
+      } else {
+        settingsData = settings || null;
+      }
+    } catch (error) {
+      console.log('回饋設定查詢異常:', error.message);
+      settingsData = null;
+    }
+    
     // 1. 處理點數交易 (如果需要)
     if (includePointsTransaction) {
       console.log(`[share-transaction] 開始處理分享點數交易，session: ${shareSessionId}`);
@@ -73,24 +92,7 @@ export default async function handler(req, res) {
         }
       }
       
-      // 取得回饋設定
-      let settingsData = null;
-      try {
-        const { data: settings, error: settingsError } = await supabase
-          .from('points_settings')
-          .select('*')
-          .order('position_index');
-          
-        if (settingsError) {
-          console.log('取得回饋設定失敗，使用預設值:', settingsError.message);
-          settingsData = null;
-        } else {
-          settingsData = settings || null;
-        }
-      } catch (error) {
-        console.log('回饋設定查詢異常:', error.message);
-        settingsData = null;
-      }
+      // 回饋設定已在外層取得，這裡不需要重複查詢
       
       // 處理每張卡片的點數交易
       for (const { id, type, position } of cardIdTypeArr) {
