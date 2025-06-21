@@ -272,23 +272,35 @@ export default async function handler(req, res) {
     
     const response = { success: true };
     if (includePointsTransaction) {
-      // 計算回饋詳細資訊 (僅主卡有回饋)
+      // 🔧 修復：計算所有位置的回饋詳細資訊
       const rewardDetails = [];
       const mainCard = cardIdTypeArr.find(c => c.type === 'main');
       
       if (mainCard) {
         const mainCardPosition = cardIdTypeArr.findIndex(card => card.type === 'main');
-        const setting = settingsData?.find(s => s.position_index === mainCardPosition);
-        const percentage = setting?.reward_percentage || 10.0;
-        const reward = 10 * (percentage / 100);
         
-        if (reward > 0) {
+        // 🔧 修復：按位置順序生成回饋詳情，正確映射卡片類型
+        // 先創建位置到卡片的映射
+        const positionMap = {};
+        cardIdTypeArr.forEach((card, index) => {
+          positionMap[index] = card;
+        });
+        
+        for (let i = 0; i < cardIdTypeArr.length; i++) {
+          const card = positionMap[i];
+          const setting = settingsData?.find(s => s.position_index === i);
+          const percentage = setting?.reward_percentage || 10.0;
+          const reward = 10 * (percentage / 100);
+          
+          // 只有主卡位置才有實際回饋，其他位置顯示0
+          const actualReward = (i === mainCardPosition) ? reward : 0;
+          
           rewardDetails.push({
-            position: mainCardPosition,
+            position: i,
             percentage: percentage,
-            reward: reward,
-            cardType: 'main',
-            description: `分享卡位置${mainCardPosition + 1}`
+            reward: actualReward,
+            cardType: card.type,
+            description: `位置${i + 1}${card.type === 'main' ? '(分享卡)' : '(活動卡)'}`
           });
         }
       }

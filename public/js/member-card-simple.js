@@ -1764,10 +1764,11 @@ async function shareToLine() {
           const promoCards = cardIdTypeArr.filter(c => c.type === 'promo');
           let totalReward = 0;
           
-          // 🎯 新邏輯：根據主卡位置顯示回饋
+          // 🔧 修復：顯示所有位置的回饋詳情
           if (shareResult.rewardDetails && shareResult.rewardDetails.length > 0) {
             shareResult.rewardDetails.forEach((detail) => {
-              successMessage += `• 賺取分享點(位${detail.position + 1})：${detail.reward.toFixed(1)}點\n`;
+              const cardTypeLabel = detail.cardType === 'main' ? '分享卡' : '活動卡';
+              successMessage += `• ${detail.description}：${detail.reward.toFixed(1)}點\n`;
               totalReward += detail.reward;
             });
           } else if (shareResult.totalRewarded > 0) {
