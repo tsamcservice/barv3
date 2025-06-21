@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 我專屬的會員卡片 - 手機版</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="js/flex2html.css">
+    <script src="js/flex2html.min.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        /* 🎨 手機版專用樣式重置 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* 📱 手機版容器 */
+        .mobile-container { 
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 🎯 頂部標題區 */
+        .mobile-header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .mobile-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        #liffUserInfo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        /* 📑 分頁導航 */
+        .mobile-tabs {
+            background: #fff;
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 73px;
+            z-index: 99;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 16px 8px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            text-align: center;
+        }
+        
+        .tab-btn.active {
+            color: #4caf50;
+            background: rgba(76,175,80,0.05);
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #4caf50;
+        }
+        
+        .tab-btn:hover:not(.active) {
+            background: rgba(0,0,0,0.05);
+        }
+        
+        /* 📄 內容區域 */
+        .mobile-content {
+            flex: 1;
+            background: #f8f9fa;
+            overflow-y: auto;
+        }
+        
+        .tab-panel {
+            display: none;
+            padding: 20px 16px;
+            min-height: calc(100vh - 140px);
+        }
+        
+        .tab-panel.active {
+            display: block;
+        }
+        
+        /* 🎨 表單樣式 */
+        .form-section-mobile {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .form-group-mobile { 
+            margin-bottom: 20px; 
+        }
+        
+        .form-group-mobile label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 15px;
+        }
+        
+        .form-group-mobile input[type="text"], 
+        .form-group-mobile input[type="url"] { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group-mobile input[type="text"]:focus, 
+        .form-group-mobile input[type="url"]:focus { 
+            border-color: #4caf50;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.1);
+        }
+        
+        .form-group-mobile input[type="color"] {
+            width: 60px;
+            height: 40px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        /* 🖼️ 圖片上傳區域 */
+        .image-upload-mobile {
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            background: #fafafa;
+            margin-top: 8px;
+        }
+        
+        .image-preview-mobile {
+            max-width: 120px;
+            max-height: 120px;
+            border-radius: 8px;
+            margin: 8px auto;
+            display: block;
+            object-fit: cover;
+        }
+        
+        .image-upload-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        
+        .image-upload-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-library { background: #2196f3; color: white; }
+        .btn-upload { background: #4caf50; color: white; }
+        .btn-line { background: #00c300; color: white; }
+        
+        .image-upload-buttons button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .image-info-mobile {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+            padding: 8px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .image-info-mobile.show {
+            display: block;
+        }
+        
+        /* 🎴 宣傳卡片區域 */
+        .promo-section-mobile {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .promo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .promo-card-thumb { 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            height: 120px; 
+            overflow: hidden; 
+            cursor: pointer; 
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .promo-card-thumb:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .promo-card-thumb.selected { 
+            border-color: #4caf50;
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.2);
+        }
+        
+        /* 📱 預覽區域 */
+        .preview-section-mobile {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .preview-container-mobile {
+            position: relative;
+            margin: 16px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        /* 🔧 手機版預覽優化 */
+        #main-card-preview {
+            width: 100%;
+            min-height: 280px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            background: transparent;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        #main-card-preview .chatbox {
+            background-color: #849ebf;
+            width: 320px; /* 手機版使用較小寬度 */
+            min-height: 280px;
+            margin: 0;
+            padding: 20px 12px;
+            border-radius: 0;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        
+        /* 🎯 操作按鈕 */
+        .action-buttons-mobile {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .action-buttons-mobile button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-share {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-save {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .action-buttons-mobile button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .action-buttons-mobile button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 🎨 載入動畫 */
+        .loading-mobile {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            color: white;
+            flex-direction: column;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid #4caf50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 🔄 隱藏的欄位（保留功能但不顯示） */
+        .hidden-field {
+            display: none !important;
+        }
+        
+        /* 📱 響應式優化 */
+        @media (max-width: 360px) {
+            .mobile-header {
+                padding: 12px;
+            }
+            
+            .tab-btn {
+                padding: 12px 6px;
+                font-size: 13px;
+            }
+            
+            .form-section-mobile {
+                padding: 16px;
+            }
+        }
+        
+        /* JSON區域樣式 */
+        #shareJsonBox {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        #shareJsonBox h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        
+        #shareJsonBox pre {
+            font-size: 11px;
+            line-height: 1.3;
+            user-select: text;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #fff;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            overflow: auto;
+            max-height: 300px;
+            margin: 0;
+        }
+        
+        /* 圖片庫樣式 */
+        .image-library-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .image-library-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .image-library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .image-library-item {
+            position: relative;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 8px;
+            transition: all 0.2s ease;
+        }
+        .image-library-item:hover {
+            border-color: #4caf50;
+            box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+        }
+        .image-library-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .image-library-item .name {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        /* 宣傳卡片相關樣式 */
+        .promo-controls {
+            margin-bottom: 16px;
+        }
+        
+        .promo-selector {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        
+        .promo-selected {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px;
+            background: #fafafa;
+        }
+        
+        .promo-list { 
+            display: flex; 
+            gap: 8px; 
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .sort-btn {
+            position: absolute; 
+            top: 4px; 
+            right: 4px; 
+            background: #fff; 
+            border: 1px solid #ddd; 
+            border-radius: 50%; 
+            width: 24px; 
+            height: 24px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .sort-btn:hover {
+            background: #f5f5f5;
+            border-color: #4caf50;
+        }
+        
+        .sort-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- 🎯 頂部標題區 -->
+        <header class="mobile-header">
+            <h1>📱 我的會員卡</h1>
+            <div id="liffUserInfo"></div>
+        </header>
+
+        <!-- 📑 分頁導航 -->
+        <nav class="mobile-tabs">
+            <button class="tab-btn active" onclick="switchTab('text-images')">
+                📝 文字圖片
+            </button>
+            <button class="tab-btn" onclick="switchTab('promo-cards')">
+                🎴 附加卡片
+            </button>
+            <button class="tab-btn" onclick="switchTab('preview')">
+                👁️ 卡片預覽
+            </button>
+        </nav>
+
+        <!-- 📱 主要內容區 -->
+        <main class="mobile-content">
+            <!-- 📝 文字圖片區 -->
+            <section id="text-images" class="tab-panel active">
+                <!-- 卡片預覽標題 -->
+                <div class="form-section-mobile">
+                    <h3 style="margin-top: 0; color: #4caf50;">🏷️ 卡片標題</h3>
+                    <div class="form-group-mobile">
+                        <label>卡片預覽標題 <span style="color:#999;font-size:12px;font-weight:normal;">(未開啟前的文字標題)</span></label>
+                        <input type="text" id="card_alt_title" name="card_alt_title" placeholder="例：我在呈璽/呈璽">
+                    </div>
+                </div>
+
+                <!-- 主圖設定 -->
+                <div class="form-section-mobile">
+                    <h3 style="margin-top: 0; color: #4caf50;">🖼️ 主圖設定</h3>
+                    <div class="form-group-mobile">
+                        <label>主圖</label>
+                        <input type="url" id="main_image_url" name="main_image_url">
+                        <div class="image-upload-mobile">
+                            <img id="main_image_preview" class="image-preview-mobile">
+                            <div class="image-upload-buttons">
+                                <button type="button" class="btn-library" id="main_image_select_btn">圖片庫</button>
+                                <input type="file" id="main_image_upload" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-upload" id="main_image_upload_btn">上傳</button>
+                            </div>
+                            <div class="image-info-mobile" id="main_image_info"></div>
+                        </div>
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>主圖後連結</label>
+                        <input type="url" id="main_image_link" name="main_image_link">
+                    </div>
+                </div>
+
+                <!-- 標題設定 -->
+                <div class="form-section-mobile">
+                    <h3 style="margin-top: 0; color: #4caf50;">✏️ 標題設定</h3>
+                    <div class="form-group-mobile">
+                        <label>主標題</label>
+                        <input type="text" id="main_title_1" name="main_title_1">
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>主標題顏色</label>
+                        <input type="color" id="main_title_1_color" name="main_title_1_color" value="#000000">
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>副標題</label>
+                        <input type="text" id="main_title_2" name="main_title_2">
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>副標題顏色</label>
+                        <input type="color" id="main_title_2_color" name="main_title_2_color" value="#000000">
+                    </div>
+                </div>
+
+                <!-- 會員設定 -->
+                <div class="form-section-mobile">
+                    <h3 style="margin-top: 0; color: #4caf50;">👤 會員設定</h3>
+                    <div class="form-group-mobile">
+                        <label>會員圖片 <span style="color:#999;font-size:12px;font-weight:normal;">(內定為LINE頭貼，建議比例1:1)</span></label>
+                        <input type="url" id="member_image_url" name="member_image_url">
+                        <div class="image-upload-mobile">
+                            <img id="member_image_preview" class="image-preview-mobile">
+                            <div class="image-upload-buttons">
+                                <button type="button" class="btn-library" id="member_image_select_btn">圖片庫</button>
+                                <input type="file" id="member_image_upload" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-upload" id="member_image_upload_btn">上傳</button>
+                                <button type="button" class="btn-line" id="member_line_profile_btn">使用LINE頭貼</button>
+                            </div>
+                            <div class="image-info-mobile" id="member_image_info"></div>
+                        </div>
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>會員圖片後連結</label>
+                        <input type="url" id="member_image_link" name="member_image_link">
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>會員名字</label>
+                        <input type="text" id="display_name" name="display_name">
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>會員名字顏色</label>
+                        <input type="color" id="name_color1" name="name_color1" value="#A4924C">
+                    </div>
+                </div>
+
+                <!-- 按鈕設定 -->
+                <div class="form-section-mobile">
+                    <h3 style="margin-top: 0; color: #4caf50;">🔘 按鈕設定</h3>
+                    <div class="form-group-mobile">
+                        <label>按鈕文字</label>
+                        <input type="text" id="button_1_text" name="button_1_text">
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>按鈕後連結</label>
+                        <input type="url" id="button_1_url" name="button_1_url">
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>按鈕顏色</label>
+                        <input type="color" id="button_1_color" name="button_1_color" value="#A4924A">
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>分享按鈕文字</label>
+                        <input type="text" id="s_button_text" name="s_button_text">
+                    </div>
+                    <div class="form-group-mobile">
+                        <label>分享按鈕顏色</label>
+                        <input type="color" id="s_button_color" name="s_button_color" value="#A4924B">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 🎴 附加卡片區 -->
+            <section id="promo-cards" class="tab-panel">
+                <div class="promo-section-mobile">
+                    <h3 style="margin-top: 0; color: #4caf50;">🎴 附加卡片管理</h3>
+                    <p style="color: #666; margin-bottom: 16px;">選擇要附加到您會員卡的宣傳卡片，點擊卡片進行選擇，拖拉調整順序。</p>
+                    
+                    <div class="promo-controls">
+                        <button type="button" id="clearAllPromoCards" style="padding: 8px 16px; background: #f44336; color: white; border: none; border-radius: 6px; margin-bottom: 16px;">清除全部選擇</button>
+                    </div>
+                    
+                    <div id="promoCardSelector" class="promo-grid">
+                        <!-- 宣傳卡片將動態載入到這裡 -->
+                    </div>
+                    
+                    <h4 style="color: #4caf50; margin-top: 24px;">已選擇的卡片 (可拖拉排序)</h4>
+                    <div id="selectedPromoCards" class="promo-grid" style="min-height: 60px; background: #f8f9fa; border: 2px dashed #ddd; border-radius: 8px; padding: 16px;">
+                        <p style="color: #999; text-align: center; margin: 20px 0;">尚未選擇任何卡片</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 👁️ 卡片預覽區 -->
+            <section id="preview" class="tab-panel">
+                <div class="preview-section-mobile">
+                    <h3 style="margin-top: 0; color: #4caf50;">👁️ 卡片預覽</h3>
+                    <p style="color: #666; margin-bottom: 16px;">預覽您的會員卡效果，確認無誤後可分享到LINE或儲存設定。</p>
+                    
+                    <div class="preview-container-mobile">
+                        <div id="main-card-preview"></div>
+                    </div>
+                    
+                    <div class="action-buttons-mobile">
+                        <button type="button" class="btn-share" onclick="shareToLine()">
+                            📤 分享到LINE
+                        </button>
+                        <button type="button" class="btn-save" onclick="saveCard()">
+                            💾 儲存設定
+                        </button>
+                    </div>
+                    
+                    <!-- JSON 顯示區域 -->
+                    <div id="shareJsonBox">
+                        <h3>🔧 FLEX JSON 內容</h3>
+                        <pre id="shareJsonContent">載入中...</pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 🎨 載入動畫 -->
+    <div class="loading-mobile" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div>處理中，請稍候...</div>
+    </div>
+
+    <!-- 🖼️ 圖片庫彈窗 -->
+    <div class="image-library-modal" id="imageLibraryModal">
+        <div class="image-library-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="margin: 0;">📚 圖片庫</h3>
+                <button onclick="hideImageLibrary()" style="background: #f44336; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">關閉</button>
+            </div>
+            <div class="image-library-grid" id="imageLibraryGrid">
+                <!-- 圖片將動態載入到這裡 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的欄位（保留功能但不顯示） -->
+    <div class="hidden-field">
+        <!-- 隱藏的輸入欄位 -->
+        <input type="url" id="snow_image_url" name="snow_image_url">
+        <input type="url" id="calendar_image_url" name="calendar_image_url">
+        <input type="url" id="calendar_image_link" name="calendar_image_link">
+        <input type="text" id="amember_id" name="amember_id">
+        <input type="url" id="love_icon_url" name="love_icon_url">
+        <input type="url" id="love_icon_link" name="love_icon_link">
+        <input type="text" id="pageview" name="pageview">
+        <input type="url" id="s_button_url" name="s_button_url">
+        
+        <!-- 隱藏的預覽圖片 -->
+        <img id="snow_image_preview">
+        <img id="calendar_image_preview">
+        <img id="love_icon_preview">
+        
+        <!-- 隱藏的上傳控制 -->
+        <input type="file" id="snow_image_upload" accept="image/*">
+        <input type="file" id="calendar_image_upload" accept="image/*">
+        <input type="file" id="love_icon_upload" accept="image/*">
+        
+        <!-- 隱藏的資訊顯示 -->
+        <div id="snow_image_info"></div>
+        <div id="calendar_image_info"></div>
+        <div id="love_icon_info"></div>
+        
+        <!-- 原有的宣傳卡片相關元素 -->
+        <div class="promo-list" id="allPromoCards"></div>
+        <div class="promo-selector" id="promoCardSelectorOld"></div>
+        <div class="promo-selected" id="selectedPromoCardsOld"></div>
+    </div>
+
+    <script src="js/member-card-simple.js"></script>
+    <script>
+        // 📱 手機版專用腳本
+        
+        // 分頁切換功能
+        function switchTab(tabName) {
+            // 隱藏所有分頁
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            // 移除所有按鈕的 active 狀態
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 顯示選中的分頁
+            document.getElementById(tabName).classList.add('active');
+            
+            // 設置對應按鈕為 active
+            event.target.classList.add('active');
+            
+            // 如果切換到預覽頁，重新渲染預覽
+            if (tabName === 'preview') {
+                setTimeout(() => {
+                    renderPreview();
+                    renderShareJsonBox();
+                }, 100);
+            }
+        }
+        
+        // 儲存卡片功能
+        async function saveCard() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'flex';
+            
+            try {
+                // 調用原有的儲存邏輯
+                const formData = getFormData();
+                const response = await fetch('/api/cards', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    alert('✅ 卡片儲存成功！');
+                } else {
+                    throw new Error('儲存失敗');
+                }
+            } catch (error) {
+                console.error('儲存錯誤:', error);
+                alert('❌ 儲存失敗，請稍後再試');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+        
+        // 手機版宣傳卡片渲染
+        function renderPromoCardListMobile() {
+            const container = document.getElementById('promoCardSelector');
+            if (!container || !window.allPromoCards) return;
+            
+            container.innerHTML = '';
+            
+            window.allPromoCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'promo-card-thumb';
+                cardElement.style.backgroundImage = `url(${card.image_url})`;
+                cardElement.style.backgroundSize = 'cover';
+                cardElement.style.backgroundPosition = 'center';
+                cardElement.dataset.cardId = card.id;
+                cardElement.title = card.title || '宣傳卡片';
+                
+                cardElement.onclick = () => togglePromoCard(card.id);
+                
+                container.appendChild(cardElement);
+            });
+        }
+        
+        // 手機版選中卡片渲染
+        function renderSelectedPromoCardsMobile() {
+            const container = document.getElementById('selectedPromoCards');
+            if (!container) return;
+            
+            if (!window.selectedPromoCardIds || window.selectedPromoCardIds.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; margin: 20px 0;">尚未選擇任何卡片</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            window.selectedPromoCardIds.forEach((cardId, index) => {
+                const card = window.allPromoCards.find(c => c.id === cardId);
+                if (!card) return;
+                
+                const cardElement = document.createElement('div');
+                cardElement.className = 'promo-card-thumb selected';
+                cardElement.style.backgroundImage = `url(${card.image_url})`;
+                cardElement.style.backgroundSize = 'cover';
+                cardElement.style.backgroundPosition = 'center';
+                cardElement.dataset.cardId = card.id;
+                cardElement.title = card.title || '宣傳卡片';
+                
+                // 添加排序按鈕
+                const sortBtn = document.createElement('div');
+                sortBtn.className = 'sort-btn';
+                sortBtn.textContent = index + 1;
+                cardElement.appendChild(sortBtn);
+                
+                cardElement.onclick = () => togglePromoCard(card.id);
+                
+                container.appendChild(cardElement);
+            });
+        }
+        
+        // 切換宣傳卡片選擇
+        function togglePromoCard(cardId) {
+            if (!window.selectedPromoCardIds) {
+                window.selectedPromoCardIds = [];
+            }
+            
+            const index = window.selectedPromoCardIds.indexOf(cardId);
+            if (index > -1) {
+                window.selectedPromoCardIds.splice(index, 1);
+            } else {
+                window.selectedPromoCardIds.push(cardId);
+            }
+            
+            // 更新顯示
+            renderPromoCardListMobile();
+            renderSelectedPromoCardsMobile();
+            
+            // 更新預覽
+            if (document.getElementById('preview').classList.contains('active')) {
+                setTimeout(() => {
+                    renderPreview();
+                    renderShareJsonBox();
+                }, 100);
+            }
+        }
+        
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📱 手機版會員卡頁面載入完成');
+            
+            // 初始化原有功能
+            if (typeof initLiffAndLogin === 'function') {
+                initLiffAndLogin().then(success => {
+                    if (success && typeof liff !== 'undefined') {
+                        liff.getProfile().then(profile => {
+                            liffProfile = profile;
+                            renderLiffUserInfo(profile);
+                            fillAllFieldsWithProfile();
+                        });
+                    }
+                });
+            }
+            
+            // 載入宣傳卡片
+            if (typeof loadPromoCards === 'function') {
+                loadPromoCards().then(() => {
+                    renderPromoCardListMobile();
+                    renderSelectedPromoCardsMobile();
+                });
+            }
+            
+            // 初始化圖片上傳功能
+            if (typeof bindImageUpload === 'function') {
+                bindImageUpload('main_image_upload', 'main_image_upload_btn', 'main_image_preview', 'main_image_url', 'main_image_info');
+                bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url', 'member_image_info');
+            }
+            
+            // 初始化圖片庫功能
+            if (typeof bindImageSelect === 'function') {
+                bindImageSelect('main_image_select_btn', 'main_image_url', 'main_image_preview');
+                bindImageSelect('member_image_select_btn', 'member_image_url', 'member_image_preview');
+            }
+            
+            // 初始化LINE頭貼功能
+            if (typeof useLINEProfile === 'function') {
+                document.getElementById('member_line_profile_btn').onclick = () => {
+                    useLINEProfile('member_image_url', 'member_image_preview', 'member_image_info');
+                };
+            }
+            
+            // 初始化圖片庫彈窗
+            if (typeof initImageLibraryModal === 'function') {
+                initImageLibraryModal();
+            }
+            
+            // 清除全部選擇按鈕
+            document.getElementById('clearAllPromoCards').onclick = () => {
+                window.selectedPromoCardIds = [];
+                renderPromoCardListMobile();
+                renderSelectedPromoCardsMobile();
+            };
+            
+            // 綁定表單變更事件以更新預覽
+            const formInputs = document.querySelectorAll('input[type="text"], input[type="url"], input[type="color"]');
+            formInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    if (document.getElementById('preview').classList.contains('active')) {
+                        setTimeout(() => {
+                            renderPreview();
+                            renderShareJsonBox();
+                        }, 100);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 
