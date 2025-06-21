@@ -72,8 +72,10 @@ export default async function handler(req, res) {
         .select('*')
         .order('position_index');
         
+      let settingsData = settings;
       if (settingsError) {
         console.log('取得回饋設定失敗，使用預設值:', settingsError.message);
+        settingsData = null; // 確保變數有定義
       }
       
       // 處理每張卡片的點數交易
@@ -132,7 +134,7 @@ export default async function handler(req, res) {
           
           // 根據主卡位置計算回饋
           if (mainCardPosition !== -1) {
-            const setting = settings?.find(s => s.position_index === mainCardPosition);
+            const setting = settingsData?.find(s => s.position_index === mainCardPosition);
             const percentage = setting?.reward_percentage || 10.0;
             const reward = 10 * (percentage / 100);
             mainCardTotalReward = reward;
@@ -246,7 +248,7 @@ export default async function handler(req, res) {
       
       if (mainCard) {
         const mainCardPosition = cardIdTypeArr.findIndex(card => card.type === 'main');
-        const setting = settings?.find(s => s.position_index === mainCardPosition);
+        const setting = settingsData?.find(s => s.position_index === mainCardPosition);
         const percentage = setting?.reward_percentage || 10.0;
         const reward = 10 * (percentage / 100);
         
