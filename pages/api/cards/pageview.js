@@ -58,11 +58,18 @@ export default async function handler(req, res) {
           .eq('id', id)
           .single();
           
-        if (getError) throw getError;
+        if (getError) {
+          console.error(`查詢${type === 'main' ? '分享卡' : '活動卡'}失敗:`, getError);
+          if (getError.code === 'PGRST116') {
+            throw new Error(`${type === 'main' ? '分享卡' : '活動卡'}不存在: ${id}`);
+          } else {
+            throw new Error(`查詢${type === 'main' ? '分享卡' : '活動卡'}失敗: ${getError.message}`);
+          }
+        }
         
         const currentPoints = current?.[pointsField] || 0;
         if (currentPoints < 10) {
-          throw new Error(`${type === 'main' ? '主卡' : '附加卡'} ${id} 點數不足 (目前: ${currentPoints}點, 需要: 10點)`);
+          throw new Error(`${type === 'main' ? '分享卡' : '活動卡'} ${id} 點數不足 (目前: ${currentPoints}點, 需要: 10點)`);
         }
       }
       
@@ -102,7 +109,14 @@ export default async function handler(req, res) {
           .eq('id', id)
           .single();
           
-        if (getError) throw getError;
+        if (getError) {
+          console.error(`查詢${type === 'main' ? '分享卡' : '活動卡'}點數失敗:`, getError);
+          if (getError.code === 'PGRST116') {
+            throw new Error(`${type === 'main' ? '分享卡' : '活動卡'}不存在: ${id}`);
+          } else {
+            throw new Error(`查詢${type === 'main' ? '分享卡' : '活動卡'}點數失敗: ${getError.message}`);
+          }
+        }
         
         const currentPoints = current?.[pointsField] || 0;
         
@@ -213,7 +227,14 @@ export default async function handler(req, res) {
           .select('pageview')
           .eq('id', id)
           .single();
-        if (getError) throw getError;
+        if (getError) {
+          console.error(`查詢${type === 'main' ? '分享卡' : '活動卡'}瀏覽次數失敗:`, getError);
+          if (getError.code === 'PGRST116') {
+            throw new Error(`${type === 'main' ? '分享卡' : '活動卡'}不存在: ${id}`);
+          } else {
+            throw new Error(`查詢${type === 'main' ? '分享卡' : '活動卡'}瀏覽次數失敗: ${getError.message}`);
+          }
+        }
         const newPageview = (current?.pageview || 0) + 1;
         // 更新 pageview
         const { data, error: updateError } = await supabase

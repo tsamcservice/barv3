@@ -1633,7 +1633,19 @@ async function shareToLine() {
         
       } catch (e) {
         hideShareLoading();
-        alert('❌ 分享交易失敗：' + e.message);
+        console.error('分享交易錯誤詳情:', e);
+        
+        // 🔧 改進錯誤訊息顯示
+        let errorMessage = '❌ 分享交易失敗\n\n';
+        if (e.message.includes('點數不足')) {
+          errorMessage += '💰 ' + e.message + '\n\n請先儲值點數後再試。';
+        } else if (e.message.includes('不存在')) {
+          errorMessage += '🔍 ' + e.message + '\n\n請檢查卡片設定是否正確。';
+        } else {
+          errorMessage += '⚠️ ' + e.message;
+        }
+        
+        alert(errorMessage);
         return;
       }
     }
