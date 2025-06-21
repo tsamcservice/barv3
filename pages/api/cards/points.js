@@ -46,8 +46,10 @@ export default async function handler(req, res) {
       .select('*')
       .order('position_index');
     
+    let settingsData = settings;
     if (settingsError) {
       console.log('取得設定失敗，使用預設比例:', settingsError.message);
+      settingsData = null; // 確保變數有定義
     }
     
     // 4. 計算總回饋點數
@@ -55,7 +57,7 @@ export default async function handler(req, res) {
     const rewardDetails = [];
     
     promoPositions.forEach(position => {
-      const setting = settings?.find(s => s.position_index === position);
+      const setting = settingsData?.find(s => s.position_index === position);
       const percentage = setting?.reward_percentage || 10.0;
       const reward = currentPoints * (percentage / 100);
       totalReward += reward;
