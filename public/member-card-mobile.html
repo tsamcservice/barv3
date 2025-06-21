@@ -1269,28 +1269,50 @@
                         dataSource = '已儲存的卡片資料';
                         console.log('✅ 使用已儲存的卡片資料');
                     } else {
-                        // 2. 沒有已儲存資料，使用預設值+LINE用戶資料
-                        if (typeof window.defaultCard !== 'undefined') {
-                            finalCardData = { ...window.defaultCard };
-                            dataSource = '預設卡片資料';
-                            console.log('✅ 使用預設卡片資料');
-                        } else {
-                            // 3. 基本預設值
-                            finalCardData = {
-                                card_alt_title: '我在呈璽/呈璽',
-                                main_title_1: '我在呈璽',
-                                main_title_2: '我在呈璽，欣賞美好幸福！',
-                                button_1_text: '加呈璽好友',
-                                button_1_url: 'https://lin.ee/JLLIBlP',
-                                s_button_text: '分享給好友'
-                            };
-                            dataSource = '基本預設值';
-                            console.log('⚠️ 使用基本預設值');
-                        }
+                        // 2. 沒有已儲存資料，使用純淨預設值+LINE用戶資料
+                        // 🔧 修復：不使用可能包含別人資料的window.defaultCard
+                        finalCardData = {
+                            card_alt_title: '我在呈璽/呈璽',
+                            main_image_url: 'https://barv3.vercel.app/uploads/vip/TS-B1.png',
+                            main_image_link: 'https://secure.smore.com/n/td1qc',
+                            main_title_1: '我在呈璽',
+                            main_title_1_color: '#000000',
+                            main_title_2: '我在呈璽，欣賞美好幸福！',
+                            main_title_2_color: '#000000',
+                            member_image_url: 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png',
+                            member_image_link: 'https://secure.smore.com/n/td1qc',
+                            display_name: '呈璽用戶',
+                            name_color1: '#A4924C',
+                            button_1_text: '加呈璽好友',
+                            button_1_url: 'https://lin.ee/JLLIBlP',
+                            button_1_color: '#A4924A',
+                            s_button_text: '分享給好友',
+                            s_button_color: '#A4924B'
+                        };
+                        dataSource = '純淨預設值';
+                        console.log('✅ 使用純淨預設值（避免載入別人資料）');
                         
                         // 覆蓋會員相關資料為LINE用戶資料
                         finalCardData.display_name = profile.displayName || '訪客用戶';
                         finalCardData.member_image_url = profile.pictureUrl || '';
+                        
+                        // 🔧 重要：設定全域變數供圖片庫等功能使用
+                        window.liffProfile = {
+                            displayName: profile.displayName,
+                            pictureUrl: profile.pictureUrl,
+                            userId: profile.userId
+                        };
+                        
+                        // 🔧 同時設定全域liffProfile變數（不帶window前綴）供JS函數使用
+                        if (typeof window !== 'undefined') {
+                            window.liffProfile = window.liffProfile;
+                        }
+                        
+                        // 🔧 同時設定舊版變數名稱以保持相容性
+                        window.liff = window.liff || {};
+                        if (window.liff && !window.liff.getProfile) {
+                            window.liff.getProfile = () => Promise.resolve(profile);
+                        }
                     }
                     
                     console.log(`📝 最終資料來源: ${dataSource}`);
@@ -1413,15 +1435,30 @@
                 
                 showLoginStatus(errorMessage, false, showRetry);
                 
-                // 失敗時填入預設資料
+                // 失敗時填入純淨的預設資料（不使用可能包含別人資料的defaultCard）
                 try {
-                    await waitForFunction('setInputDefaultStyle', 2000);
-                    setInputDefaultStyle();
+                    // 🔧 修復：使用純淨的預設值，不調用可能載入別人資料的函數
+                    const cleanDefaults = {
+                        card_alt_title: '我在呈璽/呈璽',
+                        main_title_1: '我在呈璽',
+                        main_title_2: '我在呈璽，欣賞美好幸福！',
+                        display_name: '呈璽用戶',
+                        button_1_text: '加呈璽好友',
+                        s_button_text: '分享給好友',
+                        main_image_url: 'https://barv3.vercel.app/uploads/vip/TS-B1.png',
+                        member_image_url: 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png'
+                    };
+                    
+                    Object.keys(cleanDefaults).forEach(key => {
+                        const element = document.getElementById(key);
+                        if (element) {
+                            element.value = cleanDefaults[key];
+                        }
+                    });
+                    
+                    console.log('✅ 填入純淨預設資料');
                 } catch (e) {
-                    // 基本預設值
-                    document.getElementById('card_alt_title').value = '我在呈璽/呈璽';
-                    document.getElementById('main_title_1').value = '我在呈璽';
-                    document.getElementById('main_title_2').value = '我在呈璽，欣賞美好幸福！';
+                    console.error('⚠️ 填入預設資料失敗:', e);
                 }
                 return false;
             }
@@ -1473,12 +1510,42 @@
                 let loadedCardData = null;
                 
                 if (isDirectAccess) {
-                    console.log('⚠️ 直接訪問手機版，清空資料污染，等待用戶驗證');
+                    console.log('⚠️ 直接訪問手機版，清空資料污染，填入純淨預設值');
                     // 🔧 直接訪問時，清空可能存在的資料污染
                     window.loadedCardData = null;
                     window.selectedPromoCardIds = [];
                     
-                    // 不載入任何資料，等待LIFF登入後再處理
+                    // 🔧 直接訪問時填入純淨預設值，不使用可能包含別人資料的defaultCard
+                    const cleanDefaults = {
+                        card_alt_title: '我在呈璽/呈璽',
+                        main_image_url: 'https://barv3.vercel.app/uploads/vip/TS-B1.png',
+                        main_image_link: 'https://secure.smore.com/n/td1qc',
+                        main_title_1: '我在呈璽',
+                        main_title_1_color: '#000000',
+                        main_title_2: '我在呈璽，欣賞美好幸福！',
+                        main_title_2_color: '#000000',
+                        member_image_url: 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png',
+                        member_image_link: 'https://secure.smore.com/n/td1qc',
+                        display_name: '呈璽用戶',
+                        name_color1: '#A4924C',
+                        button_1_text: '加呈璽好友',
+                        button_1_url: 'https://lin.ee/JLLIBlP',
+                        button_1_color: '#A4924A',
+                        s_button_text: '分享給好友',
+                        s_button_url: 'https://liff.line.me/2007327814-DGly5XNk?pageId=M01001',
+                        s_button_color: '#A4924B'
+                    };
+                    
+                    // 清空所有欄位，再填入純淨預設值
+                    Object.keys(cleanDefaults).forEach(key => {
+                        const element = document.getElementById(key);
+                        if (element) {
+                            element.value = cleanDefaults[key];
+                            console.log(`🧹 設定純淨預設值 [${key}]:`, cleanDefaults[key]);
+                        }
+                    });
+                    
+                    console.log('✅ 直接訪問已填入純淨預設值');
                 } else if (userId) {
                     console.log('🔍 通過分享連結訪問，嘗試載入已儲存的卡片資料');
                     

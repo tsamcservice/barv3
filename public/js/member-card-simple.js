@@ -2612,18 +2612,23 @@ async function showImageLibrary() {
     // 檢查登入狀態
     console.log('檢查登入狀態...');
     console.log('liffProfile:', liffProfile);
+    console.log('window.liffProfile:', window.liffProfile);
     
-    if (!liffProfile || !liffProfile.userId) {
+    // 🔧 修復：檢查多個可能的liffProfile位置
+    const userProfile = liffProfile || window.liffProfile || (window.liff && window.liff.getProfile ? await window.liff.getProfile() : null);
+    console.log('最終使用的userProfile:', userProfile);
+    
+    if (!userProfile || !userProfile.userId) {
       console.error('用戶未登入');
       grid.innerHTML = '<div style="text-align:center;padding:20px;color:#f44336;">❌ 請先登入 LINE</div>';
       alert('錯誤: 請先登入LINE');
       return;
     }
     
-    console.log('用戶ID:', liffProfile.userId);
+    console.log('用戶ID:', userProfile.userId);
     
     // 獲取用戶圖片列表
-    const apiUrl = '/api/uploaded-images?userId=' + liffProfile.userId;
+    const apiUrl = '/api/uploaded-images?userId=' + userProfile.userId;
     console.log('API請求URL:', apiUrl);
     
     const response = await fetch(apiUrl);
