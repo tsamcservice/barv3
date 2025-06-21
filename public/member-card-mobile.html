@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>手機版會員卡</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <!-- 🔧 移除 flex2html.min.js 避免資料污染 -->
+    <script src="js/flex2html.min.js"></script>
+    <link rel="stylesheet" href="js/flex2html.css">
     <style>
         * {
             box-sizing: border-box;
@@ -117,151 +118,316 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
+        /* 圖片上傳相關樣式 */
+        .image-upload-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .image-upload-group button {
+            padding: 8px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .image-upload-group button:hover {
+            background: #5a6fd8;
+        }
+        
+        .image-upload-group .select-btn {
+            background: #2196f3;
+        }
+        
+        .image-upload-group .line-profile-btn {
+            background: #00c300;
+        }
+        
+        .image-upload-group input[type="file"] {
+            flex: 1;
+            min-width: 120px;
+            font-size: 12px;
+            padding: 6px;
+        }
+        
         .image-preview {
             max-width: 100px;
             max-height: 100px;
             border-radius: 8px;
             margin-top: 8px;
             display: none;
+            border: 2px solid #e0e0e0;
         }
         
         .image-preview.show {
             display: block;
         }
         
+        .image-info {
+            margin-top: 4px;
+            font-size: 11px;
+            color: #666;
+            padding: 4px 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .image-info.show {
+            display: block;
+        }
+        
+        /* 附加卡片樣式 */
+        .promo-controls {
+            margin-bottom: 16px;
+        }
+        
+        .promo-controls button {
+            padding: 10px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .promo-selector {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px;
+            display: none;
+        }
+        
+        .promo-selected {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px;
+            background: #fafafa;
+        }
+        
+        .promo-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .promo-card-thumb {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            width: 80px;
+            height: 100px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .promo-card-thumb:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .promo-card-thumb.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        
+        .promo-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .promo-card-thumb .sort-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        
+        /* 預覽區域樣式 */
         .preview-container {
             background: #849ebf;
             border-radius: 12px;
             padding: 20px;
             margin: 16px 0;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
-        .flex-card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
+        #main-card-preview {
             width: 320px;
             margin: 0 auto;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         
-        .flex-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-        
-        .flex-card-body {
-            padding: 16px;
-        }
-        
-        .flex-card-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        
-        .flex-card-subtitle {
-            font-size: 14px;
-            margin-bottom: 16px;
-            line-height: 1.4;
-        }
-        
-        .flex-card-member {
-            display: flex;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        
-        .flex-card-member img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 12px;
-        }
-        
-        .flex-card-member-name {
-            font-weight: bold;
-            font-size: 16px;
-        }
-        
-        .flex-card-footer {
-            padding: 0 16px 16px;
-        }
-        
-        .flex-card-button {
-            width: 100%;
-            padding: 12px;
-            border: none;
+        #main-card-preview .chatbox {
+            background-color: #849ebf;
+            width: 320px;
+            min-height: 300px;
+            margin: 0;
+            padding: 20px 12px;
             border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            display: block;
-            text-align: center;
         }
         
-        .flex-card-button.primary {
-            color: white;
-        }
-        
-        .flex-card-button.secondary {
-            background: #f5f5f5;
-            color: #333;
-        }
-        
-        .save-btn {
+        .save-button {
             width: 100%;
             padding: 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
             border: none;
             border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: all 0.3s ease;
+            margin-top: 20px;
         }
         
-        .save-btn:hover {
+        .save-button:hover {
+            background: #5a6fd8;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
         
-        .hidden {
+        .save-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 圖片庫模態框 */
+        .image-library-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .image-library-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 70%;
+            overflow-y: auto;
+        }
+        
+        .image-library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .image-library-item {
+            position: relative;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .image-library-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .image-library-item img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        
+        .image-library-item .name {
+            font-size: 10px;
+            color: #666;
+            margin-top: 4px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .close-modal {
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-modal:hover {
+            color: #333;
+        }
+        
+        /* 隱藏欄位區域 */
+        .hidden-fields {
             display: none;
         }
     </style>
 </head>
 <body>
-    <div id="login-status" class="login-status" style="display: none;"></div>
+    <div id="loginStatus" class="login-status" style="display: none;"></div>
     
     <div class="container">
-        <h1 style="text-align: center; color: white; margin: 20px 0; font-size: 24px;">📱 手機版會員卡</h1>
-        
         <!-- 分頁導航 -->
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTab('edit')">📝 編輯</button>
-            <button class="tab-btn" onclick="switchTab('preview')">👁️ 預覽</button>
+            <button class="tab-btn active" onclick="showTab('edit')">📝 編輯</button>
+            <button class="tab-btn" onclick="showTab('promo')">🎴 附加卡片</button>
+            <button class="tab-btn" onclick="showTab('preview')">👁️ 預覽</button>
         </div>
         
-        <!-- 編輯分頁 -->
-        <div id="edit-tab" class="tab-content active">
-            <form id="cardForm">
+        <form id="cardForm">
+            <!-- 📝 編輯分頁 -->
+            <div id="edit-tab" class="tab-content active">
                 <div class="form-group">
-                    <label>卡片標題</label>
+                    <label>卡片預覽標題</label>
                     <input type="text" id="card_alt_title" name="card_alt_title">
                 </div>
                 
                 <div class="form-group">
-                    <label>主圖網址</label>
+                    <label>主圖</label>
                     <input type="url" id="main_image_url" name="main_image_url">
+                    <div class="image-upload-group">
+                        <button type="button" class="select-btn" id="main_image_select_btn">圖片庫</button>
+                        <input type="file" id="main_image_upload" accept="image/*">
+                        <button type="button" id="main_image_upload_btn">上傳</button>
+                    </div>
+                    <img id="main_image_preview" class="image-preview">
+                    <div class="image-info" id="main_image_info"></div>
                 </div>
                 
                 <div class="form-group">
-                    <label>主圖連結</label>
+                    <label>主圖後連結</label>
                     <input type="url" id="main_image_link" name="main_image_link">
                 </div>
                 
@@ -288,11 +454,18 @@
                 <div class="form-group">
                     <label>會員圖片</label>
                     <input type="url" id="member_image_url" name="member_image_url">
+                    <div class="image-upload-group">
+                        <button type="button" class="select-btn" id="member_image_select_btn">圖片庫</button>
+                        <input type="file" id="member_image_upload" accept="image/*">
+                        <button type="button" id="member_image_upload_btn">上傳</button>
+                        <button type="button" class="line-profile-btn" id="member_line_profile_btn">LINE頭貼</button>
+                    </div>
                     <img id="member_image_preview" class="image-preview">
+                    <div class="image-info" id="member_image_info"></div>
                 </div>
                 
                 <div class="form-group">
-                    <label>會員圖片連結</label>
+                    <label>會員圖片後連結</label>
                     <input type="url" id="member_image_link" name="member_image_link">
                 </div>
                 
@@ -312,7 +485,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>按鈕連結</label>
+                    <label>按鈕後連結</label>
                     <input type="url" id="button_1_url" name="button_1_url">
                 </div>
                 
@@ -327,65 +500,82 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>分享按鈕連結</label>
-                    <input type="url" id="s_button_url" name="s_button_url" readonly>
-                </div>
-                
-                <div class="form-group">
                     <label>分享按鈕顏色</label>
                     <input type="color" id="s_button_color" name="s_button_color" value="#A4924B">
                 </div>
-                
-                <button type="submit" class="save-btn">💾 儲存卡片</button>
-            </form>
-        </div>
-        
-        <!-- 預覽分頁 -->
-        <div id="preview-tab" class="tab-content">
-            <div class="preview-container">
-                <div id="main-card-preview" class="flex-card">
-                    <!-- 預覽內容將在這裡顯示 -->
+            </div>
+            
+            <!-- 🎴 附加卡片分頁 -->
+            <div id="promo-tab" class="tab-content">
+                <div class="promo-controls">
+                    <button type="button" id="toggle-promo-selector">選擇附加卡片</button>
+                    <button type="button" id="clear-promo-cards" style="background: #f44336; margin-left: 8px;">清除全部</button>
+                </div>
+                <div class="promo-selector" id="promo-card-selector">
+                    <div id="promo-card-list" class="promo-list"></div>
+                </div>
+                <div class="promo-selected">
+                    <div style="margin-bottom: 12px; text-align: center; color: #666; font-size: 14px;">📱 已選擇的附加卡片（可拖拉排序）</div>
+                    <div id="promo-cards" class="promo-list"></div>
                 </div>
             </div>
+            
+            <!-- 👁️ 預覽分頁 -->
+            <div id="preview-tab" class="tab-content">
+                <div class="preview-container">
+                    <div id="main-card-preview">
+                        <div class="chatbox">
+                            <!-- 預覽內容將在這裡動態生成 -->
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="save-button" onclick="shareToLine()">分享到LINE</button>
+                <button type="submit" class="save-button">儲存卡片</button>
+            </div>
+            
+            <!-- 隱藏的完整欄位（保持功能完整性） -->
+            <div class="hidden-fields">
+                <input type="hidden" id="snow_image_url" name="snow_image_url">
+                <input type="hidden" id="calendar_image_url" name="calendar_image_url">
+                <input type="hidden" id="calendar_image_link" name="calendar_image_link">
+                <input type="hidden" id="amember_id" name="amember_id">
+                <input type="hidden" id="love_icon_url" name="love_icon_url">
+                <input type="hidden" id="love_icon_link" name="love_icon_link">
+                <input type="hidden" id="pageview" name="pageview">
+                <input type="hidden" id="s_button_url" name="s_button_url">
+            </div>
+        </form>
+    </div>
+    
+    <!-- 圖片庫模態框 -->
+    <div id="imageLibraryModal" class="image-library-modal">
+        <div class="image-library-content">
+            <span class="close-modal">&times;</span>
+            <h3>選擇圖片</h3>
+            <div class="image-library-grid" id="imageLibraryGrid"></div>
         </div>
     </div>
     
+    <script src="js/member-card-simple.js"></script>
     <script>
-        // 🔧 手機版專用：完全獨立的邏輯，不依賴任何外部JS
         let currentUser = null;
+        let currentImageField = null;
+        let promoCards = [];
+        let selectedPromoCards = [];
         
-        console.log('📱 手機版會員卡開始載入 - 完全獨立版本');
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 手機版會員卡初始化開始');
+            initLIFF();
+            setupEventListeners();
+            loadPromoCards();
+        });
         
-        // 🔧 關鍵：清空所有可能的全域變數污染
-        window.defaultCard = undefined;
-        window.loadedCardData = undefined;
-        window.selectedPromoCardIds = undefined;
-        window.liffProfile = undefined;
-        
-        // 分頁切換
-        function switchTab(tab) {
-            console.log('🔄 切換分頁:', tab);
-            
-            // 更新按鈕狀態
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
-            
-            // 更新內容顯示
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(`${tab}-tab`).classList.add('active');
-            
-            // 如果切換到預覽，更新預覽
-            if (tab === 'preview') {
-                updatePreview();
-            }
-        }
-        
-        // 顯示登入狀態
+        // 顯示狀態訊息
         function showStatus(message, type) {
-            console.log('📱 狀態更新:', message, type);
-            const status = document.getElementById('login-status');
+            const status = document.getElementById('loginStatus');
             status.textContent = message;
-            status.className = `login-status ${type}`;
+            status.className = 'login-status ' + type;
             status.style.display = 'block';
             
             if (type === 'success') {
@@ -395,27 +585,42 @@
             }
         }
         
-        // LIFF初始化和登入
-        async function initLiffAndLogin() {
+        // 分頁切換
+        function showTab(tabName) {
+            // 隱藏所有分頁
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 顯示選中的分頁
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // 如果是預覽分頁，更新預覽
+            if (tabName === 'preview') {
+                updatePreview();
+            }
+        }
+        
+        // LIFF初始化
+        async function initLIFF() {
             try {
-                console.log('🚀 開始LIFF初始化（手機版獨立）');
+                console.log('🚀 開始LIFF初始化（手機版完整功能）');
                 showStatus('🔄 正在初始化...', 'loading');
                 
-                // 檢查LIFF環境
                 if (typeof liff === 'undefined') {
-                    console.warn('⚠️ 不在LINE環境中');
-                    showStatus('⚠️ 請在LINE中開啟', 'error');
-                    fillDefaults();
+                    console.warn('⚠️ 不在LINE環境中，使用預設資料');
+                    showStatus('⚠️ 非LINE環境，使用預設資料', 'error');
+                    await loadUserData('default');
                     return;
                 }
                 
-                console.log('✅ LIFF SDK已載入');
-                
-                // 初始化LIFF
                 await liff.init({ liffId: '2007327814-DGly5XNk' });
                 console.log('✅ LIFF初始化成功');
                 
-                // 檢查登入狀態
                 if (!liff.isLoggedIn()) {
                     console.log('🔐 未登入，開始登入');
                     showStatus('🔐 請登入LINE', 'loading');
@@ -424,71 +629,106 @@
                 }
                 
                 console.log('✅ 已登入LINE');
-                
-                // 獲取用戶資料
-                showStatus('📋 載入用戶資料...', 'loading');
                 const profile = await liff.getProfile();
                 currentUser = profile;
                 console.log('✅ 用戶資料獲取成功:', profile);
                 
-                fillUserData(profile);
+                showStatus('📋 載入用戶資料...', 'loading');
+                await loadUserData(profile.userId);
                 showStatus(`✅ 歡迎，${profile.displayName}！`, 'success');
                 
             } catch (error) {
                 console.error('❌ LIFF錯誤:', error);
                 showStatus('❌ 初始化失敗，使用預設資料', 'error');
+                await loadUserData('default');
+            }
+        }
+        
+        // 載入用戶資料（從資料庫）
+        async function loadUserData(userId) {
+            try {
+                console.log('📋 載入用戶資料，userId:', userId);
+                
+                if (userId === 'default') {
+                    fillDefaults();
+                    return;
+                }
+                
+                // 從資料庫載入用戶的會員卡資料
+                const response = await fetch(`/api/cards/list?type=main&userId=${userId}&limit=1`);
+                const result = await response.json();
+                
+                if (result.success && result.cards && result.cards.length > 0) {
+                    const cardData = result.cards[0];
+                    console.log('✅ 從資料庫載入資料:', cardData);
+                    fillCardData(cardData);
+                } else {
+                    console.log('ℹ️ 未找到用戶資料，使用預設資料');
+                    fillUserDefaults();
+                }
+                
+                updatePreview();
+                
+            } catch (error) {
+                console.error('❌ 載入用戶資料失敗:', error);
                 fillDefaults();
             }
         }
         
-        // 填入用戶資料
-        function fillUserData(profile) {
-            console.log('📝 填入手機版用戶資料:', profile);
+        // 填入資料庫資料
+        function fillCardData(cardData) {
+            console.log('📝 填入資料庫資料');
             
-            // 🔧 關鍵：使用完全純淨的用戶資料
+            // 填入所有欄位
+            Object.keys(cardData).forEach(key => {
+                const element = document.getElementById(key);
+                if (element && cardData[key] !== null && cardData[key] !== undefined) {
+                    element.value = cardData[key];
+                    console.log(`✅ 設定 [${key}]:`, cardData[key]);
+                }
+            });
+            
+            // 更新圖片預覽
+            updateImagePreviews();
+        }
+        
+        // 填入用戶預設資料（結合LINE資料）
+        function fillUserDefaults() {
+            console.log('📝 填入用戶預設資料');
+            
             const userData = {
-                card_alt_title: profile.displayName || '我的會員卡',
+                card_alt_title: currentUser?.displayName || '我的會員卡',
                 main_image_url: 'https://barv3.vercel.app/uploads/vip/TS-B1.png',
                 main_image_link: 'https://secure.smore.com/n/td1qc',
                 main_title_1: '我在呈璽',
                 main_title_1_color: '#000000',
                 main_title_2: '我在呈璽，欣賞美好幸福！',
                 main_title_2_color: '#000000',
-                member_image_url: profile.pictureUrl || 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png',
+                member_image_url: currentUser?.pictureUrl || 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png',
                 member_image_link: 'https://secure.smore.com/n/td1qc',
-                display_name: profile.displayName || '呈璽用戶',
+                display_name: currentUser?.displayName || '呈璽用戶',
                 name_color1: '#A4924C',
                 button_1_text: '加呈璽好友',
                 button_1_url: 'https://lin.ee/JLLIBlP',
                 button_1_color: '#A4924A',
                 s_button_text: '分享給好友',
-                s_button_url: `https://liff.line.me/2007327814-DGly5XNk?pageId=M01001&userId=${profile.userId}`,
+                s_button_url: `https://liff.line.me/2007327814-DGly5XNk?pageId=M01001${currentUser ? '&userId=' + currentUser.userId : ''}`,
                 s_button_color: '#A4924B'
             };
             
-            // 清空並重新填入所有欄位
             Object.keys(userData).forEach(key => {
                 const element = document.getElementById(key);
                 if (element) {
-                    element.value = '';  // 先清空
-                    element.value = userData[key];  // 再填入
-                    console.log(`✅ 設定 [${key}]:`, userData[key]);
+                    element.value = userData[key];
                 }
             });
             
-            // 顯示用戶頭貼
-            if (profile.pictureUrl) {
-                const preview = document.getElementById('member_image_preview');
-                preview.src = profile.pictureUrl;
-                preview.classList.add('show');
-            }
-            
-            updatePreview();
+            updateImagePreviews();
         }
         
-        // 填入預設資料
+        // 填入完全預設資料
         function fillDefaults() {
-            console.log('📝 填入手機版預設資料');
+            console.log('📝 填入完全預設資料');
             
             const defaults = {
                 card_alt_title: '我的會員卡',
@@ -510,20 +750,259 @@
                 s_button_color: '#A4924B'
             };
             
-            // 清空並重新填入所有欄位
             Object.keys(defaults).forEach(key => {
                 const element = document.getElementById(key);
                 if (element) {
-                    element.value = '';  // 先清空
-                    element.value = defaults[key];  // 再填入
-                    console.log(`✅ 設定預設 [${key}]:`, defaults[key]);
+                    element.value = defaults[key];
                 }
             });
             
+            updateImagePreviews();
+        }
+        
+        // 更新圖片預覽
+        function updateImagePreviews() {
+            ['main_image', 'member_image'].forEach(prefix => {
+                const urlInput = document.getElementById(prefix + '_url');
+                const preview = document.getElementById(prefix + '_preview');
+                
+                if (urlInput && preview && urlInput.value) {
+                    preview.src = urlInput.value;
+                    preview.classList.add('show');
+                }
+            });
+        }
+        
+        // 設定事件監聽器
+        function setupEventListeners() {
+            // 表單輸入監聽
+            document.getElementById('cardForm').addEventListener('input', updatePreview);
+            
+            // 圖片上傳按鈕
+            setupImageUpload('main_image');
+            setupImageUpload('member_image');
+            
+            // 附加卡片控制
+            document.getElementById('toggle-promo-selector').addEventListener('click', togglePromoSelector);
+            document.getElementById('clear-promo-cards').addEventListener('click', clearPromoCards);
+            
+            // 圖片庫模態框
+            document.querySelector('.close-modal').addEventListener('click', closeImageLibrary);
+            
+            // 表單提交
+            document.getElementById('cardForm').addEventListener('submit', saveCard);
+        }
+        
+        // 設定圖片上傳功能
+        function setupImageUpload(fieldName) {
+            const selectBtn = document.getElementById(fieldName + '_select_btn');
+            const uploadBtn = document.getElementById(fieldName + '_upload_btn');
+            const fileInput = document.getElementById(fieldName + '_upload');
+            const urlInput = document.getElementById(fieldName + '_url');
+            const preview = document.getElementById(fieldName + '_preview');
+            const lineBtn = document.getElementById(fieldName + '_line_profile_btn');
+            
+            if (selectBtn) {
+                selectBtn.addEventListener('click', () => {
+                    currentImageField = fieldName;
+                    openImageLibrary();
+                });
+            }
+            
+            if (uploadBtn && fileInput) {
+                uploadBtn.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', handleImageUpload);
+            }
+            
+            if (urlInput && preview) {
+                urlInput.addEventListener('input', () => {
+                    if (urlInput.value) {
+                        preview.src = urlInput.value;
+                        preview.classList.add('show');
+                    } else {
+                        preview.classList.remove('show');
+                    }
+                    updatePreview();
+                });
+            }
+            
+            if (lineBtn && fieldName === 'member_image') {
+                lineBtn.addEventListener('click', () => {
+                    if (currentUser && currentUser.pictureUrl) {
+                        urlInput.value = currentUser.pictureUrl;
+                        preview.src = currentUser.pictureUrl;
+                        preview.classList.add('show');
+                        updatePreview();
+                    } else {
+                        showStatus('❌ 請先登入LINE', 'error');
+                    }
+                });
+            }
+        }
+        
+        // 處理圖片上傳
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            try {
+                showStatus('📤 上傳圖片中...', 'loading');
+                
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const fieldName = currentImageField || 'main_image';
+                    const urlInput = document.getElementById(fieldName + '_url');
+                    const preview = document.getElementById(fieldName + '_preview');
+                    
+                    urlInput.value = result.url;
+                    preview.src = result.url;
+                    preview.classList.add('show');
+                    
+                    updatePreview();
+                    showStatus('✅ 圖片上傳成功', 'success');
+                } else {
+                    showStatus('❌ 圖片上傳失敗', 'error');
+                }
+            } catch (error) {
+                console.error('圖片上傳錯誤:', error);
+                showStatus('❌ 圖片上傳失敗', 'error');
+            }
+        }
+        
+        // 開啟圖片庫
+        async function openImageLibrary() {
+            try {
+                const response = await fetch('/api/uploaded-images');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const grid = document.getElementById('imageLibraryGrid');
+                    grid.innerHTML = '';
+                    
+                    result.images.forEach(image => {
+                        const item = document.createElement('div');
+                        item.className = 'image-library-item';
+                        item.innerHTML = `
+                            <img src="${image.url}" alt="${image.filename}">
+                            <div class="name">${image.filename}</div>
+                        `;
+                        item.addEventListener('click', () => selectLibraryImage(image.url));
+                        grid.appendChild(item);
+                    });
+                    
+                    document.getElementById('imageLibraryModal').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('載入圖片庫失敗:', error);
+                showStatus('❌ 載入圖片庫失敗', 'error');
+            }
+        }
+        
+        // 選擇圖片庫圖片
+        function selectLibraryImage(url) {
+            if (currentImageField) {
+                const urlInput = document.getElementById(currentImageField + '_url');
+                const preview = document.getElementById(currentImageField + '_preview');
+                
+                urlInput.value = url;
+                preview.src = url;
+                preview.classList.add('show');
+                
+                updatePreview();
+                closeImageLibrary();
+            }
+        }
+        
+        // 關閉圖片庫
+        function closeImageLibrary() {
+            document.getElementById('imageLibraryModal').style.display = 'none';
+            currentImageField = null;
+        }
+        
+        // 載入宣傳卡片
+        async function loadPromoCards() {
+            try {
+                const response = await fetch('/api/promo-cards');
+                const result = await response.json();
+                
+                if (result.success) {
+                    promoCards = result.cards;
+                    renderPromoCardSelector();
+                }
+            } catch (error) {
+                console.error('載入宣傳卡片失敗:', error);
+            }
+        }
+        
+        // 渲染宣傳卡片選擇器
+        function renderPromoCardSelector() {
+            const container = document.getElementById('promo-card-list');
+            container.innerHTML = '';
+            
+            promoCards.forEach(card => {
+                const thumb = document.createElement('div');
+                thumb.className = 'promo-card-thumb';
+                thumb.innerHTML = `<img src="${card.image_url}" alt="${card.title}">`;
+                thumb.addEventListener('click', () => addPromoCard(card));
+                container.appendChild(thumb);
+            });
+        }
+        
+        // 切換宣傳卡片選擇器
+        function togglePromoSelector() {
+            const selector = document.getElementById('promo-card-selector');
+            selector.style.display = selector.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // 添加宣傳卡片
+        function addPromoCard(card) {
+            if (!selectedPromoCards.find(c => c.id === card.id)) {
+                selectedPromoCards.push(card);
+                renderSelectedPromoCards();
+                updatePreview();
+            }
+        }
+        
+        // 渲染已選擇的宣傳卡片
+        function renderSelectedPromoCards() {
+            const container = document.getElementById('promo-cards');
+            container.innerHTML = '';
+            
+            selectedPromoCards.forEach((card, index) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'promo-card-thumb selected';
+                thumb.innerHTML = `
+                    <img src="${card.image_url}" alt="${card.title}">
+                    <div class="sort-btn" onclick="removePromoCard(${index})">×</div>
+                `;
+                container.appendChild(thumb);
+            });
+        }
+        
+        // 移除宣傳卡片
+        function removePromoCard(index) {
+            selectedPromoCards.splice(index, 1);
+            renderSelectedPromoCards();
             updatePreview();
         }
         
-        // 更新預覽（使用純HTML，不依賴FlexToHtml）
+        // 清除所有宣傳卡片
+        function clearPromoCards() {
+            selectedPromoCards = [];
+            renderSelectedPromoCards();
+            updatePreview();
+        }
+        
+        // 更新預覽
         function updatePreview() {
             try {
                 console.log('🔄 更新手機版預覽');
@@ -531,36 +1010,76 @@
                 const formData = new FormData(document.getElementById('cardForm'));
                 const data = Object.fromEntries(formData);
                 
-                const preview = document.getElementById('main-card-preview');
-                preview.innerHTML = `
-                    <img src="${data.main_image_url || 'https://barv3.vercel.app/uploads/vip/TS-B1.png'}" alt="主圖" onclick="window.open('${data.main_image_link || '#'}')">
-                    <div class="flex-card-body">
-                        <div class="flex-card-title" style="color: ${data.main_title_1_color || '#000000'}">
-                            ${data.main_title_1 || '我在呈璽'}
-                        </div>
-                        <div class="flex-card-subtitle" style="color: ${data.main_title_2_color || '#000000'}">
-                            ${data.main_title_2 || '我在呈璽，欣賞美好幸福！'}
-                        </div>
-                        <div class="flex-card-member">
-                            <img src="${data.member_image_url || 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png'}" alt="會員圖片" onclick="window.open('${data.member_image_link || '#'}')">
-                            <div class="flex-card-member-name" style="color: ${data.name_color1 || '#A4924C'}">
-                                ${data.display_name || '呈璽用戶'}
+                // 使用 flex2html 生成預覽
+                if (typeof generateFlexMessage === 'function') {
+                    const flexData = generateFlexMessage(data, selectedPromoCards);
+                    const previewContainer = document.querySelector('#main-card-preview .chatbox');
+                    
+                    if (flexData && previewContainer) {
+                        FlexToHtml.render(flexData, previewContainer);
+                        console.log('✅ 預覽更新完成');
+                    }
+                } else {
+                    // 降級處理：使用簡單HTML預覽
+                    const preview = document.querySelector('#main-card-preview .chatbox');
+                    preview.innerHTML = `
+                        <div style="background: white; border-radius: 12px; overflow: hidden;">
+                            <img src="${data.main_image_url || ''}" style="width: 100%; height: 150px; object-fit: cover;">
+                            <div style="padding: 16px;">
+                                <div style="font-size: 18px; font-weight: bold; color: ${data.main_title_1_color || '#000'}; margin-bottom: 8px;">
+                                    ${data.main_title_1 || ''}
+                                </div>
+                                <div style="font-size: 14px; color: ${data.main_title_2_color || '#000'}; margin-bottom: 16px;">
+                                    ${data.main_title_2 || ''}
+                                </div>
+                                <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                                    <img src="${data.member_image_url || ''}" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 12px;">
+                                    <div style="font-weight: bold; color: ${data.name_color1 || '#A4924C'};">
+                                        ${data.display_name || ''}
+                                    </div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="background: ${data.button_1_color || '#A4924A'}; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                                        ${data.button_1_text || ''}
+                                    </div>
+                                    <div style="background: ${data.s_button_color || '#A4924B'}; color: white; padding: 12px; border-radius: 8px;">
+                                        ${data.s_button_text || ''}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="flex-card-footer">
-                        <a href="${data.button_1_url || '#'}" class="flex-card-button primary" style="background-color: ${data.button_1_color || '#A4924A'}">
-                            ${data.button_1_text || '加呈璽好友'}
-                        </a>
-                        <a href="${data.s_button_url || '#'}" class="flex-card-button secondary" style="background-color: ${data.s_button_color || '#A4924B'}; color: white;">
-                            ${data.s_button_text || '分享給好友'}
-                        </a>
-                    </div>
-                `;
+                    `;
+                }
                 
-                console.log('✅ 預覽更新完成');
             } catch (error) {
                 console.error('❌ 預覽更新失敗:', error);
+            }
+        }
+        
+        // 分享到LINE
+        function shareToLine() {
+            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                const formData = new FormData(document.getElementById('cardForm'));
+                const data = Object.fromEntries(formData);
+                
+                if (typeof generateFlexMessage === 'function') {
+                    const flexData = generateFlexMessage(data, selectedPromoCards);
+                    
+                    liff.shareTargetPicker([{
+                        type: 'flex',
+                        altText: data.card_alt_title || '我的會員卡',
+                        contents: flexData
+                    }]).then(() => {
+                        showStatus('✅ 分享成功！', 'success');
+                    }).catch(error => {
+                        console.error('分享失敗:', error);
+                        showStatus('❌ 分享失敗', 'error');
+                    });
+                } else {
+                    showStatus('❌ 分享功能暫時無法使用', 'error');
+                }
+            } else {
+                showStatus('❌ 請先登入LINE', 'error');
             }
         }
         
@@ -581,6 +1100,11 @@
                 cardData.userId = currentUser.userId;
                 cardData.pageId = 'M01001';
                 
+                // 添加宣傳卡片資料
+                if (selectedPromoCards.length > 0) {
+                    cardData.promoCards = selectedPromoCards.map(card => card.id);
+                }
+                
                 console.log('💾 準備儲存資料:', cardData);
                 
                 const response = await fetch('/api/cards/save', {
@@ -597,45 +1121,14 @@
                 if (result.success) {
                     showStatus('✅ 儲存成功！', 'success');
                 } else {
-                    showStatus('❌ 儲存失敗', 'error');
+                    showStatus('❌ 儲存失敗: ' + (result.error || '未知錯誤'), 'error');
                 }
+                
             } catch (error) {
-                console.error('❌ 儲存錯誤:', error);
+                console.error('儲存失敗:', error);
                 showStatus('❌ 儲存失敗', 'error');
             }
         }
-        
-        // 頁面載入完成後初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('📱 手機版會員卡DOM載入完成');
-            
-            // 🔧 關鍵：立即清空任何可能的資料污染
-            console.log('🧹 清理可能的資料污染...');
-            
-            // 清空所有表單欄位
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => {
-                if (input.type !== 'color') {
-                    input.value = '';
-                }
-            });
-            
-            console.log('✅ 表單欄位已清空');
-            
-            // 綁定表單事件
-            document.getElementById('cardForm').addEventListener('submit', saveCard);
-            
-            // 綁定輸入框變更事件
-            inputs.forEach(input => {
-                input.addEventListener('input', updatePreview);
-            });
-            
-            // 延遲開始初始化，確保頁面完全載入
-            setTimeout(() => {
-                console.log('🚀 開始手機版初始化流程');
-                initLiffAndLogin();
-            }, 100);
-        });
     </script>
 </body>
 </html> 
