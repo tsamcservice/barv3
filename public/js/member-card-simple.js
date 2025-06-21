@@ -1578,23 +1578,37 @@ async function shareToLine() {
     
     // **步驟1：準備分享資料並檢查點數**
     let mainCardId = null;
-    let currentPoints = 0;
+    let currentPoints = 100; // 預設點數
+    let mainCardExists = false;
+    
     try {
       const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
       const result = await res.json();
       if (result.success && result.data && result.data.length > 0) {
         mainCardId = result.data[0].id;
         currentPoints = result.data[0].user_points || 0;
+        mainCardExists = true;
+        console.log('✅ 找到現有主卡:', mainCardId, '點數:', currentPoints);
+      } else {
+        console.log('⚠️ 未找到現有主卡，將使用臨時ID進行分享');
       }
     } catch (e) {
       console.error('取得主卡資料失敗:', e);
+    }
+    
+    // 🔧 修復：確保主卡始終參與分享，即使不存在於資料庫
+    // 如果沒有現有主卡，使用臨時ID，後端會特殊處理
+    if (!mainCardId) {
+      mainCardId = 'temp-main-card-' + Date.now();
+      console.log('🆕 使用臨時主卡ID:', mainCardId);
     }
     
     // 建立卡片ID清單並加入位置資訊 (位置對應整體排列索引)
     const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
       id: c.id === 'main' ? mainCardId : c.id, 
       type: c.type,
-      position: i // 位置就是在整體排列中的索引 (0,1,2,3,4 對應 A,B,C,D,E)
+      position: i, // 位置就是在整體排列中的索引 (0,1,2,3,4 對應 A,B,C,D,E)
+      isTemp: c.id === 'main' && !mainCardExists // 標記是否為臨時卡片
     })).filter(c => c.id);
     
     console.log('🎯 卡片位置資訊:', cardIdTypeArr.map(c => ({ type: c.type, position: c.position, id: c.id })));
@@ -1758,30 +1772,19 @@ async function shareToLine() {
         let successMessage = '✅ 分享會員卡成功！\n\n';
         if (shareResult) {
           successMessage += '💰 分享結果：\n';
-          successMessage += `• 分享卡扣除點數：10點\n`;
+          successMessage += `• 總扣除點數：${shareResult.totalDeducted}點\n`;
           
-          // 詳細顯示各位置的回饋點數
-          const promoCards = cardIdTypeArr.filter(c => c.type === 'promo');
-          let totalReward = 0;
-          
-          // 🔧 修復：顯示所有位置的回饋詳情
+          // 🔧 修復：顯示所有位置的回饋明細
           if (shareResult.rewardDetails && shareResult.rewardDetails.length > 0) {
-            shareResult.rewardDetails.forEach((detail) => {
-              const cardTypeLabel = detail.cardType === 'main' ? '分享卡' : '活動卡';
-              successMessage += `• ${detail.description}：${detail.reward.toFixed(1)}點\n`;
-              totalReward += detail.reward;
+            successMessage += '• 位置回饋明細：\n';
+            shareResult.rewardDetails.forEach(detail => {
+              const rewardText = detail.reward > 0 ? `+${detail.reward.toFixed(1)}點` : '0.0點';
+              successMessage += `  ${detail.description}: ${rewardText}\n`;
             });
-          } else if (shareResult.totalRewarded > 0) {
-            totalReward = shareResult.totalRewarded;
-            successMessage += `• 賺取分享點：${totalReward.toFixed(1)}點\n`;
-          } else {
-            // 找出主卡位置
-            const mainCardPosition = cardIdTypeArr.findIndex(card => card.type === 'main');
-            successMessage += `• 賺取分享點(位${mainCardPosition + 1})：0點\n`;
           }
           
-          successMessage += `• 合計賺取：${totalReward.toFixed(1)}點\n`;
-          successMessage += `• 分享卡目前餘點：${latestPoints}點\n\n`;
+          successMessage += `• 總回饋點數：${shareResult.totalRewarded.toFixed(1)}點\n`;
+          successMessage += `• 淨點數變化：${shareResult.netAmount >= 0 ? '+' : ''}${shareResult.netAmount.toFixed(1)}點\n\n`;
         }
         successMessage += '📝 請記得關閉本會員卡編修頁面';
         

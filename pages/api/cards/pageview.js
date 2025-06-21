@@ -96,9 +96,90 @@ export default async function handler(req, res) {
       
       // 處理每張卡片的點數交易
       for (const { id, type, position } of cardIdTypeArr) {
-        if (!id || id === 'test-main-card' || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        // 🔧 修復：支援臨時主卡ID
+        const isTempMainCard = id && id.startsWith('temp-main-card-');
+        const isValidUUID = id && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+        
+        if (!id || id === 'test-main-card') {
           console.log(`跳過無效的卡片ID: ${id}`);
           continue;
+        }
+        
+        if (!isValidUUID && !isTempMainCard) {
+          console.log(`跳過無效的卡片ID格式: ${id}`);
+          continue;
+        }
+        
+        // 🔧 臨時主卡特殊處理
+        if (isTempMainCard && type === 'main') {
+          console.log(`使用臨時主卡ID，採用預設點數: 100`);
+          
+          // 臨時主卡不需要查詢資料庫，直接使用預設值
+          const tempCurrentPoints = 100;
+          const afterDeduct = tempCurrentPoints - 10;
+          
+          // 記錄臨時主卡扣點交易（不更新資料庫）
+          await supabase.from('points_transactions').insert({
+            card_id: id,
+            card_type: type,
+            transaction_type: 'deduct_share',
+            amount: -10,
+            balance_before: tempCurrentPoints,
+            balance_after: afterDeduct,
+            share_session_id: shareSessionId,
+            position_index: position,
+            notes: '臨時主卡分享扣點'
+          });
+          
+          totalDeducted += 10;
+          
+          // 計算臨時主卡回饋
+          const allCards = cardIdTypeArr;
+          const mainCardPosition = allCards.findIndex(card => card.type === 'main');
+          
+          console.log(`🎯 臨時主卡回饋計算：總共 ${allCards.length} 張卡，主卡在位置 ${mainCardPosition}`);
+          
+          let mainCardTotalReward = 0;
+          if (mainCardPosition !== -1) {
+            const setting = settingsData?.find(s => s.position_index === mainCardPosition);
+            const percentage = setting?.reward_percentage || 10.0;
+            const reward = 10 * (percentage / 100);
+            mainCardTotalReward = reward;
+            
+            console.log(`臨時主卡位置 ${mainCardPosition}: ${percentage}% = +${reward.toFixed(2)} 點`);
+            
+            if (reward > 0) {
+              // 記錄臨時主卡回饋交易（不更新資料庫）
+              await supabase.from('points_transactions').insert({
+                card_id: id,
+                card_type: type,
+                transaction_type: 'reward_share',
+                amount: reward,
+                balance_before: afterDeduct,
+                balance_after: afterDeduct + reward,
+                share_session_id: shareSessionId,
+                position_index: mainCardPosition,
+                reward_percentage: percentage,
+                notes: '臨時主卡分享回饋'
+              });
+              
+              totalRewarded += reward;
+            }
+          }
+          
+          console.log(`臨時主卡，跳過資料庫更新，僅返回計算結果`);
+          console.log(`[points] cardId=${id}, old=${tempCurrentPoints}, reward=${mainCardTotalReward}, new=${afterDeduct + mainCardTotalReward}`);
+          
+          pointsResults.push({
+            cardId: id,
+            type: type,
+            deducted: 10,
+            rewarded: mainCardTotalReward,
+            finalBalance: afterDeduct + mainCardTotalReward,
+            isTemp: true
+          });
+          
+          continue; // 跳過正常的資料庫處理流程
         }
         
         const table = type === 'main' ? 'member_cards' : 'promo_cards';
@@ -217,8 +298,23 @@ export default async function handler(req, res) {
     // 2. 處理 pageview 更新 (原有邏輯)
     let pageviewError = null;
     for (const { id, type } of cardIdTypeArr) {
-      if (!id || id === 'test-main-card' || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      // 🔧 修復：支援臨時主卡ID
+      const isTempMainCard = id && id.startsWith('temp-main-card-');
+      const isValidUUID = id && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      
+      if (!id || id === 'test-main-card') {
         console.log(`跳過無效的卡片ID: ${id}`);
+        continue;
+      }
+      
+      if (!isValidUUID && !isTempMainCard) {
+        console.log(`跳過無效的卡片ID格式: ${id}`);
+        continue;
+      }
+      
+      // 🔧 臨時主卡跳過pageview更新
+      if (isTempMainCard && type === 'main') {
+        console.log(`臨時主卡跳過pageview更新: ${id}`);
         continue;
       }
       try {
@@ -279,30 +375,27 @@ export default async function handler(req, res) {
       if (mainCard) {
         const mainCardPosition = cardIdTypeArr.findIndex(card => card.type === 'main');
         
-        // 🔧 修復：按位置順序生成回饋詳情，正確映射卡片類型
-        // 先創建位置到卡片的映射
-        const positionMap = {};
-        cardIdTypeArr.forEach((card, index) => {
-          positionMap[index] = card;
-        });
-        
+        // 🔧 修復：為每個位置生成回饋詳情
         for (let i = 0; i < cardIdTypeArr.length; i++) {
-          const card = positionMap[i];
+          const card = cardIdTypeArr[i];
           const setting = settingsData?.find(s => s.position_index === i);
           const percentage = setting?.reward_percentage || 10.0;
-          const reward = 10 * (percentage / 100);
+          const baseReward = 10 * (percentage / 100);
           
           // 只有主卡位置才有實際回饋，其他位置顯示0
-          const actualReward = (i === mainCardPosition) ? reward : 0;
+          const actualReward = (i === mainCardPosition) ? baseReward : 0;
           
           rewardDetails.push({
             position: i,
             percentage: percentage,
             reward: actualReward,
             cardType: card.type,
-            description: `位置${i + 1}${card.type === 'main' ? '(分享卡)' : '(活動卡)'}`
+            description: `位置${i + 1}${card.type === 'main' ? '(分享卡)' : '(活動卡)'}`,
+            isMainCard: i === mainCardPosition
           });
         }
+        
+        console.log('📊 回饋詳情生成完成:', rewardDetails.map(r => `位置${r.position}: ${r.cardType} ${r.reward}點`));
       }
       
       response.pointsTransaction = {
