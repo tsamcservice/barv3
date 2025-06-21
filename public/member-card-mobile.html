@@ -598,6 +598,7 @@
     <!-- 🔐 登入狀態提示 -->
     <div id="loginStatus" style="position:fixed;top:0;left:0;right:0;background:#4caf50;color:white;padding:8px;text-align:center;z-index:999;display:none;">
         <span id="loginStatusText">🔐 正在驗證LINE登入狀態...</span>
+        <button id="retryLoginBtn" onclick="retryLogin()" style="display:none; margin-left: 10px; padding: 4px 8px; background: #00c300; color: white; border: none; border-radius: 4px; font-size: 12px;">重試登入</button>
     </div>
     
     <div class="mobile-container">
@@ -1051,14 +1052,20 @@
         }
         
         // 🔧 顯示登入狀態函數
-        function showLoginStatus(message, isSuccess = true) {
+        function showLoginStatus(message, isSuccess = true, showRetry = false) {
             const statusDiv = document.getElementById('loginStatus');
             const statusText = document.getElementById('loginStatusText');
+            const retryBtn = document.getElementById('retryLoginBtn');
             
             if (statusDiv && statusText) {
                 statusText.textContent = message;
                 statusDiv.style.background = isSuccess ? '#4caf50' : '#f44336';
                 statusDiv.style.display = 'block';
+                
+                // 顯示或隱藏重試按鈕
+                if (retryBtn) {
+                    retryBtn.style.display = showRetry ? 'inline-block' : 'none';
+                }
                 
                 // 3秒後自動隱藏（成功時）
                 if (isSuccess) {
@@ -1069,32 +1076,103 @@
             }
         }
         
+        // 🔧 重試登入函數
+        function retryLogin() {
+            console.log('🔄 用戶點擊重試登入');
+            forceInitLiffAndLogin();
+        }
+        
+        // 🔧 等待函數載入的輔助函數
+        function waitForFunction(functionName, maxWait = 5000, checkInterval = 100) {
+            return new Promise((resolve, reject) => {
+                const startTime = Date.now();
+                const checkFunction = () => {
+                    if (typeof window[functionName] === 'function') {
+                        resolve(window[functionName]);
+                    } else if (Date.now() - startTime > maxWait) {
+                        reject(new Error(`函數 ${functionName} 載入超時`));
+                    } else {
+                        setTimeout(checkFunction, checkInterval);
+                    }
+                };
+                checkFunction();
+            });
+        }
+        
         // 🔧 強制LIFF登入函數
         async function forceInitLiffAndLogin() {
             console.log('🔐 開始強制LIFF登入流程...');
             showLoginStatus('🔐 正在驗證LINE登入狀態...');
             
-            // 檢查是否在LINE環境中
-            if (!window.liff) {
-                console.log('❌ 不在LINE環境中，填入預設資料');
+            // 詳細檢查LINE環境
+            const envCheck = {
+                liff: !!window.liff,
+                userAgent: navigator.userAgent,
+                isLineApp: navigator.userAgent.includes('Line'),
+                isLineBrowser: navigator.userAgent.includes('Line') || navigator.userAgent.includes('LIFF'),
+                href: window.location.href,
+                referrer: document.referrer
+            };
+            console.log('🔧 詳細LINE環境檢查:', envCheck);
+            
+            // 🔧 修復：等待LIFF SDK載入
+            let liffReady = false;
+            let waitCount = 0;
+            const maxWait = 20; // 最多等待10秒
+            
+            while (!liffReady && waitCount < maxWait) {
+                if (window.liff && typeof window.liff.init === 'function') {
+                    liffReady = true;
+                    console.log('✅ LIFF SDK已載入');
+                    break;
+                }
+                console.log(`⏳ 等待LIFF SDK載入... (${waitCount + 1}/${maxWait})`);
+                showLoginStatus(`⏳ 正在載入LINE功能... (${waitCount + 1}/${maxWait})`);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                waitCount++;
+            }
+            
+            if (!liffReady) {
+                console.log('❌ LIFF SDK載入超時，可能不在LINE環境中');
                 showLoginStatus('ℹ️ 非LINE環境，使用預設資料', true);
-                fillAllFieldsWithDefault();
+                
+                // 等待預設資料函數載入
+                try {
+                    await waitForFunction('setInputDefaultStyle', 3000);
+                    setInputDefaultStyle();
+                    showLoginStatus('✅ 預設資料載入完成', true);
+                } catch (error) {
+                    console.warn('⚠️ 預設資料函數未載入，使用基本預設值');
+                    // 基本預設值
+                    document.getElementById('card_alt_title').value = '我在呈璽/呈璽';
+                    document.getElementById('main_title_1').value = '我在呈璽/呈璽';
+                    document.getElementById('display_name').value = '訪客用戶';
+                    showLoginStatus('✅ 基本預設資料載入完成', true);
+                }
                 return false;
             }
             
             try {
                 // 初始化LIFF
                 showLoginStatus('🔧 正在初始化LINE功能...');
+                console.log('🔧 開始初始化LIFF，ID:', '2007327814-BdWpj70m');
+                
                 await liff.init({ liffId: '2007327814-BdWpj70m' });
                 console.log('✅ LIFF初始化成功');
                 
                 // 檢查登入狀態
-                if (!liff.isLoggedIn()) {
+                const isLoggedIn = liff.isLoggedIn();
+                console.log('🔧 登入狀態檢查:', isLoggedIn);
+                
+                if (!isLoggedIn) {
                     console.log('🔐 用戶未登入，強制登入...');
                     showLoginStatus('🔐 需要登入LINE，正在跳轉...', false);
-                    setTimeout(() => {
-                        liff.login(); // 這會重新載入頁面
-                    }, 1000);
+                    
+                    // 立即跳轉登入，不延遲
+                    console.log('🔐 立即執行登入跳轉...');
+                    liff.login({
+                        redirectUri: window.location.href
+                    });
                     return false;
                 }
                 
@@ -1109,27 +1187,95 @@
                 window.liffProfile = profile;
                 
                 // 顯示用戶資訊
-                if (typeof renderLiffUserInfo === 'function') {
+                try {
+                    await waitForFunction('renderLiffUserInfo', 2000);
                     renderLiffUserInfo(profile);
+                    console.log('✅ 用戶資訊顯示完成');
+                } catch (error) {
+                    console.warn('⚠️ renderLiffUserInfo 函數未載入');
                 }
                 
                 // 填入用戶資料到表單
-                if (typeof fillAllFieldsWithProfile === 'function') {
-                    fillAllFieldsWithProfile();
+                try {
+                    // 等待相關函數載入
+                    await waitForFunction('setInputDefaultStyle', 3000);
+                    
+                    // 先設定預設值
+                    setInputDefaultStyle();
+                    
+                    // 再填入LINE用戶資料
+                    document.getElementById('display_name').value = profile.displayName || '訪客用戶';
+                    document.getElementById('member_image_url').value = profile.pictureUrl || '';
+                    
+                    // 更新圖片預覽
+                    if (profile.pictureUrl) {
+                        const preview = document.getElementById('member_image_preview');
+                        if (preview) {
+                            preview.src = profile.pictureUrl;
+                            preview.style.display = 'block';
+                        }
+                    }
+                    
                     showLoginStatus(`✅ 歡迎回來，${profile.displayName}！`, true);
-                } else {
-                    // 如果函數未載入，先填入預設資料
-                    fillAllFieldsWithDefault();
-                    showLoginStatus('✅ 資料載入完成', true);
+                    console.log('✅ 用戶資料填入完成');
+                    
+                } catch (error) {
+                    console.warn('⚠️ 資料填入函數未載入，使用基本方式:', error);
+                    
+                    // 基本方式填入資料
+                    document.getElementById('card_alt_title').value = '我在呈璽/呈璽';
+                    document.getElementById('main_title_1').value = '我在呈璽/呈璽';
+                    document.getElementById('display_name').value = profile.displayName || '訪客用戶';
+                    document.getElementById('member_image_url').value = profile.pictureUrl || '';
+                    
+                    if (profile.pictureUrl) {
+                        const preview = document.getElementById('member_image_preview');
+                        if (preview) {
+                            preview.src = profile.pictureUrl;
+                            preview.style.display = 'block';
+                        }
+                    }
+                    
+                    showLoginStatus(`✅ 歡迎回來，${profile.displayName}！`, true);
                 }
                 
                 return true;
                 
             } catch (error) {
                 console.error('❌ LIFF初始化或登入失敗:', error);
-                showLoginStatus('❌ 登入失敗，使用預設資料', false);
+                console.error('❌ 錯誤詳情:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                
+                // 🔧 根據錯誤類型提供不同的提示
+                let errorMessage = '❌ 登入失敗，使用預設資料';
+                let showRetry = false;
+                
+                if (error.message && error.message.includes('LIFF')) {
+                    errorMessage = '❌ LINE功能初始化失敗';
+                    showRetry = true;
+                } else if (error.message && error.message.includes('login')) {
+                    errorMessage = '❌ LINE登入失敗';
+                    showRetry = true;
+                } else {
+                    errorMessage = '❌ 連線失敗，使用預設資料';
+                    showRetry = true;
+                }
+                
+                showLoginStatus(errorMessage, false, showRetry);
+                
                 // 失敗時填入預設資料
-                fillAllFieldsWithDefault();
+                try {
+                    await waitForFunction('setInputDefaultStyle', 2000);
+                    setInputDefaultStyle();
+                } catch (e) {
+                    // 基本預設值
+                    document.getElementById('card_alt_title').value = '我在呈璽/呈璽';
+                    document.getElementById('main_title_1').value = '我在呈璽/呈璽';
+                    document.getElementById('display_name').value = '訪客用戶';
+                }
                 return false;
             }
         }
@@ -1138,10 +1284,37 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📱 手機版會員卡頁面載入完成');
             
-            // 🔧 等待JS載入完成後強制LIFF登入
-            setTimeout(() => {
+            // 🔧 等待JS檔案載入完成後再進行LIFF登入
+            // 檢查關鍵函數是否載入完成
+            const checkAndInit = async () => {
+                console.log('🔧 檢查JS函數載入狀態...');
+                
+                // 等待關鍵函數載入（最多等待10秒）
+                let jsReady = false;
+                const maxWait = 10000;
+                const startTime = Date.now();
+                
+                while (!jsReady && (Date.now() - startTime) < maxWait) {
+                    if (typeof window.setInputDefaultStyle === 'function' || 
+                        typeof window.defaultCard !== 'undefined') {
+                        jsReady = true;
+                        console.log('✅ 關鍵JS函數已載入');
+                        break;
+                    }
+                    console.log('⏳ 等待JS函數載入...');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                if (!jsReady) {
+                    console.warn('⚠️ JS函數載入超時，繼續初始化');
+                }
+                
+                // 開始LIFF登入流程
                 forceInitLiffAndLogin();
-            }, 300);
+            };
+            
+            // 延遲開始檢查，確保script標籤有時間載入
+            setTimeout(checkAndInit, 500);
             
             // 載入宣傳卡片
             if (typeof loadPromoCards === 'function') {
