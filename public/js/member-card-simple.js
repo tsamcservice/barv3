@@ -1214,7 +1214,51 @@ window.onload = async function() {
       const cleanFlexJson = cleanFlexJsonForShare(flexJson);
       console.log('📤 分享清理後的FLEX JSON');
       await liff.shareTargetPicker([cleanFlexJson])
-        .then(closeOrRedirect)
+        .then(async () => {
+          // 🎯 新增：分享成功後的10%回饋處理
+          try {
+            console.log('✅ 自動分享成功，開始處理10%回饋...');
+            
+            // 準備回饋API請求
+            const rewardData = {
+              cardId: cardId,
+              userId: userIdParam,
+              source: 'auto_share' // 標記為自動分享回饋
+            };
+            
+            const rewardResponse = await fetch('/api/cards/auto-share-reward', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(rewardData)
+            });
+            
+            const rewardResult = await rewardResponse.json();
+            
+            if (rewardResult.success) {
+              console.log('💰 分享回饋成功:', rewardResult);
+              
+              // 顯示回饋成功訊息
+              loadingDiv.innerHTML = `
+                <div style="font-size:18px;color:#4caf50;margin-top:60px;">
+                  ✅ 分享成功！<br/>
+                  💰 獲得 ${rewardResult.rewardAmount} 點回饋<br/>
+                  <div style="font-size:14px;color:#666;margin-top:10px;">3秒後自動關閉...</div>
+                </div>
+              `;
+              
+              // 3秒後關閉
+              setTimeout(closeOrRedirect, 3000);
+            } else {
+              console.error('回饋處理失敗:', rewardResult.error);
+              // 即使回饋失敗，分享還是成功的，所以正常關閉
+              closeOrRedirect();
+            }
+          } catch (error) {
+            console.error('回饋處理異常:', error);
+            // 即使回饋失敗，分享還是成功的，所以正常關閉
+            closeOrRedirect();
+          }
+        })
         .catch(closeOrRedirect);
     } catch (e) {
       loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">自動分享失敗：' + (e.message || e) + '</div>';

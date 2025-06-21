@@ -216,6 +216,7 @@
                 item.innerHTML = `
                     <div class="position-number">${i + 1}</div>
                     <div class="position-label">位置 ${i + 1} ${i === 0 ? '(最左邊)' : i === 4 ? '(最右邊)' : ''}</div>
+                    ${i === 4 ? '<div style="color: red; font-size: 12px; margin-top: 8px; font-weight: bold;">自動分享回饋</div>' : ''}
                     <input type="number" 
                            class="percentage-input" 
                            id="pos-${i}" 

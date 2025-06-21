@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 自動分享回饋測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .results.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .results.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .results.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        input[type="text"] {
+            width: 300px;
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .form-group label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 自動分享回饋功能測試</h1>
+        <p>測試直接分享連結的10%回饋機制</p>
+        
+        <div class="test-section">
+            <h3>📋 測試參數設定</h3>
+            <div class="form-group">
+                <label>卡片ID:</label>
+                <input type="text" id="cardId" placeholder="輸入測試用的卡片ID" value="67d1617d-1dbb-44ef-924c-856c1d201e83">
+            </div>
+            <div class="form-group">
+                <label>用戶ID:</label>
+                <input type="text" id="userId" placeholder="輸入測試用的用戶ID" value="test-user-123">
+            </div>
+            <div class="form-group">
+                <label>回饋比例(%):</label>
+                <input type="text" id="rewardPercentage" placeholder="預設10%" value="10">
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 API測試</h3>
+            <button onclick="testAutoShareReward()">測試自動分享回饋</button>
+            <button onclick="checkCardPoints()">查詢當前點數</button>
+            <button onclick="testInvalidCard()">測試無效卡片</button>
+            <div id="apiResults" class="results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 模擬自動分享連結</h3>
+            <p>測試不同的連結格式：</p>
+            <button onclick="simulateAutoShare('M01001', 'test-user-123')">模擬: pageId + userId</button>
+            <button onclick="simulateAutoShare('M01001', null)">模擬: 只有pageId</button>
+            <div id="linkResults" class="results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 交易記錄查詢</h3>
+            <button onclick="getPointsHistory()">查詢最近交易記錄</button>
+            <div id="historyResults" class="results"></div>
+        </div>
+    </div>
+
+    <script>
+        // 測試自動分享回饋API
+        async function testAutoShareReward() {
+            const cardId = document.getElementById('cardId').value.trim();
+            const userId = document.getElementById('userId').value.trim();
+            const rewardPercentage = parseFloat(document.getElementById('rewardPercentage').value) || 10;
+            const results = document.getElementById('apiResults');
+            
+            if (!cardId) {
+                results.className = 'results error';
+                results.textContent = '請輸入卡片ID';
+                return;
+            }
+            
+            results.className = 'results info';
+            results.textContent = '🔄 測試中...';
+            
+            try {
+                const response = await fetch('/api/cards/auto-share-reward', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cardId: cardId,
+                        userId: userId || null,
+                        rewardPercentage: rewardPercentage
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    results.className = 'results success';
+                    results.textContent = `✅ 回饋成功！
+                    
+🎯 回饋詳情:
+• 卡片標題: ${result.cardTitle}
+• 回饋金額: ${result.rewardAmount} 點
+• 原始點數: ${result.oldPoints} 點
+• 新點數: ${result.newPoints} 點
+• 分享會話ID: ${result.shareSessionId}
+
+📊 計算方式: 10點 × ${rewardPercentage}% = ${result.rewardAmount}點`;
+                } else {
+                    results.className = 'results error';
+                    results.textContent = `❌ 回饋失敗: ${result.error}`;
+                }
+            } catch (error) {
+                results.className = 'results error';
+                results.textContent = `❌ 請求失敗: ${error.message}`;
+            }
+        }
+        
+        // 查詢卡片當前點數
+        async function checkCardPoints() {
+            const cardId = document.getElementById('cardId').value.trim();
+            const results = document.getElementById('apiResults');
+            
+            if (!cardId) {
+                results.className = 'results error';
+                results.textContent = '請輸入卡片ID';
+                return;
+            }
+            
+            results.className = 'results info';
+            results.textContent = '🔄 查詢中...';
+            
+            try {
+                const response = await fetch(`/api/cards/list?type=main&userId=test-user-123&limit=10`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const card = result.data.find(c => c.id === cardId);
+                    if (card) {
+                        results.className = 'results success';
+                        results.textContent = `📊 卡片資訊:
+                        
+• ID: ${card.id}
+• 標題: ${card.main_title_1 || card.display_name || '未設定'}
+• 當前點數: ${card.user_points || 0} 點
+• 瀏覽次數: ${card.pageview || 0} 次
+• 建立時間: ${new Date(card.created_at).toLocaleString()}`;
+                    } else {
+                        results.className = 'results error';
+                        results.textContent = '❌ 找不到指定的卡片';
+                    }
+                } else {
+                    results.className = 'results error';
+                    results.textContent = `❌ 查詢失敗: ${result.error}`;
+                }
+            } catch (error) {
+                results.className = 'results error';
+                results.textContent = `❌ 請求失敗: ${error.message}`;
+            }
+        }
+        
+        // 測試無效卡片
+        async function testInvalidCard() {
+            const results = document.getElementById('apiResults');
+            
+            results.className = 'results info';
+            results.textContent = '🔄 測試無效卡片...';
+            
+            try {
+                const response = await fetch('/api/cards/auto-share-reward', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cardId: 'invalid-card-id-12345',
+                        userId: 'test-user',
+                        rewardPercentage: 10
+                    })
+                });
+                
+                const result = await response.json();
+                
+                results.className = 'results error';
+                results.textContent = `❌ 預期的錯誤回應:
+                
+• 成功: ${result.success}
+• 錯誤訊息: ${result.error}
+• HTTP狀態: ${response.status}
+
+✅ 錯誤處理正常！`;
+            } catch (error) {
+                results.className = 'results error';
+                results.textContent = `❌ 請求失敗: ${error.message}`;
+            }
+        }
+        
+        // 模擬自動分享連結
+        function simulateAutoShare(pageId, userId) {
+            const results = document.getElementById('linkResults');
+            
+            let url = `https://liff.line.me/YOUR_LIFF_ID?pageId=${pageId}`;
+            if (userId) {
+                url += `&userId=${userId}`;
+            }
+            
+            results.className = 'results info';
+            results.textContent = `🔗 模擬自動分享連結:
+
+📋 連結格式: ${url}
+
+🎯 預期流程:
+1. 用戶點擊連結
+2. LIFF初始化並登入
+3. 根據pageId${userId ? '+userId' : ''}查詢卡片資料
+4. 自動啟動LINE分享選擇器
+5. 分享成功後觸發10%回饋
+6. 顯示回饋成功訊息
+7. 3秒後自動關閉頁面
+
+💡 測試方式:
+實際需要在LINE App中開啟此連結進行完整測試`;
+        }
+        
+        // 查詢交易記錄
+        async function getPointsHistory() {
+            const results = document.getElementById('historyResults');
+            
+            results.className = 'results info';
+            results.textContent = '🔄 查詢交易記錄...';
+            
+            try {
+                const response = await fetch('/api/points-history?limit=10');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    results.className = 'results success';
+                    let output = `📊 最近10筆交易記錄:\n\n`;
+                    
+                    result.data.forEach((tx, index) => {
+                        const date = new Date(tx.created_at).toLocaleString();
+                        const type = tx.transaction_type === 'reward_auto_share' ? '自動分享回饋' : 
+                                   tx.transaction_type === 'deduction' ? '分享扣點' : 
+                                   tx.transaction_type.includes('reward') ? '分享回饋' : tx.transaction_type;
+                        
+                        output += `${index + 1}. ${date}
+   類型: ${type}
+   金額: ${tx.amount > 0 ? '+' : ''}${tx.amount} 點
+   餘額: ${tx.balance_before} → ${tx.balance_after}
+   卡片: ${tx.card_type}
+   ${tx.share_session_id ? `會話: ${tx.share_session_id}` : ''}
+   
+`;
+                    });
+                    
+                    results.textContent = output;
+                } else {
+                    results.className = 'results error';
+                    results.textContent = `❌ 查詢失敗: ${result.error}`;
+                }
+            } catch (error) {
+                results.className = 'results error';
+                results.textContent = `❌ 請求失敗: ${error.message}`;
+            }
+        }
+        
+        // 頁面載入時的初始化
+        window.onload = function() {
+            console.log('🎯 自動分享回饋測試頁面已載入');
+        };
+    </script>
+</body>
+</html> 
