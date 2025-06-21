@@ -1117,6 +1117,12 @@
             });
         }
         
+        // 解析網址參數
+        function getQueryParam(name) {
+            const url = new URL(window.location.href);
+            return url.searchParams.get(name);
+        }
+        
         // 🔧 強制LIFF登入函數
         async function forceInitLiffAndLogin() {
             console.log('🔐 開始強制LIFF登入流程...');
@@ -1163,8 +1169,11 @@
                     console.warn('⚠️ 預設資料函數未載入，使用基本預設值');
                     // 基本預設值
                     document.getElementById('card_alt_title').value = '我在呈璽/呈璽';
-                    document.getElementById('main_title_1').value = '我在呈璽/呈璽';
-                    document.getElementById('display_name').value = '訪客用戶';
+                    document.getElementById('main_title_1').value = '我在呈璽';
+                    document.getElementById('main_title_2').value = '我在呈璽，欣賞美好幸福！';
+                    document.getElementById('button_1_text').value = '加呈璽好友';
+                    document.getElementById('button_1_url').value = 'https://lin.ee/JLLIBlP';
+                    document.getElementById('s_button_text').value = '分享給好友';
                     showLoginStatus('✅ 基本預設資料載入完成', true);
                 }
                 return false;
@@ -1220,23 +1229,101 @@
                     // 等待相關函數載入
                     await waitForFunction('setInputDefaultStyle', 3000);
                     
-                    // 先設定預設值
-                    setInputDefaultStyle();
+                    // 🔧 關鍵修復：檢查是否有已載入的卡片資料
+                    console.log('🔧 開始資料載入流程...');
+                    console.log('🔧 檢查已載入的卡片資料:', window.loadedCardData);
                     
-                    // 再填入LINE用戶資料
-                    document.getElementById('display_name').value = profile.displayName || '訪客用戶';
-                    document.getElementById('member_image_url').value = profile.pictureUrl || '';
+                    let finalCardData = null;
+                    let dataSource = '';
                     
-                    // 更新圖片預覽
-                    if (profile.pictureUrl) {
-                        const preview = document.getElementById('member_image_preview');
-                        if (preview) {
-                            preview.src = profile.pictureUrl;
-                            preview.style.display = 'block';
+                    if (window.loadedCardData) {
+                        // 1. 優先使用已載入的卡片資料
+                        finalCardData = window.loadedCardData;
+                        dataSource = '已儲存的卡片資料';
+                        console.log('✅ 使用已儲存的卡片資料');
+                    } else {
+                        // 2. 沒有已儲存資料，使用預設值+LINE用戶資料
+                        if (typeof window.defaultCard !== 'undefined') {
+                            finalCardData = { ...window.defaultCard };
+                            dataSource = '預設卡片資料';
+                            console.log('✅ 使用預設卡片資料');
+                        } else {
+                            // 3. 基本預設值
+                            finalCardData = {
+                                card_alt_title: '我在呈璽/呈璽',
+                                main_title_1: '我在呈璽',
+                                main_title_2: '我在呈璽，欣賞美好幸福！',
+                                button_1_text: '加呈璽好友',
+                                button_1_url: 'https://lin.ee/JLLIBlP',
+                                s_button_text: '分享給好友'
+                            };
+                            dataSource = '基本預設值';
+                            console.log('⚠️ 使用基本預設值');
                         }
+                        
+                        // 覆蓋會員相關資料為LINE用戶資料
+                        finalCardData.display_name = profile.displayName || '訪客用戶';
+                        finalCardData.member_image_url = profile.pictureUrl || '';
                     }
                     
-                    showLoginStatus(`✅ 歡迎回來，${profile.displayName}！`, true);
+                    console.log(`📝 最終資料來源: ${dataSource}`);
+                    console.log('📝 最終卡片資料:', finalCardData);
+                    
+                    // 清空所有欄位後填入最終資料
+                    const formFields = [
+                        'card_alt_title', 'main_image_url', 'main_image_link', 
+                        'main_title_1', 'main_title_2', 'member_image_url', 
+                        'member_image_link', 'display_name', 'button_1_text', 
+                        'button_1_url', 's_button_text', 's_button_url'
+                    ];
+                    
+                    // 清空所有欄位
+                    formFields.forEach(fieldId => {
+                        const field = document.getElementById(fieldId);
+                        if (field) {
+                            field.value = '';
+                        }
+                    });
+                    
+                    // 填入最終資料
+                    Object.keys(finalCardData).forEach(key => {
+                        const field = document.getElementById(key);
+                        if (field && finalCardData[key] !== undefined && finalCardData[key] !== null) {
+                            field.value = finalCardData[key];
+                            console.log(`📝 設定欄位 ${key}:`, finalCardData[key]);
+                        }
+                    });
+                    
+                    // 設定分享連結（包含用戶ID）
+                    const pageId = getQueryParam('pageId') || 'M01001';
+                    const mobileLiffId = '2007327814-DGly5XNk'; // 手機版LIFF ID
+                    let liffShareUrl = `https://liff.line.me/${mobileLiffId}?pageId=${pageId}`;
+                    if (profile.userId) {
+                        liffShareUrl += `&userId=${profile.userId}`;
+                        console.log('🔗 設定分享連結（含用戶ID）:', liffShareUrl);
+                    } else {
+                        console.log('🔗 設定分享連結（無用戶ID）:', liffShareUrl);
+                    }
+                    document.getElementById('s_button_url').value = liffShareUrl;
+                    
+                    // 更新圖片預覽
+                    const imageFields = [
+                        { urlId: 'main_image_url', previewId: 'main_image_preview' },
+                        { urlId: 'member_image_url', previewId: 'member_image_preview' }
+                    ];
+                    
+                    imageFields.forEach(field => {
+                        const urlInput = document.getElementById(field.urlId);
+                        const preview = document.getElementById(field.previewId);
+                        
+                        if (urlInput && preview && urlInput.value && urlInput.value.trim() !== '') {
+                            preview.src = urlInput.value;
+                            preview.style.display = 'block';
+                            console.log(`🖼️ 更新圖片預覽 [${field.urlId}]`);
+                        }
+                    });
+                    
+                    showLoginStatus(`✅ 歡迎回來，${profile.displayName}！資料來源：${dataSource}`, true);
                     console.log('✅ 用戶資料填入完成');
                     
                 } catch (error) {
@@ -1244,9 +1331,22 @@
                     
                     // 基本方式填入資料
                     document.getElementById('card_alt_title').value = '我在呈璽/呈璽';
-                    document.getElementById('main_title_1').value = '我在呈璽/呈璽';
+                    document.getElementById('main_title_1').value = '我在呈璽';
+                    document.getElementById('main_title_2').value = '我在呈璽，欣賞美好幸福！';
                     document.getElementById('display_name').value = profile.displayName || '訪客用戶';
                     document.getElementById('member_image_url').value = profile.pictureUrl || '';
+                    document.getElementById('button_1_text').value = '加呈璽好友';
+                    document.getElementById('button_1_url').value = 'https://lin.ee/JLLIBlP';
+                    document.getElementById('s_button_text').value = '分享給好友';
+                    
+                    // 設定分享連結
+                    const pageId = 'M01001';
+                    const mobileLiffId = '2007327814-DGly5XNk';
+                    let liffShareUrl = `https://liff.line.me/${mobileLiffId}?pageId=${pageId}`;
+                    if (profile.userId) {
+                        liffShareUrl += `&userId=${profile.userId}`;
+                    }
+                    document.getElementById('s_button_url').value = liffShareUrl;
                     
                     if (profile.pictureUrl) {
                         const preview = document.getElementById('member_image_preview');
@@ -1293,8 +1393,8 @@
                 } catch (e) {
                     // 基本預設值
                     document.getElementById('card_alt_title').value = '我在呈璽/呈璽';
-                    document.getElementById('main_title_1').value = '我在呈璽/呈璽';
-                    document.getElementById('display_name').value = '訪客用戶';
+                    document.getElementById('main_title_1').value = '我在呈璽';
+                    document.getElementById('main_title_2').value = '我在呈璽，欣賞美好幸福！';
                 }
                 return false;
             }
@@ -1327,6 +1427,45 @@
                 
                 if (!jsReady) {
                     console.warn('⚠️ JS函數載入超時，繼續初始化');
+                }
+                
+                // 🔧 新增：檢查是否有已儲存的卡片資料
+                const pageId = getQueryParam('pageId') || 'M01001';
+                const userId = getQueryParam('userId');
+                
+                console.log('🔧 檢查URL參數:', { pageId, userId });
+                
+                // 🔧 實現與桌機版相同的資料載入邏輯
+                let cardLoaded = false;
+                let loadedCardData = null;
+                
+                if (userId) {
+                    console.log('🔍 發現userId，嘗試載入已儲存的卡片資料');
+                    
+                    try {
+                        const apiUrl = `/api/cards?pageId=${pageId}&userId=${userId}`;
+                        console.log('🔗 API URL:', apiUrl);
+                        
+                        const response = await fetch(apiUrl);
+                        const result = await response.json();
+                        
+                        console.log('📊 API回應:', result);
+                        
+                        if (result.success && result.data && result.data.length > 0) {
+                            loadedCardData = result.data[0];
+                            cardLoaded = true;
+                            console.log('✅ 成功載入已儲存的卡片資料:', loadedCardData);
+                            
+                            // 🔧 設定全域變數供後續使用
+                            window.loadedCardData = loadedCardData;
+                        } else {
+                            console.log('ℹ️ 沒有找到已儲存的卡片資料，將使用預設值');
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ 載入已儲存資料失敗:', error);
+                    }
+                } else {
+                    console.log('ℹ️ 沒有userId，將使用預設值');
                 }
                 
                 // 開始LIFF登入流程
