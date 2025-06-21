@@ -95,7 +95,8 @@ export default async function handler(req, res) {
       // 回饋設定已在外層取得，這裡不需要重複查詢
       
       // 處理每張卡片的點數交易
-      for (const { id, type, position } of cardIdTypeArr) {
+      for (let i = 0; i < cardIdTypeArr.length; i++) {
+        const { id, type, position = i } = cardIdTypeArr[i]; // 如果沒有position，使用索引
         // 🔧 修復：支援臨時主卡ID
         const isTempMainCard = id && id.startsWith('temp-main-card-');
         const isValidUUID = id && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
@@ -133,38 +134,30 @@ export default async function handler(req, res) {
           
           totalDeducted += 10;
           
-          // 計算臨時主卡回饋
-          const allCards = cardIdTypeArr;
-          const mainCardPosition = allCards.findIndex(card => card.type === 'main');
+          // 🔧 計算臨時主卡回饋（按位置計算）
+          const setting = settingsData?.find(s => s.position_index === position);
+          const percentage = setting?.reward_percentage || 10.0;
+          const reward = 10 * (percentage / 100);
+          let mainCardTotalReward = reward;
           
-          console.log(`🎯 臨時主卡回饋計算：總共 ${allCards.length} 張卡，主卡在位置 ${mainCardPosition}`);
+          console.log(`臨時主卡位置 ${position}: ${percentage}% = +${reward.toFixed(2)} 點`);
           
-          let mainCardTotalReward = 0;
-          if (mainCardPosition !== -1) {
-            const setting = settingsData?.find(s => s.position_index === mainCardPosition);
-            const percentage = setting?.reward_percentage || 10.0;
-            const reward = 10 * (percentage / 100);
-            mainCardTotalReward = reward;
+          if (reward > 0) {
+            // 記錄臨時主卡回饋交易（不更新資料庫）
+            await supabase.from('points_transactions').insert({
+              card_id: id,
+              card_type: type,
+              transaction_type: 'reward_share',
+              amount: reward,
+              balance_before: afterDeduct,
+              balance_after: afterDeduct + reward,
+              share_session_id: shareSessionId,
+              position_index: position,
+              reward_percentage: percentage,
+              notes: '臨時主卡分享回饋'
+            });
             
-            console.log(`臨時主卡位置 ${mainCardPosition}: ${percentage}% = +${reward.toFixed(2)} 點`);
-            
-            if (reward > 0) {
-              // 記錄臨時主卡回饋交易（不更新資料庫）
-              await supabase.from('points_transactions').insert({
-                card_id: id,
-                card_type: type,
-                transaction_type: 'reward_share',
-                amount: reward,
-                balance_before: afterDeduct,
-                balance_after: afterDeduct + reward,
-                share_session_id: shareSessionId,
-                position_index: mainCardPosition,
-                reward_percentage: percentage,
-                notes: '臨時主卡分享回饋'
-              });
-              
-              totalRewarded += reward;
-            }
+            totalRewarded += reward;
           }
           
           console.log(`臨時主卡，跳過資料庫更新，僅返回計算結果`);
@@ -223,65 +216,47 @@ export default async function handler(req, res) {
         
         totalDeducted += 10;
         
-        // 2. 計算回饋 (僅主卡獲得回饋，根據所有卡片在5個位置的排列)
-        let mainCardTotalReward = 0;
+        // 2. 計算回饋 (🔧 新邏輯：每個位置的卡片都根據位置獲得回饋)
+        let cardReward = 0;
         let currentBalance = afterDeduct;
         
-        if (type === 'main') {
+        // 🎯 新邏輯：每張卡片都根據其位置獲得回饋
+        const setting = settingsData?.find(s => s.position_index === position);
+        const percentage = setting?.reward_percentage || 10.0;
+        const reward = 10 * (percentage / 100);
+        cardReward = reward;
+        
+        console.log(`位置 ${position}: ${percentage}% = +${reward.toFixed(2)} 點`);
+        
+        // 記錄回饋交易
+        if (reward > 0) {
+          await supabase.from('points_transactions').insert({
+            card_id: id,
+            card_type: type,
+            transaction_type: 'reward_share',
+            amount: reward,
+            balance_before: currentBalance,
+            balance_after: currentBalance + reward,
+            share_session_id: shareSessionId,
+            position_index: position,
+            reward_percentage: percentage
+          });
           
-          // 🎯 新邏輯：根據5個位置(A,B,C,D,E)計算回饋
-          // 找出主卡在整體排列中的位置
-          const allCards = cardIdTypeArr; // 包含主卡和所有附加卡
-          const mainCardPosition = allCards.findIndex(card => card.type === 'main');
-          
-          console.log(`🎯 回饋計算：總共 ${allCards.length} 張卡，主卡在位置 ${mainCardPosition}`);
-          
-          // 根據主卡位置計算回饋
-          if (mainCardPosition !== -1) {
-            const setting = settingsData?.find(s => s.position_index === mainCardPosition);
-            const percentage = setting?.reward_percentage || 10.0;
-            const reward = 10 * (percentage / 100);
-            mainCardTotalReward = reward;
-            
-            console.log(`主卡位置 ${mainCardPosition}: ${percentage}% = +${reward.toFixed(2)} 點`);
-            
-            // 記錄主卡回饋交易
-            if (reward > 0) {
-              await supabase.from('points_transactions').insert({
-                card_id: id,
-                card_type: type,
-                transaction_type: 'reward_share',
-                amount: reward,
-                balance_before: currentBalance,
-                balance_after: currentBalance + reward,
-                share_session_id: shareSessionId,
-                position_index: mainCardPosition,
-                reward_percentage: percentage
-              });
-              
-              currentBalance += reward;
-            }
-          }
-          
-          if (mainCardTotalReward > 0) {
-            // 更新主卡點數
-            await supabase.from(table).update({ [pointsField]: currentBalance }).eq('id', id);
-            console.log(`✅ 主卡回饋完成：位置${mainCardPosition} 回饋 ${mainCardTotalReward.toFixed(2)} 點，最終餘額 ${currentBalance} 點`);
-          } else {
-            console.log(`ℹ️ 主卡無回饋：位置${mainCardPosition} 回饋為0`);
-          }
-          
-          totalRewarded += mainCardTotalReward;
+          currentBalance += reward;
         }
+        
+        if (cardReward > 0) {
+          // 更新卡片點數
+          await supabase.from(table).update({ [pointsField]: currentBalance }).eq('id', id);
+          console.log(`✅ ${type} 回饋完成：位置${position} 回饋 ${cardReward.toFixed(2)} 點，最終餘額 ${currentBalance} 點`);
+        } else {
+          console.log(`ℹ️ ${type} 無回饋：位置${position} 回饋為0`);
+        }
+        
+        totalRewarded += cardReward;
         
         // 修復變數作用域問題
-        let cardReward = 0;
-        let finalBalance = afterDeduct;
-        
-        if (type === 'main') {
-          cardReward = mainCardTotalReward || 0;
-          finalBalance = currentBalance || afterDeduct;
-        }
+        let finalBalance = currentBalance || afterDeduct;
         
         pointsResults.push({
           cardId: id,
@@ -292,7 +267,7 @@ export default async function handler(req, res) {
         });
         
         console.log(`[points] ${type} ${id}: -10點 ${type === 'main' && cardReward > 0 ? `+${cardReward.toFixed(2)}點回饋` : ''}`);
-      }
+      } // 結束 for 迴圈
     }
     
     // 2. 處理 pageview 更新 (原有邏輯)
@@ -368,35 +343,27 @@ export default async function handler(req, res) {
     
     const response = { success: true };
     if (includePointsTransaction) {
-      // 🔧 修復：計算所有位置的回饋詳細資訊
+      // 🔧 修復：計算所有位置的回饋詳細資訊（每個位置都有回饋）
       const rewardDetails = [];
-      const mainCard = cardIdTypeArr.find(c => c.type === 'main');
       
-      if (mainCard) {
-        const mainCardPosition = cardIdTypeArr.findIndex(card => card.type === 'main');
+      // 🎯 新邏輯：為每個位置生成回饋詳情，每個位置都根據位置比例獲得回饋
+      for (let i = 0; i < cardIdTypeArr.length; i++) {
+        const card = cardIdTypeArr[i];
+        const setting = settingsData?.find(s => s.position_index === i);
+        const percentage = setting?.reward_percentage || 10.0;
+        const actualReward = 10 * (percentage / 100);
         
-        // 🔧 修復：為每個位置生成回饋詳情
-        for (let i = 0; i < cardIdTypeArr.length; i++) {
-          const card = cardIdTypeArr[i];
-          const setting = settingsData?.find(s => s.position_index === i);
-          const percentage = setting?.reward_percentage || 10.0;
-          const baseReward = 10 * (percentage / 100);
-          
-          // 只有主卡位置才有實際回饋，其他位置顯示0
-          const actualReward = (i === mainCardPosition) ? baseReward : 0;
-          
-          rewardDetails.push({
-            position: i,
-            percentage: percentage,
-            reward: actualReward,
-            cardType: card.type,
-            description: `位置${i + 1}${card.type === 'main' ? '(分享卡)' : '(活動卡)'}`,
-            isMainCard: i === mainCardPosition
-          });
-        }
-        
-        console.log('📊 回饋詳情生成完成:', rewardDetails.map(r => `位置${r.position}: ${r.cardType} ${r.reward}點`));
+        rewardDetails.push({
+          position: i,
+          percentage: percentage,
+          reward: actualReward,
+          cardType: card.type,
+          description: `位置${i + 1}${card.type === 'main' ? '(分享卡)' : '(活動卡)'}`,
+          isMainCard: card.type === 'main'
+        });
       }
+      
+      console.log('📊 回饋詳情生成完成:', rewardDetails.map(r => `位置${r.position}: ${r.cardType} ${r.reward}點`));
       
       response.pointsTransaction = {
         shareSessionId,
