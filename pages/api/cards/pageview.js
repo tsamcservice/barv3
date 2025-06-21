@@ -128,8 +128,7 @@ export default async function handler(req, res) {
             balance_before: tempCurrentPoints,
             balance_after: afterDeduct,
             share_session_id: shareSessionId,
-            position_index: position,
-            notes: '臨時主卡分享扣點'
+            position_index: position
           });
           
           totalDeducted += 10;
@@ -149,20 +148,30 @@ export default async function handler(req, res) {
             
             if (positionReward > 0) {
               // 記錄臨時主卡回饋交易（不更新資料庫）
-              await supabase.from('points_transactions').insert({
-                card_id: id,
-                card_type: type,
-                transaction_type: 'reward_share',
-                amount: positionReward,
-                balance_before: tempCurrentBalance,
-                balance_after: tempCurrentBalance + positionReward,
-                share_session_id: shareSessionId,
-                position_index: pos,
-                reward_percentage: percentage,
-                notes: `臨時主卡位置${pos}回饋`
-              });
-              
-              tempCurrentBalance += positionReward;
+              try {
+                const { data: tempRewardTransaction, error: tempRewardError } = await supabase.from('points_transactions').insert({
+                  card_id: id,
+                  card_type: type,
+                  transaction_type: 'reward_share',
+                  amount: positionReward,
+                  balance_before: tempCurrentBalance,
+                  balance_after: tempCurrentBalance + positionReward,
+                  share_session_id: shareSessionId,
+                  position_index: pos,
+                  reward_percentage: percentage
+                });
+                
+                if (tempRewardError) {
+                  console.error(`❌ 臨時主卡回饋交易記錄失敗 (位置${pos}):`, tempRewardError);
+                } else {
+                  console.log(`✅ 臨時主卡回饋交易記錄成功 (位置${pos}): +${positionReward}點`);
+                }
+                
+                tempCurrentBalance += positionReward;
+              } catch (insertError) {
+                console.error(`❌ 臨時主卡回饋交易插入異常 (位置${pos}):`, insertError);
+                tempCurrentBalance += positionReward; // 仍然更新餘額，避免計算錯誤
+              }
             }
           }
           
@@ -244,20 +253,30 @@ export default async function handler(req, res) {
             
             // 記錄每個位置的回饋交易（都記錄到主卡）
             if (positionReward > 0) {
-              await supabase.from('points_transactions').insert({
-                card_id: id,
-                card_type: type,
-                transaction_type: 'reward_share',
-                amount: positionReward,
-                balance_before: currentBalance,
-                balance_after: currentBalance + positionReward,
-                share_session_id: shareSessionId,
-                position_index: pos,
-                reward_percentage: percentage,
-                notes: `位置${pos}回饋給分享卡`
-              });
-              
-              currentBalance += positionReward;
+              try {
+                const { data: rewardTransaction, error: rewardError } = await supabase.from('points_transactions').insert({
+                  card_id: id,
+                  card_type: type,
+                  transaction_type: 'reward_share',
+                  amount: positionReward,
+                  balance_before: currentBalance,
+                  balance_after: currentBalance + positionReward,
+                  share_session_id: shareSessionId,
+                  position_index: pos,
+                  reward_percentage: percentage
+                });
+                
+                if (rewardError) {
+                  console.error(`❌ 回饋交易記錄失敗 (位置${pos}):`, rewardError);
+                } else {
+                  console.log(`✅ 回饋交易記錄成功 (位置${pos}): +${positionReward}點`);
+                }
+                
+                currentBalance += positionReward;
+              } catch (insertError) {
+                console.error(`❌ 回饋交易插入異常 (位置${pos}):`, insertError);
+                currentBalance += positionReward; // 仍然更新餘額，避免計算錯誤
+              }
             }
           }
           

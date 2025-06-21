@@ -1,6 +1,6 @@
 // 版本標記函數
 function createVersionTag() {
-  return 'v20250531-O';
+  return 'v20250621-REWARD-DISPLAY-FIX';
 }
 
 // 會員卡初始資料
@@ -1772,19 +1772,18 @@ async function shareToLine() {
         let successMessage = '✅ 分享會員卡成功！\n\n';
         if (shareResult) {
           successMessage += '💰 分享結果：\n';
-          successMessage += `• 總扣除點數：${shareResult.totalDeducted}點\n`;
+          successMessage += `• 扣除分享點數：${shareResult.totalDeducted}點\n\n`;
           
-          // 🔧 修復：顯示所有位置的回饋明細
+          // 🔧 修復：顯示詳細的賺取明細
           if (shareResult.rewardDetails && shareResult.rewardDetails.length > 0) {
-            successMessage += '• 位置回饋明細：\n';
+            successMessage += '🎯 分享賺取點數明細：\n';
             shareResult.rewardDetails.forEach(detail => {
-              const rewardText = detail.reward > 0 ? `+${detail.reward.toFixed(1)}點` : '0.0點';
-              successMessage += `  ${detail.description}: ${rewardText}\n`;
+              const cardTypeText = detail.cardType === 'main' ? '分享卡' : '活動卡';
+              const rewardText = `+${detail.reward.toFixed(0)}點`;
+              successMessage += `賺取(位置${detail.position + 1})-${cardTypeText}:${rewardText}\n`;
             });
+            successMessage += `總賺取點數:${shareResult.totalRewarded.toFixed(0)}點\n\n`;
           }
-          
-          successMessage += `• 總回饋點數：${shareResult.totalRewarded.toFixed(1)}點\n`;
-          successMessage += `• 淨點數變化：${shareResult.netAmount >= 0 ? '+' : ''}${shareResult.netAmount.toFixed(1)}點\n\n`;
         }
         successMessage += '📝 請記得關閉本會員卡編修頁面';
         
