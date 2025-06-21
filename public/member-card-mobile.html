@@ -839,7 +839,7 @@
         </div>
     </div>
 
-    <script src="js/member-card-simple.js"></script>
+    <script src="js/member-card-mobile.js"></script>
     <script>
         // 📱 手機版專用腳本
         
@@ -1155,8 +1155,8 @@
             try {
                 // 初始化LIFF
                 showLoginStatus('🔧 正在初始化LINE功能...');
-                // 🔧 使用手機版專用的LIFF ID（請替換為您的新LIFF ID）
-                const mobileLiffId = '2007327814-BdWpj70m'; // 🚨 請替換為新的手機版LIFF ID
+                // 🔧 使用手機版專用的LIFF ID
+                const mobileLiffId = '2007327814-DGly5XNk'; // 手機版專用LIFF ID
                 console.log('🔧 開始初始化手機版LIFF，ID:', mobileLiffId);
                 
                 await liff.init({ liffId: mobileLiffId });
