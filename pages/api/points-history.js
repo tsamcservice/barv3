@@ -14,15 +14,7 @@ export default async function handler(req, res) {
     let query = supabase
       .from('points_transactions')
       .select(`
-        *,
-        share_sessions!inner(
-          main_card_id,
-          total_cards,
-          attached_cards,
-          net_amount,
-          status,
-          created_at
-        )
+        *
       `)
       .order('created_at', { ascending: false });
 
@@ -48,6 +40,28 @@ export default async function handler(req, res) {
     if (error) {
       throw error;
     }
+
+    // 取得對應的分享會話資訊
+    let sessionsData = {};
+    if (transactions && transactions.length > 0) {
+      const sessionIds = [...new Set(transactions.map(t => t.share_session_id))];
+      const { data: sessions } = await supabase
+        .from('share_sessions')
+        .select('*')
+        .in('id', sessionIds);
+      
+      if (sessions) {
+        sessions.forEach(session => {
+          sessionsData[session.id] = session;
+        });
+      }
+    }
+
+    // 合併交易和會話資料
+    const enrichedTransactions = transactions.map(transaction => ({
+      ...transaction,
+      share_session: sessionsData[transaction.share_session_id] || null
+    }));
 
     // 如果指定了cardId，也取得卡片基本資訊
     let cardInfo = null;
@@ -81,11 +95,11 @@ export default async function handler(req, res) {
 
     // 統計資訊
     const stats = {
-      totalTransactions: transactions.length,
-      totalDeducted: transactions
+      totalTransactions: enrichedTransactions.length,
+      totalDeducted: enrichedTransactions
         .filter(t => t.transaction_type === 'deduct_share')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0),
-      totalRewarded: transactions
+      totalRewarded: enrichedTransactions
         .filter(t => t.transaction_type === 'reward_share')
         .reduce((sum, t) => sum + t.amount, 0)
     };
@@ -93,7 +107,7 @@ export default async function handler(req, res) {
     res.status(200).json({
       success: true,
       data: {
-        transactions,
+        transactions: enrichedTransactions,
         cardInfo,
         stats,
         pagination: {

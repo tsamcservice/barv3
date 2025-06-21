@@ -466,7 +466,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">總卡片數</div>
-                        <div class="detail-value">${transaction.share_sessions.total_cards}張</div>
+                        <div class="detail-value">${transaction.share_session?.total_cards || 1}張</div>
                     </div>
                 </div>
             `;
