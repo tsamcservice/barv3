@@ -1816,7 +1816,8 @@ async function shareToLine() {
         let successMessage = '✅ 分享會員卡成功！\n\n';
         if (shareResult) {
           successMessage += '💰 分享結果：\n';
-          successMessage += `• 扣除分享點數：${shareResult.totalDeducted}點\n\n`;
+          // 🔧 修復：只顯示分享卡扣除的10點，不顯示總扣除點數
+          successMessage += `• 扣除分享點數：10點\n\n`;
           
           // 🔧 修復：顯示詳細的賺取明細
           if (shareResult.rewardDetails && shareResult.rewardDetails.length > 0) {
