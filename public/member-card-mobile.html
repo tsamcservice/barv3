@@ -595,6 +595,11 @@
     </style>
 </head>
 <body>
+    <!-- 🔐 登入狀態提示 -->
+    <div id="loginStatus" style="position:fixed;top:0;left:0;right:0;background:#4caf50;color:white;padding:8px;text-align:center;z-index:999;display:none;">
+        <span id="loginStatusText">🔐 正在驗證LINE登入狀態...</span>
+    </div>
+    
     <div class="mobile-container">
         <!-- 🎯 頂部標題區 -->
         <header class="mobile-header">
@@ -1045,68 +1050,97 @@
             }
         }
         
+        // 🔧 顯示登入狀態函數
+        function showLoginStatus(message, isSuccess = true) {
+            const statusDiv = document.getElementById('loginStatus');
+            const statusText = document.getElementById('loginStatusText');
+            
+            if (statusDiv && statusText) {
+                statusText.textContent = message;
+                statusDiv.style.background = isSuccess ? '#4caf50' : '#f44336';
+                statusDiv.style.display = 'block';
+                
+                // 3秒後自動隱藏（成功時）
+                if (isSuccess) {
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                    }, 3000);
+                }
+            }
+        }
+        
+        // 🔧 強制LIFF登入函數
+        async function forceInitLiffAndLogin() {
+            console.log('🔐 開始強制LIFF登入流程...');
+            showLoginStatus('🔐 正在驗證LINE登入狀態...');
+            
+            // 檢查是否在LINE環境中
+            if (!window.liff) {
+                console.log('❌ 不在LINE環境中，填入預設資料');
+                showLoginStatus('ℹ️ 非LINE環境，使用預設資料', true);
+                fillAllFieldsWithDefault();
+                return false;
+            }
+            
+            try {
+                // 初始化LIFF
+                showLoginStatus('🔧 正在初始化LINE功能...');
+                await liff.init({ liffId: '2007327814-BdWpj70m' });
+                console.log('✅ LIFF初始化成功');
+                
+                // 檢查登入狀態
+                if (!liff.isLoggedIn()) {
+                    console.log('🔐 用戶未登入，強制登入...');
+                    showLoginStatus('🔐 需要登入LINE，正在跳轉...', false);
+                    setTimeout(() => {
+                        liff.login(); // 這會重新載入頁面
+                    }, 1000);
+                    return false;
+                }
+                
+                // 已登入，獲取用戶資料
+                console.log('✅ 用戶已登入，獲取資料...');
+                showLoginStatus('✅ 正在載入您的資料...');
+                
+                const profile = await liff.getProfile();
+                console.log('🔧 用戶資料:', profile);
+                
+                // 設定全域變數
+                window.liffProfile = profile;
+                
+                // 顯示用戶資訊
+                if (typeof renderLiffUserInfo === 'function') {
+                    renderLiffUserInfo(profile);
+                }
+                
+                // 填入用戶資料到表單
+                if (typeof fillAllFieldsWithProfile === 'function') {
+                    fillAllFieldsWithProfile();
+                    showLoginStatus(`✅ 歡迎回來，${profile.displayName}！`, true);
+                } else {
+                    // 如果函數未載入，先填入預設資料
+                    fillAllFieldsWithDefault();
+                    showLoginStatus('✅ 資料載入完成', true);
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ LIFF初始化或登入失敗:', error);
+                showLoginStatus('❌ 登入失敗，使用預設資料', false);
+                // 失敗時填入預設資料
+                fillAllFieldsWithDefault();
+                return false;
+            }
+        }
+        
         // 頁面載入完成後初始化
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📱 手機版會員卡頁面載入完成');
             
-            // 🔧 先填入預設資料
-            console.log('🔧 填入預設資料...');
-            fillAllFieldsWithDefault();
-            
-            // 🔧 等待並初始化LIFF
+            // 🔧 等待JS載入完成後強制LIFF登入
             setTimeout(() => {
-                if (typeof initLiffAndLogin === 'function') {
-                    console.log('🔧 開始初始化LIFF...');
-                    initLiffAndLogin().then(success => {
-                        console.log('🔧 LIFF初始化結果:', success);
-                        if (success && typeof liff !== 'undefined') {
-                            console.log('🔧 LIFF已就緒，獲取用戶資料...');
-                            liff.getProfile().then(profile => {
-                                console.log('🔧 用戶資料:', profile);
-                                window.liffProfile = profile; // 🔧 設定全域變數
-                                if (typeof renderLiffUserInfo === 'function') {
-                                    renderLiffUserInfo(profile);
-                                }
-                                if (typeof fillAllFieldsWithProfile === 'function') {
-                                    fillAllFieldsWithProfile();
-                                }
-                            }).catch(error => {
-                                console.error('🔧 獲取用戶資料失敗:', error);
-                                // 🔧 即使獲取用戶資料失敗，也要保持預設資料
-                            });
-                        } else {
-                            console.error('🔧 LIFF初始化失敗或LIFF未定義');
-                            // 🔧 LIFF失敗時保持預設資料
-                        }
-                    }).catch(error => {
-                        console.error('🔧 LIFF初始化錯誤:', error);
-                        // 🔧 初始化錯誤時保持預設資料
-                    });
-                } else {
-                    console.log('🔧 等待 initLiffAndLogin 函數載入...');
-                    // 🔧 延遲重試
-                    setTimeout(() => {
-                        if (typeof initLiffAndLogin === 'function') {
-                            console.log('🔧 重試LIFF初始化...');
-                            // 重複上述邏輯
-                            initLiffAndLogin().then(success => {
-                                if (success && typeof liff !== 'undefined') {
-                                    liff.getProfile().then(profile => {
-                                        window.liffProfile = profile;
-                                        if (typeof renderLiffUserInfo === 'function') {
-                                            renderLiffUserInfo(profile);
-                                        }
-                                        if (typeof fillAllFieldsWithProfile === 'function') {
-                                            fillAllFieldsWithProfile();
-                                        }
-                                    });
-                                }
-                            });
-                        } else {
-                            console.error('🔧 initLiffAndLogin函數仍未找到，跳過LIFF初始化');
-                        }
-                    }, 1000);
-                }
+                forceInitLiffAndLogin();
             }, 300);
             
             // 載入宣傳卡片
