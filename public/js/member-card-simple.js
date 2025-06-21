@@ -1590,15 +1590,14 @@ async function shareToLine() {
       console.error('取得主卡資料失敗:', e);
     }
     
-    // 建立卡片ID清單並加入位置資訊
-    let promoPosition = 0; // 宣傳卡位置計數器
+    // 建立卡片ID清單並加入位置資訊 (位置對應整體排列索引)
     const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
       id: c.id === 'main' ? mainCardId : c.id, 
       type: c.type,
-      position: c.type === 'promo' ? promoPosition++ : null // 宣傳卡位置從0開始
+      position: i // 位置就是在整體排列中的索引 (0,1,2,3,4 對應 A,B,C,D,E)
     })).filter(c => c.id);
     
-    console.log('🎯 卡片位置資訊:', cardIdTypeArr.map(c => ({ type: c.type, position: c.position })));
+    console.log('🎯 卡片位置資訊:', cardIdTypeArr.map(c => ({ type: c.type, position: c.position, id: c.id })));
     
     // 計算所需點數 (每張卡片10點)
     const requiredPoints = cardIdTypeArr.length * 10;
@@ -1749,25 +1748,26 @@ async function shareToLine() {
           successMessage += '💰 分享結果：\n';
           successMessage += `• 分享卡扣除點數：10點\n`;
           
-          // 計算各位置的回饋點數
+          // 詳細顯示各位置的回饋點數
           const promoCards = cardIdTypeArr.filter(c => c.type === 'promo');
           let totalReward = 0;
           
-          if (promoCards.length > 0) {
-            // 使用已有的shareResult中的回饋資訊，或從API結果計算
-            if (shareResult.totalRewarded) {
-              totalReward = shareResult.totalRewarded;
-              // 簡化顯示，直接顯示總回饋
-              successMessage += `• 賺取分享點：${totalReward.toFixed(1)}點\n`;
-            } else {
-              // 如果沒有回饋資訊，顯示預設訊息
-              successMessage += `• 賺取分享點：計算中...\n`;
-            }
+          // 🎯 新邏輯：根據主卡位置顯示回饋
+          if (shareResult.rewardDetails && shareResult.rewardDetails.length > 0) {
+            shareResult.rewardDetails.forEach((detail) => {
+              successMessage += `• 賺取分享點(位${detail.position + 1})：${detail.reward.toFixed(1)}點\n`;
+              totalReward += detail.reward;
+            });
+          } else if (shareResult.totalRewarded > 0) {
+            totalReward = shareResult.totalRewarded;
+            successMessage += `• 賺取分享點：${totalReward.toFixed(1)}點\n`;
+          } else {
+            // 找出主卡位置
+            const mainCardPosition = cardIdTypeArr.findIndex(card => card.type === 'main');
+            successMessage += `• 賺取分享點(位${mainCardPosition + 1})：0點\n`;
           }
           
-          if (totalReward > 0) {
-            successMessage += `• 合計賺取：${totalReward.toFixed(1)}點\n`;
-          }
+          successMessage += `• 合計賺取：${totalReward.toFixed(1)}點\n`;
           successMessage += `• 分享卡目前餘點：${latestPoints}點\n\n`;
         }
         successMessage += '📝 請記得關閉本會員卡編修頁面';
