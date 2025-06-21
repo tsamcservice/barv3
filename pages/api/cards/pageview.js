@@ -67,15 +67,22 @@ export default async function handler(req, res) {
       }
       
       // 取得回饋設定
-      const { data: settings, error: settingsError } = await supabase
-        .from('points_settings')
-        .select('*')
-        .order('position_index');
-        
-      let settingsData = settings;
-      if (settingsError) {
-        console.log('取得回饋設定失敗，使用預設值:', settingsError.message);
-        settingsData = null; // 確保變數有定義
+      let settingsData = null;
+      try {
+        const { data: settings, error: settingsError } = await supabase
+          .from('points_settings')
+          .select('*')
+          .order('position_index');
+          
+        if (settingsError) {
+          console.log('取得回饋設定失敗，使用預設值:', settingsError.message);
+          settingsData = null;
+        } else {
+          settingsData = settings || null;
+        }
+      } catch (error) {
+        console.log('回饋設定查詢異常:', error.message);
+        settingsData = null;
       }
       
       // 處理每張卡片的點數交易

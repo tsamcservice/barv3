@@ -41,15 +41,22 @@ export default async function handler(req, res) {
     }
     
     // 3. 取得回饋比例設定
-    const { data: settings, error: settingsError } = await supabase
-      .from('points_settings')
-      .select('*')
-      .order('position_index');
-    
-    let settingsData = settings;
-    if (settingsError) {
-      console.log('取得設定失敗，使用預設比例:', settingsError.message);
-      settingsData = null; // 確保變數有定義
+    let settingsData = null;
+    try {
+      const { data: settings, error: settingsError } = await supabase
+        .from('points_settings')
+        .select('*')
+        .order('position_index');
+      
+      if (settingsError) {
+        console.log('取得設定失敗，使用預設比例:', settingsError.message);
+        settingsData = null;
+      } else {
+        settingsData = settings || null;
+      }
+    } catch (error) {
+      console.log('設定查詢異常:', error.message);
+      settingsData = null;
     }
     
     // 4. 計算總回饋點數
