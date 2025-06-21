@@ -61,6 +61,76 @@ export default function Home() {
       >
         flex碼測試預覽頁
       </a>
+      
+      {/* 🔴 管理後台區塊 */}
+      <div style={{
+        background: '#dc3545',
+        color: 'white',
+        padding: '1.5rem',
+        borderRadius: '12px',
+        marginTop: '2rem',
+        boxShadow: '0 4px 16px rgba(220,53,69,0.3)',
+        maxWidth: '500px',
+        width: '100%'
+      }}>
+        <h3 style={{
+          margin: '0 0 1rem 0',
+          fontSize: '1.3rem',
+          fontWeight: 'bold',
+          textAlign: 'center'
+        }}>
+          🔴 管理後台
+        </h3>
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          flexWrap: 'wrap',
+          justifyContent: 'center'
+        }}>
+          <a
+            href="/admin-points.html"
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            ⚙️ 點數設定管理
+          </a>
+          <a
+            href="/points-history.html"
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            📊 交易記錄查詢
+          </a>
+          <a
+            href="/member-card-simple.html"
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🎨 會員卡編輯器
+          </a>
+        </div>
+      </div>
     </div>
   );
 } 

@@ -44,7 +44,10 @@ export default async function handler(req, res) {
       
       // 先檢查所有卡片點數是否足夠
       for (const { id, type } of cardIdTypeArr) {
-        if (!id) continue;
+        if (!id || id === 'test-main-card' || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          console.log(`跳過無效的卡片ID: ${id}`);
+          continue;
+        }
         
         const table = type === 'main' ? 'member_cards' : 'promo_cards';
         const pointsField = type === 'main' ? 'user_points' : 'promo_points';
@@ -75,7 +78,10 @@ export default async function handler(req, res) {
       
       // 處理每張卡片的點數交易
       for (const { id, type, position } of cardIdTypeArr) {
-        if (!id) continue;
+        if (!id || id === 'test-main-card' || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          console.log(`跳過無效的卡片ID: ${id}`);
+          continue;
+        }
         
         const table = type === 'main' ? 'member_cards' : 'promo_cards';
         const pointsField = type === 'main' ? 'user_points' : 'promo_points';
@@ -161,7 +167,10 @@ export default async function handler(req, res) {
     // 2. 處理 pageview 更新 (原有邏輯)
     let pageviewError = null;
     for (const { id, type } of cardIdTypeArr) {
-      if (!id) continue;
+      if (!id || id === 'test-main-card' || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        console.log(`跳過無效的卡片ID: ${id}`);
+        continue;
+      }
       try {
         let table = type === 'main' ? 'member_cards' : 'promo_cards';
         // 先查詢目前 pageview

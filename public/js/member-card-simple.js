@@ -170,6 +170,26 @@ function setImageUserStyle(img, url) {
 function cleanFlexJsonForShare(flexJson) {
   const cleanedJson = JSON.parse(JSON.stringify(flexJson)); // 深度複製
   
+  // 🔧 修復：確保所有圖片URL都是絕對路徑
+  function ensureAbsoluteUrls(obj) {
+    if (typeof obj !== 'object' || obj === null) return;
+    
+    // 如果是圖片物件，確保URL是絕對路徑
+    if (obj.type === 'image' && obj.url) {
+      if (obj.url.startsWith('/')) {
+        obj.url = `https://barv3.vercel.app${obj.url}`;
+        console.log('🔗 轉換相對路徑為絕對路徑:', obj.url);
+      }
+    }
+    
+    // 遞迴處理子物件
+    if (Array.isArray(obj)) {
+      obj.forEach(ensureAbsoluteUrls);
+    } else {
+      Object.values(obj).forEach(ensureAbsoluteUrls);
+    }
+  }
+  
   function removeCustomFields(obj) {
     if (typeof obj !== 'object' || obj === null) return;
     
@@ -186,8 +206,10 @@ function cleanFlexJsonForShare(flexJson) {
     }
   }
   
+  // 先確保絕對URL，再清理自定義欄位
+  ensureAbsoluteUrls(cleanedJson);
   removeCustomFields(cleanedJson);
-  console.log('🧹 清理FLEX JSON，移除自定義欄位');
+  console.log('🧹 清理FLEX JSON：移除自定義欄位 + 確保圖片絕對路徑');
   return cleanedJson;
 }
 
@@ -1621,9 +1643,13 @@ async function shareToLine() {
     }
     confirmMessage += `\n剩餘點數：${currentPoints - requiredPoints + expectedReward}點`;
     
-    if (!confirm(confirmMessage)) {
-      hideShareLoading();
-      return;
+    // 🔧 修復：使用標記避免重複確認
+    if (window.shareConfirmed !== true) {
+      if (!confirm(confirmMessage)) {
+        hideShareLoading();
+        return;
+      }
+      window.shareConfirmed = true; // 設定確認標記
     }
     
     // **步驟2：執行分享交易 (包含pageview更新和點數處理)**
@@ -1655,19 +1681,21 @@ async function shareToLine() {
       }
     }
     
-    // **步驟3：取得更新後的卡片資料**
+    // **步驟3：使用交易結果更新資料，避免額外API調用**
     let latestPageview = getFormData().pageview;
     let latestPoints = currentPoints;
-    try {
-      const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
-      const result = await res.json();
-      if (result.success && result.data && result.data.length > 0) {
-        latestPageview = result.data[0].pageview;
-        latestPoints = result.data[0].user_points || 0;
-        console.log('ShareToLine: 取得更新後資料 - pageview:', latestPageview, 'points:', latestPoints);
+    
+    if (shareResult && shareResult.pointsResults && shareResult.pointsResults.length > 0) {
+      // 從交易結果中取得最新的主卡點數
+      const mainCardResult = shareResult.pointsResults.find(r => r.type === 'main');
+      if (mainCardResult) {
+        latestPoints = mainCardResult.finalBalance;
+        console.log('ShareToLine: 從交易結果取得最新點數:', latestPoints);
       }
-    } catch (e) {
-      console.error('取得更新後資料失敗:', e);
+      
+      // pageview 增加 (每張卡片+1)
+      latestPageview = (parseInt(getFormData().pageview) || 0) + cardIdTypeArr.length;
+      console.log('ShareToLine: 計算最新pageview:', latestPageview);
     }
     
     // **步驟4：用最新資料重新生成flexJson**
@@ -1755,17 +1783,29 @@ async function shareToLine() {
     await liff.shareTargetPicker([cleanFlexJson])
       .then(() => {
         hideShareLoading();
+        window.shareConfirmed = false; // 🔧 重置確認標記
         
         // 顯示分享成功與點數交易結果
         let successMessage = '✅ 分享會員卡成功！\n\n';
         if (shareResult) {
           successMessage += '💰 點數交易結果：\n';
-          successMessage += `• 扣除：${shareResult.totalDeducted}點\n`;
-          if (shareResult.totalRewarded > 0) {
-            successMessage += `• 回饋：+${shareResult.totalRewarded.toFixed(1)}點\n`;
+          
+          // 詳細顯示每張卡片的扣點情況
+          const mainCards = cardIdTypeArr.filter(c => c.type === 'main').length;
+          const promoCards = cardIdTypeArr.filter(c => c.type === 'promo').length;
+          
+          if (mainCards > 0) {
+            successMessage += `• 主卡扣除：${mainCards * 10}點 (${mainCards}張 × 10點)\n`;
           }
-          successMessage += `• 淨支出：${(shareResult.totalDeducted - shareResult.totalRewarded).toFixed(1)}點\n`;
-          successMessage += `• 目前餘額：${latestPoints}點\n\n`;
+          if (promoCards > 0) {
+            successMessage += `• 附加卡扣除：${promoCards * 10}點 (${promoCards}張 × 10點)\n`;
+          }
+          
+          if (shareResult.totalRewarded > 0) {
+            successMessage += `• 主卡回饋：+${shareResult.totalRewarded.toFixed(1)}點\n`;
+          }
+          successMessage += `• 主卡淨支出：${(10 - shareResult.totalRewarded).toFixed(1)}點\n`;
+          successMessage += `• 主卡目前餘額：${latestPoints}點\n\n`;
         }
         successMessage += '📝 請記得關閉本會員卡編修頁面';
         
@@ -1774,12 +1814,14 @@ async function shareToLine() {
       })
       .catch((error) => {
         hideShareLoading();
+        window.shareConfirmed = false; // 🔧 重置確認標記
         console.log('分享取消或失敗:', error);
         // 不顯示錯誤訊息，因為用戶可能主動取消分享
         closeOrRedirect();
       });
   } catch (err) {
     hideShareLoading();
+    window.shareConfirmed = false; // 🔧 重置確認標記
     alert('儲存或分享失敗: ' + err.message);
   }
 }
