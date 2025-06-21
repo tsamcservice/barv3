@@ -1128,6 +1128,33 @@
             console.log('🔐 開始強制LIFF登入流程...');
             showLoginStatus('🔐 正在驗證LINE登入狀態...');
             
+            // 🔧 關鍵修復：先檢查URL參數並載入已儲存的資料
+            const pageId = getQueryParam('pageId');
+            const userId = getQueryParam('userId');
+            console.log('🔧 檢查URL參數:', { pageId, userId });
+            
+            if (pageId && userId) {
+                console.log('🔍 發現URL參數，嘗試載入已儲存的卡片資料');
+                showLoginStatus('🔍 正在載入您的卡片資料...');
+                
+                try {
+                    // 直接調用API載入資料
+                    const response = await fetch(`/api/cards?pageId=${pageId}&userId=${userId}`);
+                    if (response.ok) {
+                        const cardData = await response.json();
+                        console.log('✅ 成功載入已儲存的卡片資料:', cardData);
+                        
+                        // 儲存到全域變數
+                        window.loadedCardData = cardData;
+                        showLoginStatus('✅ 卡片資料載入完成，正在驗證登入...');
+                    } else {
+                        console.log('ℹ️ 未找到已儲存的卡片資料，將使用預設值');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ 載入已儲存資料失敗:', error);
+                }
+            }
+            
             // 詳細檢查LINE環境
             const envCheck = {
                 liff: !!window.liff,
@@ -1429,21 +1456,35 @@
                     console.warn('⚠️ JS函數載入超時，繼續初始化');
                 }
                 
-                // 🔧 新增：檢查是否有已儲存的卡片資料
-                const pageId = getQueryParam('pageId') || 'M01001';
+                // 🔧 關鍵修復：檢查訪問方式和用戶驗證
+                const pageId = getQueryParam('pageId');
                 const userId = getQueryParam('userId');
+                const isDirectAccess = !pageId && !userId;
                 
-                console.log('🔧 檢查URL參數:', { pageId, userId });
+                console.log('🔧 訪問方式檢查:', { 
+                    pageId, 
+                    userId, 
+                    isDirectAccess,
+                    href: window.location.href 
+                });
                 
                 // 🔧 實現與桌機版相同的資料載入邏輯
                 let cardLoaded = false;
                 let loadedCardData = null;
                 
-                if (userId) {
-                    console.log('🔍 發現userId，嘗試載入已儲存的卡片資料');
+                if (isDirectAccess) {
+                    console.log('⚠️ 直接訪問手機版，清空資料污染，等待用戶驗證');
+                    // 🔧 直接訪問時，清空可能存在的資料污染
+                    window.loadedCardData = null;
+                    window.selectedPromoCardIds = [];
+                    
+                    // 不載入任何資料，等待LIFF登入後再處理
+                } else if (userId) {
+                    console.log('🔍 通過分享連結訪問，嘗試載入已儲存的卡片資料');
                     
                     try {
-                        const apiUrl = `/api/cards?pageId=${pageId}&userId=${userId}`;
+                        const finalPageId = pageId || 'M01001';
+                        const apiUrl = `/api/cards?pageId=${finalPageId}&userId=${userId}`;
                         console.log('🔗 API URL:', apiUrl);
                         
                         const response = await fetch(apiUrl);
@@ -1465,7 +1506,7 @@
                         console.warn('⚠️ 載入已儲存資料失敗:', error);
                     }
                 } else {
-                    console.log('ℹ️ 沒有userId，將使用預設值');
+                    console.log('ℹ️ 有pageId但沒有userId，將使用預設值');
                 }
                 
                 // 開始LIFF登入流程
