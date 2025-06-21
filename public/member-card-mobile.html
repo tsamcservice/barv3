@@ -839,9 +839,27 @@
         </div>
     </div>
 
-    <script src="js/member-card-mobile.js"></script>
-    <script>
-        // 📱 手機版專用腳本
+    <script src="js/member-card-simple.js"></script>
+            <script>
+            // 📱 手機版專用腳本
+            
+            // 🔧 覆蓋預設分享連結，確保使用桌機版LIFF ID以保持一致性
+            document.addEventListener('DOMContentLoaded', function() {
+                // 等待原始JS載入完成
+                setTimeout(() => {
+                    // 覆蓋預設分享連結，使用桌機版LIFF ID確保資料庫一致性
+                    if (typeof defaultCard !== 'undefined') {
+                        defaultCard.s_button_url = 'https://liff.line.me/2007327814-BdWpj70m?pageId=M01001';
+                        console.log('📱 手機版：已覆蓋分享連結為桌機版LIFF，確保資料庫一致性');
+                    }
+                    
+                    // 覆蓋分享按鈕URL輸入框的預設值
+                    const shareUrlInput = document.getElementById('s_button_url');
+                    if (shareUrlInput && !shareUrlInput.value) {
+                        shareUrlInput.value = 'https://liff.line.me/2007327814-BdWpj70m?pageId=M01001';
+                    }
+                }, 200);
+            });
         
         // 🔧 填入預設資料函數
         function fillAllFieldsWithDefault() {
@@ -1155,8 +1173,8 @@
             try {
                 // 初始化LIFF
                 showLoginStatus('🔧 正在初始化LINE功能...');
-                // 🔧 使用手機版專用的LIFF ID
-                const mobileLiffId = '2007327814-DGly5XNk'; // 手機版專用LIFF ID
+                // 🔧 手機版：覆蓋JS中的LIFF設定，但保持分享連結一致
+                const mobileLiffId = '2007327814-DGly5XNk'; // 手機版登入用LIFF ID
                 console.log('🔧 開始初始化手機版LIFF，ID:', mobileLiffId);
                 
                 await liff.init({ liffId: mobileLiffId });
