@@ -839,8 +839,10 @@
         
         // 🔧 填入預設資料函數
         function fillAllFieldsWithDefault() {
+            // 🔧 等待 member-card-simple.js 載入完成
             if (typeof defaultCard === 'undefined') {
-                console.error('🔧 defaultCard未定義，無法填入預設資料');
+                console.log('🔧 等待 defaultCard 載入...');
+                setTimeout(fillAllFieldsWithDefault, 100);
                 return;
             }
             
@@ -850,26 +852,34 @@
             Object.keys(defaultCard).forEach(key => {
                 const input = document.getElementById(key);
                 if (input) {
-                    input.value = defaultCard[key];
+                    // 🔧 使用正確的方式設定預設值
+                    if (typeof setInputDefaultStyle === 'function') {
+                        setInputDefaultStyle(input, defaultCard[key]);
+                    } else {
+                        input.value = defaultCard[key];
+                    }
                     console.log(`🔧 設定 ${key} = ${defaultCard[key]}`);
                 } else {
                     console.warn(`🔧 找不到欄位: ${key}`);
                 }
             });
             
-            // 更新圖片預覽
-            updateImagePreviews();
-            
-            // 立即更新預覽
+            // 🔧 更新圖片預覽（延遲執行確保DOM準備好）
             setTimeout(() => {
+                updateImagePreviewsMobile();
+                
+                // 立即更新預覽
                 if (typeof renderPreview === 'function') {
                     renderPreview();
                 }
-            }, 500);
+                if (typeof renderShareJsonBox === 'function') {
+                    renderShareJsonBox();
+                }
+            }, 200);
         }
         
-        // 🔧 更新圖片預覽函數
-        function updateImagePreviews() {
+        // 🔧 手機版圖片預覽更新函數
+        function updateImagePreviewsMobile() {
             const imageFields = [
                 { url: 'main_image_url', preview: 'main_image_preview' },
                 { url: 'member_image_url', preview: 'member_image_preview' }
@@ -880,9 +890,19 @@
                 const previewImg = document.getElementById(field.preview);
                 
                 if (urlInput && previewImg && urlInput.value) {
-                    previewImg.src = urlInput.value;
-                    previewImg.style.display = 'block';
-                    console.log(`🔧 更新圖片預覽: ${field.url} -> ${urlInput.value}`);
+                    console.log(`🖼️ 更新圖片預覽: ${field.url} -> ${urlInput.value}`);
+                    
+                    // 🔧 使用正確的圖片設定函數
+                    if (typeof setImageUserStyle === 'function') {
+                        setImageUserStyle(previewImg, urlInput.value);
+                    } else {
+                        previewImg.src = urlInput.value;
+                        previewImg.style.display = 'block';
+                        previewImg.style.maxWidth = '200px';
+                        previewImg.style.maxHeight = '200px';
+                        previewImg.style.borderRadius = '4px';
+                        previewImg.style.objectFit = 'cover';
+                    }
                 }
             });
         }
@@ -1033,34 +1053,61 @@
             console.log('🔧 填入預設資料...');
             fillAllFieldsWithDefault();
             
-            // 🔧 修復：確保LIFF正確初始化
-            if (typeof initLiffAndLogin === 'function') {
-                console.log('🔧 開始初始化LIFF...');
-                initLiffAndLogin().then(success => {
-                    console.log('🔧 LIFF初始化結果:', success);
-                    if (success && typeof liff !== 'undefined') {
-                        console.log('🔧 LIFF已就緒，獲取用戶資料...');
-                        liff.getProfile().then(profile => {
-                            console.log('🔧 用戶資料:', profile);
-                            liffProfile = profile;
-                            renderLiffUserInfo(profile);
-                            fillAllFieldsWithProfile();
-                        }).catch(error => {
-                            console.error('🔧 獲取用戶資料失敗:', error);
-                            // 🔧 即使獲取用戶資料失敗，也要保持預設資料
-                        });
-                    } else {
-                        console.error('🔧 LIFF初始化失敗或LIFF未定義');
-                        // 🔧 LIFF失敗時保持預設資料
-                    }
-                }).catch(error => {
-                    console.error('🔧 LIFF初始化錯誤:', error);
-                    // 🔧 初始化錯誤時保持預設資料
-                });
-            } else {
-                console.error('🔧 initLiffAndLogin函數未找到，請確認member-card-simple.js已載入');
-                // 🔧 函數未找到時保持預設資料
-            }
+            // 🔧 等待並初始化LIFF
+            setTimeout(() => {
+                if (typeof initLiffAndLogin === 'function') {
+                    console.log('🔧 開始初始化LIFF...');
+                    initLiffAndLogin().then(success => {
+                        console.log('🔧 LIFF初始化結果:', success);
+                        if (success && typeof liff !== 'undefined') {
+                            console.log('🔧 LIFF已就緒，獲取用戶資料...');
+                            liff.getProfile().then(profile => {
+                                console.log('🔧 用戶資料:', profile);
+                                window.liffProfile = profile; // 🔧 設定全域變數
+                                if (typeof renderLiffUserInfo === 'function') {
+                                    renderLiffUserInfo(profile);
+                                }
+                                if (typeof fillAllFieldsWithProfile === 'function') {
+                                    fillAllFieldsWithProfile();
+                                }
+                            }).catch(error => {
+                                console.error('🔧 獲取用戶資料失敗:', error);
+                                // 🔧 即使獲取用戶資料失敗，也要保持預設資料
+                            });
+                        } else {
+                            console.error('🔧 LIFF初始化失敗或LIFF未定義');
+                            // 🔧 LIFF失敗時保持預設資料
+                        }
+                    }).catch(error => {
+                        console.error('🔧 LIFF初始化錯誤:', error);
+                        // 🔧 初始化錯誤時保持預設資料
+                    });
+                } else {
+                    console.log('🔧 等待 initLiffAndLogin 函數載入...');
+                    // 🔧 延遲重試
+                    setTimeout(() => {
+                        if (typeof initLiffAndLogin === 'function') {
+                            console.log('🔧 重試LIFF初始化...');
+                            // 重複上述邏輯
+                            initLiffAndLogin().then(success => {
+                                if (success && typeof liff !== 'undefined') {
+                                    liff.getProfile().then(profile => {
+                                        window.liffProfile = profile;
+                                        if (typeof renderLiffUserInfo === 'function') {
+                                            renderLiffUserInfo(profile);
+                                        }
+                                        if (typeof fillAllFieldsWithProfile === 'function') {
+                                            fillAllFieldsWithProfile();
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+                            console.error('🔧 initLiffAndLogin函數仍未找到，跳過LIFF初始化');
+                        }
+                    }, 1000);
+                }
+            }, 300);
             
             // 載入宣傳卡片
             if (typeof loadPromoCards === 'function') {
@@ -1070,29 +1117,50 @@
                 });
             }
             
-            // 初始化圖片上傳功能
-            if (typeof bindImageUpload === 'function') {
-                bindImageUpload('main_image_upload', 'main_image_upload_btn', 'main_image_preview', 'main_image_url', 'main_image_info');
-                bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url', 'member_image_info');
-            }
-            
-            // 初始化圖片庫功能
-            if (typeof bindImageSelect === 'function') {
-                bindImageSelect('main_image_select_btn', 'main_image_url', 'main_image_preview');
-                bindImageSelect('member_image_select_btn', 'member_image_url', 'member_image_preview');
-            }
-            
-            // 初始化LINE頭貼功能
-            if (typeof useLINEProfile === 'function') {
-                document.getElementById('member_line_profile_btn').onclick = () => {
-                    useLINEProfile('member_image_url', 'member_image_preview', 'member_image_info');
-                };
-            }
-            
-            // 初始化圖片庫彈窗
-            if (typeof initImageLibraryModal === 'function') {
-                initImageLibraryModal();
-            }
+            // 🔧 延遲初始化所有功能（確保JS載入完成）
+            setTimeout(() => {
+                console.log('🔧 初始化圖片功能...');
+                
+                // 初始化圖片上傳功能
+                if (typeof bindImageUpload === 'function') {
+                    bindImageUpload('main_image_upload', 'main_image_upload_btn', 'main_image_preview', 'main_image_url', 'main_image_info');
+                    bindImageUpload('member_image_upload', 'member_image_upload_btn', 'member_image_preview', 'member_image_url', 'member_image_info');
+                    console.log('✅ 圖片上傳功能初始化完成');
+                } else {
+                    console.warn('⚠️ bindImageUpload 函數未找到');
+                }
+                
+                // 初始化圖片庫功能
+                if (typeof bindImageSelect === 'function') {
+                    bindImageSelect('main_image_select_btn', 'main_image_url', 'main_image_preview');
+                    bindImageSelect('member_image_select_btn', 'member_image_url', 'member_image_preview');
+                    console.log('✅ 圖片庫功能初始化完成');
+                } else {
+                    console.warn('⚠️ bindImageSelect 函數未找到');
+                }
+                
+                // 初始化LINE頭貼功能
+                if (typeof useLINEProfile === 'function') {
+                    const lineBtn = document.getElementById('member_line_profile_btn');
+                    if (lineBtn) {
+                        lineBtn.onclick = () => {
+                            console.log('🔧 點擊LINE頭貼按鈕');
+                            useLINEProfile('member_image_url', 'member_image_preview', 'member_image_info');
+                        };
+                        console.log('✅ LINE頭貼功能初始化完成');
+                    }
+                } else {
+                    console.warn('⚠️ useLINEProfile 函數未找到');
+                }
+                
+                // 初始化圖片庫彈窗
+                if (typeof initImageLibraryModal === 'function') {
+                    initImageLibraryModal();
+                    console.log('✅ 圖片庫彈窗初始化完成');
+                } else {
+                    console.warn('⚠️ initImageLibraryModal 函數未找到');
+                }
+            }, 500);
             
             // 清除全部選擇按鈕
             document.getElementById('clearAllPromoCards').onclick = () => {
