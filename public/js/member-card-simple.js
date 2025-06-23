@@ -1,6 +1,193 @@
+// 🔄 統一LIFF系統 v20250622
 // 版本標記函數
 function createVersionTag() {
-  return 'v20250621-REWARD-DISPLAY-FIX';
+  return 'v20250622-UNIFIED-LIFF-SYSTEM';
+}
+
+// 🆕 統一LIFF系統配置
+const UNIFIED_LIFF = {
+  config: window.UNIFIED_LIFF_CONFIG || {
+    liffId: '2007327814-BdWpj70m',
+    isMobile: false,
+    isInLineApp: false,
+    deviceType: 'desktop'
+  },
+  profile: { displayName: '', pictureUrl: '', userId: '' },
+  isInitialized: false,
+  isLoggedIn: false
+};
+
+console.log('🔄 統一LIFF系統啟動:', UNIFIED_LIFF.config);
+
+// 🆕 設備指示器更新
+function updateDeviceIndicator() {
+  const indicator = document.getElementById('deviceIndicator');
+  if (!indicator) return;
+  
+  const { isMobile, isInLineApp, deviceType } = UNIFIED_LIFF.config;
+  const status = UNIFIED_LIFF.isLoggedIn ? '已登入' : '未登入';
+  
+  indicator.textContent = `${deviceType === 'mobile' ? '📱' : '💻'} ${deviceType.toUpperCase()} | ${isInLineApp ? 'LINE內' : 'LINE外'} | ${status}`;
+  indicator.style.background = UNIFIED_LIFF.isLoggedIn ? 'rgba(76, 175, 80, 0.9)' : 'rgba(255, 152, 0, 0.9)';
+}
+
+// 🆕 統一LIFF初始化
+async function initUnifiedLiff() {
+  try {
+    console.log('🔄 開始統一LIFF初始化...');
+    updateDeviceIndicator();
+    
+    if (!window.liff) {
+      console.error('❌ LIFF SDK未載入');
+      return false;
+    }
+    
+    await liff.init({ liffId: UNIFIED_LIFF.config.liffId });
+    UNIFIED_LIFF.isInitialized = true;
+    console.log('✅ LIFF初始化成功');
+    
+    if (!liff.isLoggedIn()) {
+      console.log('👤 用戶未登入，執行登入...');
+      liff.login();
+      return false;
+    }
+    
+    UNIFIED_LIFF.isLoggedIn = true;
+    UNIFIED_LIFF.profile = await liff.getProfile();
+    console.log('👤 用戶已登入:', UNIFIED_LIFF.profile);
+    
+    // 🔄 更新liffProfile引用
+    updateLiffProfile();
+    
+    updateDeviceIndicator();
+    renderLiffUserInfo(UNIFIED_LIFF.profile);
+    
+    return true;
+  } catch (error) {
+    console.error('❌ 統一LIFF初始化失敗:', error);
+    updateDeviceIndicator();
+    return false;
+  }
+}
+
+// 🆕 自動分享模式檢測與處理
+async function handleAutoShareMode() {
+  const pageId = getQueryParam('pageId');
+  const userId = getQueryParam('userId');
+  
+  console.log('🔍 檢查自動分享模式:', { pageId, userId });
+  
+  if (pageId && !userId) {
+    console.log('📤 進入自動分享模式，頁面ID:', pageId);
+    await handleAutoShare(pageId);
+    return true;
+  }
+  
+  return false;
+}
+
+// 🆕 統一的自動分享處理
+async function handleAutoShare(pageId) {
+  try {
+    console.log('📤 處理自動分享，頁面ID:', pageId);
+    
+    // 隱藏編輯介面，只顯示預覽
+    hideEditingInterface();
+    
+    // 顯示載入狀態
+    showAutoShareLoading();
+    
+    // 先嘗試載入個人卡片
+    let cardData = null;
+    if (UNIFIED_LIFF.isLoggedIn) {
+      console.log('👤 嘗試載入個人卡片...');
+      cardData = await loadPersonalCard(pageId, UNIFIED_LIFF.profile.userId);
+    }
+    
+    // 如果沒有個人卡片，載入預設卡片
+    if (!cardData) {
+      console.log('📋 載入預設卡片...');
+      cardData = await loadDefaultCard(pageId);
+    }
+    
+    if (cardData) {
+      console.log('✅ 卡片資料載入成功');
+      fillFormWithData(cardData);
+      await loadPromoCards();
+      renderPreview();
+      showAutoShareInterface();
+    } else {
+      console.error('❌ 查無卡片資料');
+      showAutoShareError('查無卡片資料，無法分享');
+    }
+    
+  } catch (error) {
+    console.error('❌ 自動分享處理失敗:', error);
+    showAutoShareError('載入失敗，請稍後再試');
+  } finally {
+    hideAutoShareLoading();
+  }
+}
+
+// 🆕 響應式功能載入
+function loadResponsiveFeatures() {
+  const { isMobile } = UNIFIED_LIFF.config;
+  
+  if (isMobile) {
+    console.log('📱 載入手機版功能...');
+    loadMobileFeatures();
+  } else {
+    console.log('💻 載入桌面版功能...');
+    loadDesktopFeatures();
+  }
+}
+
+// 🆕 手機版特殊功能
+function loadMobileFeatures() {
+  // 手機版特殊優化
+  document.body.classList.add('mobile-mode');
+  
+  // 調整輸入框樣式防止縮放
+  const inputs = document.querySelectorAll('input[type="text"], input[type="url"]');
+  inputs.forEach(input => {
+    input.style.fontSize = '16px';
+  });
+  
+  // 手機版預覽優化
+  const preview = document.getElementById('main-card-preview');
+  if (preview) {
+    preview.style.overflowX = 'scroll';
+    preview.addEventListener('touchstart', function(e) {
+      // 啟用觸控滑動
+    });
+  }
+}
+
+// 🆕 桌面版特殊功能
+function loadDesktopFeatures() {
+  // 桌面版特殊優化
+  document.body.classList.add('desktop-mode');
+  
+  // 桌面版可能有的特殊功能
+  enableKeyboardShortcuts();
+}
+
+// 🆕 鍵盤快捷鍵（桌面版）
+function enableKeyboardShortcuts() {
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+      switch(e.key) {
+        case 's':
+          e.preventDefault();
+          document.getElementById('cardForm').dispatchEvent(new Event('submit'));
+          break;
+        case 'p':
+          e.preventDefault();
+          renderPreview();
+          break;
+      }
+    }
+  });
 }
 
 // 會員卡初始資料
@@ -26,27 +213,27 @@ const defaultCard = {
   button_1_url: 'https://lin.ee/JLLIBlP',
   button_1_color: '#A4924A', // 按鈕顏色 
   s_button_text: '分享給好友',
-  s_button_url: 'https://liff.line.me/2007327814-BdWpj70m?pageId=M01001', // 初始值為 LIFF+頁面ID
+  s_button_url: `https://liff.line.me/${UNIFIED_LIFF.config.liffId}?pageId=M01001`, // 🔄 使用統一LIFF
   s_button_color: '#A4924B',
   card_alt_title: '我在呈璽/呈璽'
 };
 
-// 取得 LINE 頭像與名字
-let liffProfile = { displayName: '', pictureUrl: '', userId: '' };
-const liffId = '2007327814-BdWpj70m';
+// 取得 LINE 頭像與名字 - 使用統一LIFF配置
+let liffProfile = UNIFIED_LIFF.profile;
+const liffId = UNIFIED_LIFF.config.liffId;
 
-// LIFF 初始化與登入
-async function initLiffAndLogin() {
-  if (!window.liff) return;
-  await liff.init({ liffId });
-  if (!liff.isLoggedIn()) {
-    liff.login();
-    return false;
-  }
-  return true;
+// 🔄 統一LIFF系統：更新liffProfile引用
+function updateLiffProfile() {
+  liffProfile = UNIFIED_LIFF.profile;
+  console.log('🔄 更新liffProfile引用:', liffProfile);
 }
 
-// 於右上角顯示LINE頭像、姓名與綠色LINE圖示
+// 🔄 修改：統一的LIFF初始化與登入
+async function initLiffAndLogin() {
+  return await initUnifiedLiff();
+}
+
+// 🔄 修改：統一的用戶資訊顯示
 function renderLiffUserInfo(profile) {
   const el = document.getElementById('liffUserInfo');
   if (!el) return;
@@ -2896,4 +3083,233 @@ async function testSimpleAPI() {
   }
 }
 
+// 🔄 統一LIFF系統輔助函數
+
+// 隱藏編輯介面（自動分享模式）
+function hideEditingInterface() {
+  const formSection = document.querySelector('.form-section');
+  const promoSection = document.querySelector('.promo-section');
+  if (formSection) formSection.style.display = 'none';
+  if (promoSection) promoSection.style.display = 'none';
+  console.log('📝 編輯介面已隱藏');
+}
+
+// 顯示自動分享載入狀態
+function showAutoShareLoading() {
+  const container = document.querySelector('.container');
+  if (container) {
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'autoShareLoading';
+    loadingDiv.innerHTML = `
+      <div style="text-align:center;padding:40px;background:#fff;border-radius:8px;margin:20px 0;">
+        <div style="font-size:24px;margin-bottom:16px;">📤</div>
+        <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">載入分享卡片中...</div>
+        <div style="color:#666;">請稍候，正在準備您的專屬卡片</div>
+        <div class="loading-spinner" style="margin:20px auto;width:32px;height:32px;border:3px solid #f3f3f3;border-top:3px solid #4caf50;border-radius:50%;animation:spin 1s linear infinite;"></div>
+      </div>
+    `;
+    container.insertBefore(loadingDiv, container.firstChild);
+  }
+}
+
+// 隱藏自動分享載入狀態
+function hideAutoShareLoading() {
+  const loading = document.getElementById('autoShareLoading');
+  if (loading) loading.remove();
+}
+
+// 顯示自動分享介面
+function showAutoShareInterface() {
+  const container = document.querySelector('.container');
+  if (container) {
+    const shareDiv = document.createElement('div');
+    shareDiv.id = 'autoShareInterface';
+    shareDiv.innerHTML = `
+      <div style="background:#fff;padding:24px;border-radius:8px;margin:20px 0;text-align:center;">
+        <h2 style="color:#4caf50;margin-bottom:16px;">🎉 卡片載入成功！</h2>
+        <p style="color:#666;margin-bottom:24px;">您可以直接分享此卡片，或繼續編輯內容</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <button onclick="shareToLine()" style="padding:12px 24px;background:#06C755;color:white;border:none;border-radius:6px;font-size:16px;cursor:pointer;">
+            📱 立即分享到LINE
+          </button>
+          <button onclick="showEditingInterface()" style="padding:12px 24px;background:#4caf50;color:white;border:none;border-radius:6px;font-size:16px;cursor:pointer;">
+            ✏️ 編輯卡片內容
+          </button>
+        </div>
+      </div>
+    `;
+    container.insertBefore(shareDiv, container.firstChild);
+  }
+}
+
+// 顯示編輯介面
+function showEditingInterface() {
+  const formSection = document.querySelector('.form-section');
+  const promoSection = document.querySelector('.promo-section');
+  const autoShareInterface = document.getElementById('autoShareInterface');
+  
+  if (formSection) formSection.style.display = 'block';
+  if (promoSection) promoSection.style.display = 'block';
+  if (autoShareInterface) autoShareInterface.remove();
+  
+  console.log('📝 編輯介面已顯示');
+}
+
+// 顯示自動分享錯誤
+function showAutoShareError(message) {
+  const container = document.querySelector('.container');
+  if (container) {
+    const errorDiv = document.createElement('div');
+    errorDiv.id = 'autoShareError';
+    errorDiv.innerHTML = `
+      <div style="background:#ffebee;border:1px solid #f44336;padding:24px;border-radius:8px;margin:20px 0;text-align:center;">
+        <div style="font-size:48px;margin-bottom:16px;">😔</div>
+        <h2 style="color:#f44336;margin-bottom:16px;">載入失敗</h2>
+        <p style="color:#666;margin-bottom:24px;">${message}</p>
+        <button onclick="location.reload()" style="padding:12px 24px;background:#4caf50;color:white;border:none;border-radius:6px;font-size:16px;cursor:pointer;">
+          🔄 重新載入
+        </button>
+      </div>
+    `;
+    container.insertBefore(errorDiv, container.firstChild);
+  }
+}
+
+// 載入個人卡片
+async function loadPersonalCard(pageId, userId) {
+  try {
+    console.log('👤 載入個人卡片:', { pageId, userId });
+    
+    const response = await fetch(`/api/cards?pageId=${pageId}&userId=${userId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('👤 個人卡片API回應:', result);
+    
+    if (result.success && result.data) {
+      return result.data;
+    }
+    
+    return null;
+  } catch (error) {
+    console.log('👤 個人卡片載入失敗:', error);
+    return null;
+  }
+}
+
+// 載入預設卡片
+async function loadDefaultCard(pageId) {
+  try {
+    console.log('📋 載入預設卡片:', pageId);
+    
+    // 如果是M01001，使用內建預設資料
+    if (pageId === 'M01001') {
+      return { ...defaultCard, pageId: pageId };
+    }
+    
+    // 其他pageId可以從API載入
+    const response = await fetch(`/api/cards?pageId=${pageId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('📋 預設卡片API回應:', result);
+    
+    if (result.success && result.data) {
+      return result.data;
+    }
+    
+    return null;
+  } catch (error) {
+    console.log('📋 預設卡片載入失敗:', error);
+    return null;
+  }
+}
+
+// 填充表單資料
+function fillFormWithData(cardData) {
+  console.log('📝 填充表單資料:', cardData);
+  
+  Object.keys(cardData).forEach(key => {
+    const input = document.getElementById(key);
+    if (input && cardData[key] !== undefined) {
+      input.value = cardData[key];
+      
+      // 觸發圖片預覽更新
+      if (key.includes('_url') && key.includes('image')) {
+        const previewId = key.replace('_url', '_preview');
+        const preview = document.getElementById(previewId);
+        if (preview && cardData[key]) {
+          setImageUserStyle(preview, cardData[key]);
+        }
+      }
+    }
+  });
+  
+  console.log('✅ 表單資料填充完成');
+}
+
+// 🔄 統一的主初始化函數
+async function initUnifiedSystem() {
+  console.log('🚀 統一LIFF系統初始化開始...');
+  
+  try {
+    // 1. 初始化LIFF
+    const liffSuccess = await initUnifiedLiff();
+    if (!liffSuccess) {
+      console.log('⏸️ LIFF初始化失敗或需要登入，停止初始化');
+      return;
+    }
+    
+    // 2. 檢查自動分享模式
+    const isAutoShare = await handleAutoShareMode();
+    if (isAutoShare) {
+      console.log('📤 自動分享模式，跳過一般初始化');
+      return;
+    }
+    
+    // 3. 載入響應式功能
+    loadResponsiveFeatures();
+    
+    // 4. 一般模式初始化
+    console.log('📝 進入一般編輯模式');
+    await initGeneralMode();
+    
+  } catch (error) {
+    console.error('❌ 統一系統初始化失敗:', error);
+    updateDeviceIndicator();
+  }
+}
+
+// 一般模式初始化
+async function initGeneralMode() {
+  try {
+    // 填充LINE用戶資料
+    if (UNIFIED_LIFF.profile.userId) {
+      await fillAllFieldsWithProfile();
+    }
+    
+    // 初始化所有功能
+    initImagePreviews();
+    initImageLibraryModal();
+    await loadPromoCards();
+    renderPreview();
+    renderShareJsonBox();
+    
+    console.log('✅ 一般模式初始化完成');
+  } catch (error) {
+    console.error('❌ 一般模式初始化失敗:', error);
+  }
+}
+
+// 🔄 頁面載入完成後執行統一初始化
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('📄 DOM載入完成，啟動統一LIFF系統...');
+  
+  // 延遲執行確保LIFF SDK完全載入
+  setTimeout(initUnifiedSystem, 500);
+});
  
