@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>統一LIFF系統測試</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        .info { background: #e3f2fd; color: #1565c0; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #4caf50;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .device-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="device-info" id="deviceInfo">載入中...</div>
+    
+    <div class="container">
+        <h1>🔄 統一LIFF系統測試</h1>
+        <p>此頁面用於測試統一LIFF系統的各項功能</p>
+        
+        <div class="test-section">
+            <h3>📱 設備檢測</h3>
+            <div id="deviceDetection"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔧 LIFF初始化</h3>
+            <button onclick="testLiffInit()">測試LIFF初始化</button>
+            <div id="liffInitResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>👤 用戶登入狀態</h3>
+            <button onclick="testUserLogin()">檢查登入狀態</button>
+            <div id="userLoginResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📤 自動分享模式測試</h3>
+            <button onclick="testAutoShareMode()">測試自動分享模式</button>
+            <div id="autoShareResult"></div>
+            <div style="margin-top:10px;">
+                <small>測試連結：</small><br>
+                <a href="?pageId=M01001" target="_blank">?pageId=M01001</a><br>
+                <a href="?pageId=M01001&userId=test123" target="_blank">?pageId=M01001&userId=test123</a>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔄 完整系統測試</h3>
+            <button onclick="testFullSystem()">完整系統測試</button>
+            <div id="fullSystemResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 系統狀態</h3>
+            <button onclick="showSystemStatus()">顯示系統狀態</button>
+            <div id="systemStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        // 設備檢測（複製自統一LIFF系統）
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+        const isInLineApp = navigator.userAgent.includes('Line/');
+        
+        // 統一LIFF配置
+        const UNIFIED_LIFF_CONFIG = {
+            liffId: '2007327814-BdWpj70m',
+            isMobile: isMobile,
+            isInLineApp: isInLineApp,
+            deviceType: isMobile ? 'mobile' : 'desktop'
+        };
+        
+        // 更新設備資訊顯示
+        function updateDeviceInfo() {
+            const deviceInfo = document.getElementById('deviceInfo');
+            const { deviceType, isInLineApp } = UNIFIED_LIFF_CONFIG;
+            deviceInfo.textContent = `${deviceType === 'mobile' ? '📱' : '💻'} ${deviceType.toUpperCase()} | ${isInLineApp ? 'LINE內' : 'LINE外'}`;
+        }
+        
+        // 顯示設備檢測結果
+        function showDeviceDetection() {
+            const container = document.getElementById('deviceDetection');
+            container.innerHTML = `
+                <div class="test-result info">
+                    <strong>User Agent:</strong> ${navigator.userAgent}<br>
+                    <strong>視窗寬度:</strong> ${window.innerWidth}px<br>
+                    <strong>是否為手機:</strong> ${isMobile ? '是' : '否'}<br>
+                    <strong>是否在LINE中:</strong> ${isInLineApp ? '是' : '否'}<br>
+                    <strong>設備類型:</strong> ${UNIFIED_LIFF_CONFIG.deviceType}
+                </div>
+            `;
+        }
+        
+        // 測試LIFF初始化
+        async function testLiffInit() {
+            const container = document.getElementById('liffInitResult');
+            container.innerHTML = '<div class="test-result info">正在測試LIFF初始化...</div>';
+            
+            try {
+                if (!window.liff) {
+                    throw new Error('LIFF SDK未載入');
+                }
+                
+                await liff.init({ liffId: UNIFIED_LIFF_CONFIG.liffId });
+                
+                container.innerHTML = `
+                    <div class="test-result success">
+                        ✅ LIFF初始化成功<br>
+                        <strong>LIFF ID:</strong> ${UNIFIED_LIFF_CONFIG.liffId}<br>
+                        <strong>SDK版本:</strong> ${liff.getVersion()}<br>
+                        <strong>是否在LINE中:</strong> ${liff.isInClient() ? '是' : '否'}<br>
+                        <strong>登入狀態:</strong> ${liff.isLoggedIn() ? '已登入' : '未登入'}
+                    </div>
+                `;
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="test-result error">
+                        ❌ LIFF初始化失敗<br>
+                        <strong>錯誤:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 測試用戶登入狀態
+        async function testUserLogin() {
+            const container = document.getElementById('userLoginResult');
+            container.innerHTML = '<div class="test-result info">正在檢查用戶登入狀態...</div>';
+            
+            try {
+                if (!window.liff) {
+                    throw new Error('請先初始化LIFF');
+                }
+                
+                if (!liff.isLoggedIn()) {
+                    container.innerHTML = `
+                        <div class="test-result info">
+                            ℹ️ 用戶未登入<br>
+                            <button onclick="liff.login()" style="margin-top:8px;">立即登入</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const profile = await liff.getProfile();
+                container.innerHTML = `
+                    <div class="test-result success">
+                        ✅ 用戶已登入<br>
+                        <strong>用戶ID:</strong> ${profile.userId}<br>
+                        <strong>顯示名稱:</strong> ${profile.displayName}<br>
+                        <strong>頭像URL:</strong> <a href="${profile.pictureUrl}" target="_blank">查看</a><br>
+                        <img src="${profile.pictureUrl}" style="width:50px;height:50px;border-radius:50%;margin-top:8px;">
+                    </div>
+                `;
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="test-result error">
+                        ❌ 檢查登入狀態失敗<br>
+                        <strong>錯誤:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 測試自動分享模式
+        function testAutoShareMode() {
+            const container = document.getElementById('autoShareResult');
+            const urlParams = new URLSearchParams(window.location.search);
+            const pageId = urlParams.get('pageId');
+            const userId = urlParams.get('userId');
+            
+            container.innerHTML = `
+                <div class="test-result info">
+                    <strong>當前URL參數:</strong><br>
+                    pageId: ${pageId || '無'}<br>
+                    userId: ${userId || '無'}<br>
+                    <strong>自動分享模式:</strong> ${pageId && !userId ? '是' : '否'}
+                </div>
+            `;
+        }
+        
+        // 完整系統測試
+        async function testFullSystem() {
+            const container = document.getElementById('fullSystemResult');
+            container.innerHTML = '<div class="test-result info">正在進行完整系統測試...</div>';
+            
+            const results = [];
+            
+            try {
+                // 1. 設備檢測
+                results.push({
+                    test: '設備檢測',
+                    success: true,
+                    message: `${UNIFIED_LIFF_CONFIG.deviceType} | ${UNIFIED_LIFF_CONFIG.isInLineApp ? 'LINE內' : 'LINE外'}`
+                });
+                
+                // 2. LIFF SDK檢查
+                if (window.liff) {
+                    results.push({
+                        test: 'LIFF SDK',
+                        success: true,
+                        message: `版本 ${liff.getVersion()}`
+                    });
+                } else {
+                    results.push({
+                        test: 'LIFF SDK',
+                        success: false,
+                        message: 'SDK未載入'
+                    });
+                }
+                
+                // 3. LIFF初始化
+                try {
+                    await liff.init({ liffId: UNIFIED_LIFF_CONFIG.liffId });
+                    results.push({
+                        test: 'LIFF初始化',
+                        success: true,
+                        message: '初始化成功'
+                    });
+                    
+                    // 4. 登入狀態
+                    if (liff.isLoggedIn()) {
+                        const profile = await liff.getProfile();
+                        results.push({
+                            test: '用戶登入',
+                            success: true,
+                            message: `已登入: ${profile.displayName}`
+                        });
+                    } else {
+                        results.push({
+                            test: '用戶登入',
+                            success: false,
+                            message: '未登入'
+                        });
+                    }
+                } catch (error) {
+                    results.push({
+                        test: 'LIFF初始化',
+                        success: false,
+                        message: error.message
+                    });
+                }
+                
+                // 5. 自動分享模式檢測
+                const urlParams = new URLSearchParams(window.location.search);
+                const pageId = urlParams.get('pageId');
+                const userId = urlParams.get('userId');
+                const isAutoShare = pageId && !userId;
+                
+                results.push({
+                    test: '自動分享模式',
+                    success: true,
+                    message: isAutoShare ? '啟用' : '未啟用'
+                });
+                
+            } catch (error) {
+                results.push({
+                    test: '系統測試',
+                    success: false,
+                    message: error.message
+                });
+            }
+            
+            // 顯示結果
+            const resultHtml = results.map(result => `
+                <div class="test-result ${result.success ? 'success' : 'error'}">
+                    ${result.success ? '✅' : '❌'} <strong>${result.test}:</strong> ${result.message}
+                </div>
+            `).join('');
+            
+            container.innerHTML = resultHtml;
+        }
+        
+        // 顯示系統狀態
+        function showSystemStatus() {
+            const container = document.getElementById('systemStatus');
+            const status = {
+                timestamp: new Date().toLocaleString(),
+                url: window.location.href,
+                userAgent: navigator.userAgent,
+                viewport: `${window.innerWidth}x${window.innerHeight}`,
+                liffSdk: window.liff ? '已載入' : '未載入',
+                liffVersion: window.liff ? liff.getVersion() : 'N/A',
+                deviceConfig: UNIFIED_LIFF_CONFIG
+            };
+            
+            container.innerHTML = `
+                <div class="test-result info">
+                    <strong>系統狀態報告</strong><br>
+                    <strong>時間:</strong> ${status.timestamp}<br>
+                    <strong>URL:</strong> ${status.url}<br>
+                    <strong>User Agent:</strong> ${status.userAgent}<br>
+                    <strong>視窗大小:</strong> ${status.viewport}<br>
+                    <strong>LIFF SDK:</strong> ${status.liffSdk}<br>
+                    <strong>LIFF版本:</strong> ${status.liffVersion}<br>
+                    <strong>設備配置:</strong> ${JSON.stringify(status.deviceConfig, null, 2)}
+                </div>
+            `;
+        }
+        
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDeviceInfo();
+            showDeviceDetection();
+            
+            // 自動進行基本檢測
+            setTimeout(() => {
+                if (window.liff) {
+                    testLiffInit();
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

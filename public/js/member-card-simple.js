@@ -1,73 +1,38 @@
-// 🔄 統一LIFF系統 v20250622
 // 版本標記函數
 function createVersionTag() {
-  return 'v20250622-UNIFIED-LIFF-SYSTEM';
+  return 'v20250623-STABLE-RESTORED';
 }
 
-// 🆕 統一LIFF系統配置
-const UNIFIED_LIFF = {
-  config: window.UNIFIED_LIFF_CONFIG || {
-    liffId: '2007327814-BdWpj70m',
-    isMobile: false,
-    isInLineApp: false,
-    deviceType: 'desktop'
-  },
-  profile: { displayName: '', pictureUrl: '', userId: '' },
-  isInitialized: false,
-  isLoggedIn: false
-};
-
-console.log('🔄 統一LIFF系統啟動:', UNIFIED_LIFF.config);
-
-// 🆕 設備指示器更新
+// 🆕 設備指示器更新（保留登入狀況顯示）
 function updateDeviceIndicator() {
   const indicator = document.getElementById('deviceIndicator');
   if (!indicator) return;
   
-  const { isMobile, isInLineApp, deviceType } = UNIFIED_LIFF.config;
-  const status = UNIFIED_LIFF.isLoggedIn ? '已登入' : '未登入';
+  const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+  const isInLineApp = navigator.userAgent.includes('Line/');
+  const deviceType = isMobile ? 'mobile' : 'desktop';
+  
+  // 檢查LIFF登入狀態
+  let isLoggedIn = false;
+  if (window.liff && liff.isLoggedIn && liff.isLoggedIn()) {
+    isLoggedIn = true;
+  }
+  
+  const status = isLoggedIn ? '已登入' : '未登入';
   
   indicator.textContent = `${deviceType === 'mobile' ? '📱' : '💻'} ${deviceType.toUpperCase()} | ${isInLineApp ? 'LINE內' : 'LINE外'} | ${status}`;
-  indicator.style.background = UNIFIED_LIFF.isLoggedIn ? 'rgba(76, 175, 80, 0.9)' : 'rgba(255, 152, 0, 0.9)';
+  indicator.style.background = isLoggedIn ? 'rgba(76, 175, 80, 0.9)' : 'rgba(255, 152, 0, 0.9)';
 }
 
-// 🆕 統一LIFF初始化
-async function initUnifiedLiff() {
-  try {
-    console.log('🔄 開始統一LIFF初始化...');
-    updateDeviceIndicator();
-    
-    if (!window.liff) {
-      console.error('❌ LIFF SDK未載入');
-      return false;
-    }
-    
-    await liff.init({ liffId: UNIFIED_LIFF.config.liffId });
-    UNIFIED_LIFF.isInitialized = true;
-    console.log('✅ LIFF初始化成功');
-    
-    if (!liff.isLoggedIn()) {
-      console.log('👤 用戶未登入，執行登入...');
-      liff.login();
-      return false;
-    }
-    
-    UNIFIED_LIFF.isLoggedIn = true;
-    UNIFIED_LIFF.profile = await liff.getProfile();
-    console.log('👤 用戶已登入:', UNIFIED_LIFF.profile);
-    
-    // 🔄 更新liffProfile引用
-    updateLiffProfile();
-    
-    updateDeviceIndicator();
-    renderLiffUserInfo(UNIFIED_LIFF.profile);
-    
-    return true;
-  } catch (error) {
-    console.error('❌ 統一LIFF初始化失敗:', error);
-    updateDeviceIndicator();
+// LIFF 初始化與登入（恢復原始版本）
+async function initLiffAndLogin() {
+  if (!window.liff) return;
+  await liff.init({ liffId });
+  if (!liff.isLoggedIn()) {
+    liff.login();
     return false;
   }
+  return true;
 }
 
 // 🆕 自動分享模式檢測與處理
@@ -213,25 +178,14 @@ const defaultCard = {
   button_1_url: 'https://lin.ee/JLLIBlP',
   button_1_color: '#A4924A', // 按鈕顏色 
   s_button_text: '分享給好友',
-  s_button_url: `https://liff.line.me/${UNIFIED_LIFF.config.liffId}?pageId=M01001`, // 🔄 使用統一LIFF
+  s_button_url: 'https://liff.line.me/2007327814-BdWpj70m?pageId=M01001', // 初始值為 LIFF+頁面ID
   s_button_color: '#A4924B',
   card_alt_title: '我在呈璽/呈璽'
 };
 
-// 取得 LINE 頭像與名字 - 使用統一LIFF配置
-let liffProfile = UNIFIED_LIFF.profile;
-const liffId = UNIFIED_LIFF.config.liffId;
-
-// 🔄 統一LIFF系統：更新liffProfile引用
-function updateLiffProfile() {
-  liffProfile = UNIFIED_LIFF.profile;
-  console.log('🔄 更新liffProfile引用:', liffProfile);
-}
-
-// 🔄 修改：統一的LIFF初始化與登入
-async function initLiffAndLogin() {
-  return await initUnifiedLiff();
-}
+// 取得 LINE 頭像與名字
+let liffProfile = { displayName: '', pictureUrl: '', userId: '' };
+const liffId = '2007327814-BdWpj70m';
 
 // 🔄 修改：統一的用戶資訊顯示
 function renderLiffUserInfo(profile) {
@@ -2006,15 +1960,15 @@ async function shareToLine() {
           // 🔧 修復：只顯示分享卡扣除的10點，不顯示總扣除點數
           successMessage += `• 扣除分享點數：10點\n\n`;
           
-          // 🔧 修復：顯示詳細的賺取明細
+                      // 🔧 修復：顯示詳細的回饋明細
           if (shareResult.rewardDetails && shareResult.rewardDetails.length > 0) {
-            successMessage += '🎯 分享賺取點數明細：\n';
+            successMessage += '🎯 分享回饋點數明細：\n';
             shareResult.rewardDetails.forEach(detail => {
               const cardTypeText = detail.cardType === 'main' ? '分享卡' : '活動卡';
               const rewardText = `+${detail.reward.toFixed(0)}點`;
-              successMessage += `賺取(位置${detail.position + 1})-${cardTypeText}:${rewardText}\n`;
+              successMessage += `回饋(位置${detail.position + 1})-${cardTypeText}:${rewardText}\n`;
             });
-            successMessage += `總賺取點數:${shareResult.totalRewarded.toFixed(0)}點\n\n`;
+            successMessage += `總回饋點數:${shareResult.totalRewarded.toFixed(0)}點\n\n`;
           }
         }
         successMessage += '📝 請記得關閉本會員卡編修頁面';

@@ -10,24 +10,7 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     
-    <!-- 🔄 統一LIFF系統：設備檢測與初始化 -->
-    <script>
-        // 設備檢測
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-        const isInLineApp = navigator.userAgent.includes('Line/');
-        
-        console.log('🔍 設備檢測:', { isMobile, isInLineApp, userAgent: navigator.userAgent, windowWidth: window.innerWidth });
-        
-        // 統一LIFF配置
-        window.UNIFIED_LIFF_CONFIG = {
-            liffId: '2007327814-BdWpj70m', // 統一使用桌面版LIFF ID
-            isMobile: isMobile,
-            isInLineApp: isInLineApp,
-            deviceType: isMobile ? 'mobile' : 'desktop'
-        };
-        
-        console.log('⚙️ 統一LIFF配置:', window.UNIFIED_LIFF_CONFIG);
-    </script>
+
     
     <style>
         body { 
