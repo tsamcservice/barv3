@@ -80,24 +80,25 @@
 
 #### **方案A：桌機版 → 手機版LIFF橋接 (推薦)**
 ```javascript
-// 桌機版分享功能
-function shareFromDesktop(pageId, userId) {
-  const shareData = {
-    pageId: pageId,
-    userId: userId,
-    timestamp: Date.now(),
-    action: 'shareTargetPicker'
+// 桌機版分享核心邏輯
+function shareFromDesktop(cardData) {
+  // 1. 準備分享資料
+  const sharePackage = {
+    action: 'shareTargetPicker',
+    cardData: cardData,
+    userId: getCurrentUserId(),
+    timestamp: Date.now()
   };
   
-  // 開啟手機版LIFF視窗
+  // 2. 開啟手機版LIFF橋接視窗
   const shareWindow = window.open(
-    `https://liff.line.me/2007327814-BdWpj70m?action=share&data=${encodeURIComponent(JSON.stringify(shareData))}`,
-    'lineShare',
-    'width=400,height=600'
+    `https://liff.line.me/2007327814-BdWpj70m?bridgeShare=${encodeData(sharePackage)}`,
+    'liffShare',
+    'width=400,height=600,scrollbars=yes'
   );
   
-  // 監聽分享完成
-  window.addEventListener('message', handleShareComplete);
+  // 3. 監聽分享完成
+  window.addEventListener('message', handleShareResult);
 }
 ```
 
@@ -201,3 +202,15 @@ CREATE TABLE cards (
 
 *最後更新：2025-06-23*
 *版本：v20250623* 
+
+📁 新建文件：
+├── public/member-card-desktop.html    (桌機版主頁面)
+├── public/js/member-card-desktop.js   (桌機版邏輯)
+├── public/css/desktop-style.css       (桌機版樣式)
+└── pages/api/desktop-auth.js          (多元登入API)
+
+🔧 功能開發：
+├── 多元登入系統 (LINE/Google/Email)
+├── P、A開頭活動卡管理
+├── 進階編輯功能
+└── 資料庫API擴展 
