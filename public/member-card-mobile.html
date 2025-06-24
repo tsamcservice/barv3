@@ -519,6 +519,214 @@
             font-weight: bold;
             z-index: 1001;
         }
+        
+        /* 📱 手機版頁籤樣式 */
+        .mobile-tabs {
+            display: flex;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab-btn:not(.active) {
+            color: #666;
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+        }
+        
+        .tab-btn:not(.active):hover {
+            background: #f8f9fa;
+            color: #4caf50;
+        }
+        
+        .tab-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .tab-text {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* 頁籤內容 */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 美化表單樣式 */
+        .field-hint {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #4caf50;
+        }
+        
+        .field-hint-inline {
+            color: #999;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        
+        /* 附加卡片區域美化 */
+        .add-promo-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .add-promo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76,175,80,0.3);
+        }
+        
+        .add-promo-btn span {
+            font-size: 18px;
+        }
+        
+        .promo-hint {
+            margin: 16px 0;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px dashed #ddd;
+        }
+        
+        /* 預覽區域美化 */
+        .preview-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .share-btn {
+            background: linear-gradient(135deg, #00c300, #00a000);
+            color: white;
+        }
+        
+        .save-btn {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        /* JSON區域美化 */
+        .json-section {
+            margin-top: 20px;
+        }
+        
+        .json-toggle {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .toggle-btn {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-btn:hover {
+            background: #e9ecef;
+            color: #4caf50;
+            border-color: #4caf50;
+        }
+        
+        /* 手機版特別優化 */
+        @media (max-width: 768px) {
+            .mobile-tabs {
+                margin: 16px 8px 20px 8px;
+            }
+            
+            .tab-btn {
+                padding: 12px 4px;
+            }
+            
+            .tab-icon {
+                font-size: 18px;
+            }
+            
+            .tab-text {
+                font-size: 11px;
+            }
+            
+            .preview-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .action-btn {
+                padding: 14px;
+                font-size: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -539,179 +747,207 @@
 
     
     <div class="container">
-        <!-- 📝 第一區：基本資料 -->
-        <div class="form-section">
-            <h2 class="section-title">📝 基本資料設定</h2>
-            <div class="liff-user" id="liffUser"></div>
-            <form id="cardForm">
-                <div class="form-group">
-                    <label>卡片預覽標題(前/後台皆可改)</label>
-                    <input type="text" id="card_alt_title" name="card_alt_title">
-                </div>
-                <div class="form-group">
-                    <label>主圖 <span style="color:#999;font-size:12px;font-weight:normal;">(建議圖片比例1:1)</span></label>
-                    <input type="url" id="main_image_url" name="main_image_url">
-                    <div class="image-upload-group">
-                        <button type="button" class="select-btn" id="main_image_select_btn">圖片庫</button>
-                        <input type="file" id="main_image_upload" accept="image/*">
-                        <button type="button" id="main_image_upload_btn">上傳</button>
+        <!-- 📱 手機版頁籤導航 -->
+        <div class="mobile-tabs">
+            <button class="tab-btn active" data-tab="text-image">
+                <div class="tab-icon">📝</div>
+                <div class="tab-text">文字圖片</div>
+            </button>
+            <button class="tab-btn" data-tab="promo-cards">
+                <div class="tab-icon">🎨</div>
+                <div class="tab-text">附加卡片</div>
+            </button>
+            <button class="tab-btn" data-tab="preview">
+                <div class="tab-icon">👀</div>
+                <div class="tab-text">卡片預覽</div>
+            </button>
+        </div>
 
+        <!-- 📝 第一頁：文字圖片區 -->
+        <div class="tab-content active" id="tab-text-image">
+            <div class="form-section">
+                <div class="liff-user" id="liffUser"></div>
+                <form id="cardForm">
+                    <div class="form-group">
+                        <label>卡片預覽標題</label>
+                        <div class="field-hint">未開啟前的文字標題，內定為主標題/會員名字</div>
+                        <input type="text" id="card_alt_title" name="card_alt_title">
                     </div>
-                    <img id="main_image_preview" class="image-preview">
-                    <div class="image-info" id="main_image_info"></div>
-                </div>
-                <div class="form-group">
-                    <label>主圖前雪花動畫 <span style="color:#999;font-size:12px;font-weight:normal;">(建議去背動態PNG，比例1:1)</span></label>
-                    <input type="url" id="snow_image_url" name="snow_image_url">
-                    <div class="image-upload-group">
-                        <button type="button" class="select-btn" id="snow_image_select_btn">圖片庫</button>
+                    
+                    <div class="form-group">
+                        <label>主圖 <span class="field-hint-inline">(建議圖片比例1:1)</span></label>
+                        <input type="url" id="main_image_url" name="main_image_url">
+                        <div class="image-upload-group">
+                            <button type="button" class="select-btn" id="main_image_select_btn">圖片庫</button>
+                            <input type="file" id="main_image_upload" accept="image/*">
+                            <button type="button" id="main_image_upload_btn">上傳</button>
+                        </div>
+                        <img id="main_image_preview" class="image-preview">
+                        <div class="image-info" id="main_image_info"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>主圖後連結</label>
+                        <input type="url" id="main_image_link" name="main_image_link">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>主標題</label>
+                        <input type="text" id="main_title_1" name="main_title_1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>主標題顏色</label>
+                        <input type="color" id="main_title_1_color" name="main_title_1_color" value="#000000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>副標題</label>
+                        <input type="text" id="main_title_2" name="main_title_2">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>副標題顏色</label>
+                        <input type="color" id="main_title_2_color" name="main_title_2_color" value="#000000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>會員圖片 <span class="field-hint-inline">(內定為LINE頭貼，建議比例1:1)</span></label>
+                        <input type="url" id="member_image_url" name="member_image_url">
+                        <div class="image-upload-group">
+                            <button type="button" class="select-btn" id="member_image_select_btn">圖片庫</button>
+                            <input type="file" id="member_image_upload" accept="image/*">
+                            <button type="button" id="member_image_upload_btn">上傳</button>
+                            <button type="button" class="line-profile-btn" id="member_line_profile_btn">使用LINE頭貼</button>
+                        </div>
+                        <img id="member_image_preview" class="image-preview">
+                        <div class="image-info" id="member_image_info"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>會員圖片後連結</label>
+                        <input type="url" id="member_image_link" name="member_image_link">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>會員名字</label>
+                        <input type="text" id="display_name" name="display_name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>會員名字顏色</label>
+                        <input type="color" id="name_color1" name="name_color1" value="#A4924C">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>按鈕文字</label>
+                        <input type="text" id="button_1_text" name="button_1_text">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>按鈕後連結</label>
+                        <input type="url" id="button_1_url" name="button_1_url">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>按鈕顏色</label>
+                        <input type="color" id="button_1_color" name="button_1_color" value="#A4924A">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>分享按鈕文字</label>
+                        <input type="text" id="s_button_text" name="s_button_text">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>分享按鈕顏色</label>
+                        <input type="color" id="s_button_color" name="s_button_color" value="#A4924B">
+                    </div>
+
+                    <!-- 隱藏欄位 - 保留功能但不顯示 -->
+                    <div style="display: none;">
+                        <input type="url" id="snow_image_url" name="snow_image_url">
                         <input type="file" id="snow_image_upload" accept="image/*">
+                        <button type="button" class="select-btn" id="snow_image_select_btn">圖片庫</button>
                         <button type="button" id="snow_image_upload_btn">上傳</button>
-                    </div>
-                    <img id="snow_image_preview" class="image-preview">
-                    <div class="image-info" id="snow_image_info"></div>
-                </div>
-                <div class="form-group">
-                    <label>主圖後連結</label>
-                    <input type="url" id="main_image_link" name="main_image_link">
-                </div>
-                <div class="form-group">
-                    <label>行事曆圖片 <span style="color:#999;font-size:12px;font-weight:normal;">(建議圖片比例1:1)</span></label>
-                    <input type="url" id="calendar_image_url" name="calendar_image_url">
-                    <div class="image-upload-group">
-                        <button type="button" class="select-btn" id="calendar_image_select_btn">圖片庫</button>
+                        <img id="snow_image_preview" class="image-preview">
+                        <div class="image-info" id="snow_image_info"></div>
+                        
+                        <input type="url" id="calendar_image_url" name="calendar_image_url">
                         <input type="file" id="calendar_image_upload" accept="image/*">
+                        <button type="button" class="select-btn" id="calendar_image_select_btn">圖片庫</button>
                         <button type="button" id="calendar_image_upload_btn">上傳</button>
-                    </div>
-                    <img id="calendar_image_preview" class="image-preview">
-                    <div class="image-info" id="calendar_image_info"></div>
-                </div>
-                <div class="form-group">
-                    <label>行事曆圖片後連結</label>
-                    <input type="url" id="calendar_image_link" name="calendar_image_link">
-                </div>
-                <div class="form-group">
-                    <label>行事曆下會員編號</label>
-                    <input type="text" id="amember_id" name="amember_id">
-                </div>
-                <div class="form-group">
-                    <label>愛心圖片 <span style="color:#999;font-size:12px;font-weight:normal;">(建議圖片比例1:1)</span></label>
-                    <input type="url" id="love_icon_url" name="love_icon_url">
-                    <div class="image-upload-group">
-                        <button type="button" class="select-btn" id="love_icon_select_btn">圖片庫</button>
+                        <img id="calendar_image_preview" class="image-preview">
+                        <div class="image-info" id="calendar_image_info"></div>
+                        <input type="url" id="calendar_image_link" name="calendar_image_link">
+                        
+                        <input type="text" id="amember_id" name="amember_id">
+                        
+                        <input type="url" id="love_icon_url" name="love_icon_url">
                         <input type="file" id="love_icon_upload" accept="image/*">
+                        <button type="button" class="select-btn" id="love_icon_select_btn">圖片庫</button>
                         <button type="button" id="love_icon_upload_btn">上傳</button>
+                        <img id="love_icon_preview" class="image-preview">
+                        <div class="image-info" id="love_icon_info"></div>
+                        <input type="url" id="love_icon_link" name="love_icon_link">
+                        
+                        <input type="text" id="pageview" name="pageview">
+                        <input type="url" id="s_button_url" name="s_button_url" readonly>
                     </div>
-                    <img id="love_icon_preview" class="image-preview">
-                    <div class="image-info" id="love_icon_info"></div>
-                </div>
-                <div class="form-group">
-                    <label>愛心圖片後連結</label>
-                    <input type="url" id="love_icon_link" name="love_icon_link">
-                </div>
-                <div class="form-group">
-                    <label>愛心圖片下號碼</label>
-                    <input type="text" id="pageview" name="pageview">
-                </div>
-                <div class="form-group">
-                    <label>主標題</label>
-                    <input type="text" id="main_title_1" name="main_title_1">
-                </div>
-                <div class="form-group">
-                    <label>主標題顏色</label>
-                    <input type="color" id="main_title_1_color" name="main_title_1_color" value="#000000">
-                </div>
-                <div class="form-group">
-                    <label>副標題</label>
-                    <input type="text" id="main_title_2" name="main_title_2">
-                </div>
-                <div class="form-group">
-                    <label>副標題顏色</label>
-                    <input type="color" id="main_title_2_color" name="main_title_2_color" value="#000000">
-                </div>
-                <div class="form-group">
-                    <label>會員圖片 <span style="color:#999;font-size:12px;font-weight:normal;">(內定為LINE頭貼，建議比例1:1)</span></label>
-                    <input type="url" id="member_image_url" name="member_image_url">
-                    <div class="image-upload-group">
-                        <button type="button" class="select-btn" id="member_image_select_btn">圖片庫</button>
-                        <input type="file" id="member_image_upload" accept="image/*">
-                        <button type="button" id="member_image_upload_btn">上傳</button>
-                        <button type="button" class="line-profile-btn" id="member_line_profile_btn">使用LINE頭貼</button>
-                    </div>
-                    <img id="member_image_preview" class="image-preview">
-                    <div class="image-info" id="member_image_info"></div>
-                </div>
-                <div class="form-group">
-                    <label>會員圖片後連結</label>
-                    <input type="url" id="member_image_link" name="member_image_link">
-                </div>
-                <div class="form-group">
-                    <label>會員名字</label>
-                    <input type="text" id="display_name" name="display_name">
-                </div>
-                <div class="form-group">
-                    <label>會員名字顏色</label>
-                    <input type="color" id="name_color1" name="name_color1" value="#A4924C">
-                </div>
-                <div class="form-group">
-                    <label>按鈕文字</label>
-                    <input type="text" id="button_1_text" name="button_1_text">
-                </div>
-                <div class="form-group">
-                    <label>按鈕後連結</label>
-                    <input type="url" id="button_1_url" name="button_1_url">
-                </div>
-                <div class="form-group">
-                    <label>按鈕顏色</label>
-                    <input type="color" id="button_1_color" name="button_1_color" value="#A4924A">
-                </div>
-                <div class="form-group">
-                    <label>分享按鈕文字</label>
-                    <input type="text" id="s_button_text" name="s_button_text">
-                </div>
-                <div class="form-group">
-                    <label>分享按鈕後連結</label>
-                    <input type="url" id="s_button_url" name="s_button_url" readonly>
-                </div>
-                <div class="form-group">
-                    <label>分享按鈕顏色</label>
-                    <input type="color" id="s_button_color" name="s_button_color" value="#A4924B">
-                </div>
-                <button type="submit" class="save-button">儲存卡片</button>
-            </form>
-        </div>
-        
-        <!-- 🎨 第二區：附加卡片 -->
-        <div class="promo-section">
-            <h2 class="section-title">🎨 附加卡片管理</h2>
-            <div class="promo-controls">
-                <button type="button" id="toggle-promo-selector" style="padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;">點選加入 &gt;&gt;</button>
-            </div>
-            <div class="promo-selector">
-                <div id="promo-card-selector" class="promo-list" style="display:none;"></div>
-            </div>
-            <div class="promo-selected">
-                <div style="margin:12px 0;text-align:center;color:#666;font-size:14px;">📱 拖拉卡片左右排序</div>
-                <div id="promo-cards" class="promo-list"></div>
+                    
+                    <button type="submit" class="save-button">💾 儲存卡片</button>
+                </form>
             </div>
         </div>
 
-        <!-- 👀 第三區：預覽區域 -->
-        <div class="preview-section">
-            <h2 class="section-title">👀 卡片預覽</h2>
-            <div class="preview-container">
-                <div id="main-card-preview">
-                    <div class="chatbox">
-                        <!-- flex2html內容將插入這裡 -->
-                    </div>
+        <!-- 🎨 第二頁：附加卡片區 -->
+        <div class="tab-content" id="tab-promo-cards">
+            <div class="promo-section">
+                <div class="promo-controls">
+                    <button type="button" id="toggle-promo-selector" class="add-promo-btn">
+                        <span>➕</span> 點選加入附加卡片
+                    </button>
+                </div>
+                <div class="promo-selector">
+                    <div id="promo-card-selector" class="promo-list" style="display:none;"></div>
+                </div>
+                <div class="promo-selected">
+                    <div class="promo-hint">📱 拖拉卡片左右排序</div>
+                    <div id="promo-cards" class="promo-list"></div>
                 </div>
             </div>
         </div>
-        
-        <!-- 💾 第四區：JSON資料 -->
-        <div class="preview-section">
-            <h2 class="section-title">💾 JSON 資料</h2>
-            <div id="shareJsonBox"></div>
+
+        <!-- 👀 第三頁：卡片預覽區 -->
+        <div class="tab-content" id="tab-preview">
+            <div class="preview-section">
+                <div class="preview-actions">
+                    <button type="button" onclick="shareToLine()" class="action-btn share-btn">
+                        📱 分享到LINE
+                    </button>
+                    <button type="button" onclick="document.getElementById('cardForm').dispatchEvent(new Event('submit'))" class="action-btn save-btn">
+                        💾 儲存卡片
+                    </button>
+                </div>
+                
+                <div class="preview-container">
+                    <div id="main-card-preview">
+                        <div class="chatbox">
+                            <!-- flex2html內容將插入這裡 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- JSON資料區域 -->
+                <div class="json-section">
+                    <div class="json-toggle">
+                        <button type="button" id="toggle-json" class="toggle-btn">
+                            📋 顯示/隱藏 JSON 資料
+                        </button>
+                    </div>
+                    <div id="shareJsonBox" style="display: none;"></div>
+                </div>
+            </div>
         </div>
     </div>
     

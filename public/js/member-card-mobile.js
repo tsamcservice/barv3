@@ -3661,12 +3661,137 @@ async function initGeneralMode() {
   }
 }
 
+// 📱 手機版頁籤切換功能
+function initMobileTabs() {
+  console.log('📱 初始化手機版頁籤功能...');
+  
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+  
+  // 頁籤按鈕點擊事件
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.getAttribute('data-tab');
+      switchTab(targetTab);
+    });
+  });
+  
+  // JSON顯示/隱藏按鈕
+  const toggleJsonBtn = document.getElementById('toggle-json');
+  if (toggleJsonBtn) {
+    toggleJsonBtn.addEventListener('click', () => {
+      const jsonBox = document.getElementById('shareJsonBox');
+      if (jsonBox) {
+        if (jsonBox.style.display === 'none') {
+          jsonBox.style.display = 'block';
+          toggleJsonBtn.textContent = '📋 隱藏 JSON 資料';
+        } else {
+          jsonBox.style.display = 'none';
+          toggleJsonBtn.textContent = '📋 顯示 JSON 資料';
+        }
+      }
+    });
+  }
+}
+
+// 切換頁籤功能
+function switchTab(tabName) {
+  console.log('🔄 切換到頁籤:', tabName);
+  
+  // 移除所有active類別
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.remove('active');
+  });
+  
+  // 添加active類別到目標頁籤
+  const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
+  const targetContent = document.getElementById(`tab-${tabName}`);
+  
+  if (targetBtn && targetContent) {
+    targetBtn.classList.add('active');
+    targetContent.classList.add('active');
+    
+    // 特殊處理：切換到預覽頁時更新預覽
+    if (tabName === 'preview') {
+      setTimeout(() => {
+        console.log('🔄 更新預覽內容...');
+        renderPreview();
+        renderShareJsonBox();
+      }, 300); // 等待動畫完成
+    }
+  }
+}
+
+// 🆕 手機版快速導航功能
+function initMobileNavigation() {
+  // 添加鍵盤快捷鍵（開發用）
+  if (MOBILE_FEATURES.debugMode) {
+    document.addEventListener('keydown', (e) => {
+      if (e.altKey) {
+        switch(e.key) {
+          case '1':
+            switchTab('text-image');
+            e.preventDefault();
+            break;
+          case '2':
+            switchTab('promo-cards');
+            e.preventDefault();
+            break;
+          case '3':
+            switchTab('preview');
+            e.preventDefault();
+            break;
+        }
+      }
+    });
+  }
+  
+  // 滑動手勢支援（簡單版本）
+  if (MOBILE_FEATURES.touchOptimization) {
+    let startX = 0;
+    let currentTab = 0;
+    const tabs = ['text-image', 'promo-cards', 'preview'];
+    
+    document.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+    });
+    
+    document.addEventListener('touchend', (e) => {
+      const endX = e.changedTouches[0].clientX;
+      const diffX = startX - endX;
+      
+      // 滑動距離超過100px才觸發
+      if (Math.abs(diffX) > 100) {
+        if (diffX > 0 && currentTab < tabs.length - 1) {
+          // 向左滑動，下一頁
+          currentTab++;
+          switchTab(tabs[currentTab]);
+        } else if (diffX < 0 && currentTab > 0) {
+          // 向右滑動，上一頁
+          currentTab--;
+          switchTab(tabs[currentTab]);
+        }
+      }
+    });
+  }
+}
+
 // 🔄 頁面載入完成後執行手機版專用初始化
 document.addEventListener('DOMContentLoaded', function() {
   console.log('📄 DOM載入完成，啟動手機版會員卡系統...');
   
   // 🆕 手機版專用初始化檢查
   initMobileVersionCheck();
+  
+  // 🆕 初始化手機版頁籤功能
+  initMobileTabs();
+  
+  // 🆕 初始化手機版導航功能
+  initMobileNavigation();
   
   // 延遲執行確保LIFF SDK完全載入
   setTimeout(() => {
