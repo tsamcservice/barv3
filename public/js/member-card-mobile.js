@@ -916,8 +916,30 @@ async function fillAllFieldsWithProfile() {
         }
       }
       renderLiffUserInfo(profile);
-    } catch (e) {}
+      
+      // 🔧 關鍵修復：載入用戶的個人卡片資料
+      console.log('🔄 嘗試載入用戶個人卡片資料...');
+      const pageId = 'M01001';
+      const personalCard = await loadPersonalCard(pageId, profile.userId);
+      
+      if (personalCard) {
+        console.log('✅ 找到用戶個人卡片，填充資料:', personalCard);
+        fillFormWithData(personalCard);
+        
+        // 🔧 關鍵：如果有card_order，暫存到window.pendingCardData
+        if (personalCard.card_order) {
+          console.log('📋 暫存card_order資料:', personalCard.card_order);
+          window.pendingCardData = personalCard;
+        }
+      } else {
+        console.log('⚠️ 未找到用戶個人卡片，使用預設資料');
+      }
+      
+    } catch (e) {
+      console.error('❌ 載入用戶資料失敗:', e);
+    }
   }
+  
   // 分享按鈕後連結自動帶入 LIFF 連結（含 pageId 與 userId）
   const pageId = 'M01001';
   let liffShareUrl = `https://liff.line.me/${liffId}?pageId=${pageId}`;
@@ -3885,71 +3907,11 @@ function initMobileNavigation() {
     });
   }
   
-  // 滑動手勢支援（簡單版本）
-  if (MOBILE_FEATURES.touchOptimization) {
-    let startX = 0;
-    let currentTab = 0;
-    const tabs = ['text-image', 'promo-cards', 'preview'];
-    
-    document.addEventListener('touchstart', (e) => {
-      startX = e.touches[0].clientX;
-    });
-    
-    document.addEventListener('touchend', (e) => {
-      const endX = e.changedTouches[0].clientX;
-      const diffX = startX - endX;
-      
-      // 滑動距離超過100px才觸發
-      if (Math.abs(diffX) > 100) {
-        if (diffX > 0 && currentTab < tabs.length - 1) {
-          // 向左滑動，下一頁
-          currentTab++;
-          switchTab(tabs[currentTab]);
-        } else if (diffX < 0 && currentTab > 0) {
-          // 向右滑動，上一頁
-          currentTab--;
-          switchTab(tabs[currentTab]);
-        }
-      }
-    });
-  }
+  // 🚫 移除滑動手勢功能，避免與內容滑動衝突
+  console.log('📱 手機版導航初始化完成 (已移除滑動手勢功能)');
 }
 
-// 🎨 初始化顏色預覽功能
-function initColorPreviews() {
-  console.log('🎨 初始化顏色預覽功能...');
-  
-  const colorInputs = [
-    { input: 'main_title_1_color', preview: 'main_title_1_preview_block' },
-    { input: 'main_title_2_color', preview: 'main_title_2_preview_block' },
-    { input: 'name_color1', preview: 'name_color1_preview_block' },
-    { input: 'button_1_color', preview: 'button_1_color_preview_block' },
-    { input: 's_button_color', preview: 's_button_color_preview_block' }
-  ];
-  
-  colorInputs.forEach(({ input, preview }) => {
-    const colorInput = document.getElementById(input);
-    const previewBlock = document.getElementById(preview);
-    
-    if (colorInput && previewBlock) {
-      // 初始化預覽顏色
-      previewBlock.style.backgroundColor = colorInput.value;
-      
-      // 監聽顏色變化
-      colorInput.addEventListener('input', (e) => {
-        previewBlock.style.backgroundColor = e.target.value;
-        console.log(`🎨 更新顏色預覽 ${input}:`, e.target.value);
-      });
-      
-      colorInput.addEventListener('change', (e) => {
-        previewBlock.style.backgroundColor = e.target.value;
-        console.log(`🎨 確認顏色選擇 ${input}:`, e.target.value);
-      });
-    }
-  });
-  
-  console.log('✅ 顏色預覽功能初始化完成');
-}
+// 🎨 顏色選擇器已簡化為直接使用input[type="color"]，不需要額外的預覽功能
 
 // 🔄 頁面載入完成後執行手機版專用初始化
 document.addEventListener('DOMContentLoaded', function() {
@@ -3963,9 +3925,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 🆕 初始化手機版導航功能
   initMobileNavigation();
-  
-  // 🆕 初始化顏色預覽功能
-  initColorPreviews();
   
   // 延遲執行確保LIFF SDK完全載入
   setTimeout(() => {
