@@ -34,11 +34,21 @@ function updateDeviceIndicator() {
   
   // 檢查LIFF登入狀態
   let isLoggedIn = false;
-  if (window.liff && liff.isLoggedIn && liff.isLoggedIn()) {
-    isLoggedIn = true;
-  }
+  let status = '載入中';
   
-  const status = isLoggedIn ? '已登入' : '未登入';
+  if (window.liff && typeof liff.isLoggedIn === 'function') {
+    try {
+      isLoggedIn = liff.isLoggedIn();
+      status = isLoggedIn ? '已登入' : '未登入';
+    } catch (e) {
+      status = '檢查中';
+      console.warn('LIFF狀態檢查錯誤:', e);
+    }
+  } else if (window.liff) {
+    status = 'LIFF初始化中';
+  } else {
+    status = 'LIFF未載入';
+  }
   
   // 手機版專用顯示邏輯
   let displayText = '';
@@ -390,6 +400,23 @@ function initMobileVersionCheck() {
   console.log('📱 LIFF ID:', liffId);
   console.log('🔧 功能開關:', MOBILE_FEATURES);
   
+  // 添加全域錯誤處理 - 避免Chrome擴展錯誤影響頁面
+  window.addEventListener('error', (event) => {
+    if (event.message && event.message.includes('runtime.lastError')) {
+      console.log('🔇 忽略Chrome擴展錯誤:', event.message);
+      event.preventDefault();
+      return false;
+    }
+  });
+  
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason && event.reason.message && event.reason.message.includes('message channel closed')) {
+      console.log('🔇 忽略Chrome擴展Promise錯誤:', event.reason.message);
+      event.preventDefault();
+      return false;
+    }
+  });
+  
   // 檢查必要元素
   const requiredElements = [
     'deviceIndicator',
@@ -415,6 +442,17 @@ function initMobileVersionCheck() {
   // 初始化設備指示器
   if (MOBILE_FEATURES.deviceDetection) {
     updateDeviceIndicator();
+    
+    // 每3秒更新一次，直到LIFF載入完成
+    const updateInterval = setInterval(() => {
+      updateDeviceIndicator();
+      
+      // 如果LIFF已載入且狀態確定，改為較低頻率更新
+      if (window.liff && typeof liff.isLoggedIn === 'function') {
+        clearInterval(updateInterval);
+        setInterval(updateDeviceIndicator, 30000); // 30秒更新一次
+      }
+    }, 3000);
   }
 }
 
@@ -3668,10 +3706,17 @@ function initMobileTabs() {
   const tabBtns = document.querySelectorAll('.tab-btn');
   const tabContents = document.querySelectorAll('.tab-content');
   
+  console.log('🔍 找到頁籤按鈕數量:', tabBtns.length);
+  console.log('🔍 找到頁籤內容數量:', tabContents.length);
+  
   // 頁籤按鈕點擊事件
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetTab = btn.getAttribute('data-tab');
+  tabBtns.forEach((btn, index) => {
+    const targetTab = btn.getAttribute('data-tab');
+    console.log(`🔗 綁定頁籤 ${index + 1}:`, targetTab);
+    
+    btn.addEventListener('click', (e) => {
+      console.log('🖱️ 頁籤被點擊:', targetTab);
+      e.preventDefault();
       switchTab(targetTab);
     });
   });
@@ -3679,6 +3724,7 @@ function initMobileTabs() {
   // JSON顯示/隱藏按鈕
   const toggleJsonBtn = document.getElementById('toggle-json');
   if (toggleJsonBtn) {
+    console.log('✅ 找到JSON切換按鈕');
     toggleJsonBtn.addEventListener('click', () => {
       const jsonBox = document.getElementById('shareJsonBox');
       if (jsonBox) {
@@ -3691,7 +3737,17 @@ function initMobileTabs() {
         }
       }
     });
+  } else {
+    console.log('⚠️ 未找到JSON切換按鈕');
   }
+  
+  // 確認初始狀態
+  setTimeout(() => {
+    const activeTab = document.querySelector('.tab-btn.active');
+    const activeContent = document.querySelector('.tab-content.active');
+    console.log('📊 初始活動頁籤:', activeTab ? activeTab.getAttribute('data-tab') : '無');
+    console.log('📊 初始活動內容:', activeContent ? activeContent.id : '無');
+  }, 100);
 }
 
 // 切換頁籤功能
@@ -3699,11 +3755,16 @@ function switchTab(tabName) {
   console.log('🔄 切換到頁籤:', tabName);
   
   // 移除所有active類別
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  const allBtns = document.querySelectorAll('.tab-btn');
+  const allContents = document.querySelectorAll('.tab-content');
+  
+  console.log('🔄 移除所有active類別 - 按鈕:', allBtns.length, '內容:', allContents.length);
+  
+  allBtns.forEach(btn => {
     btn.classList.remove('active');
   });
   
-  document.querySelectorAll('.tab-content').forEach(content => {
+  allContents.forEach(content => {
     content.classList.remove('active');
   });
   
@@ -3711,18 +3772,31 @@ function switchTab(tabName) {
   const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
   const targetContent = document.getElementById(`tab-${tabName}`);
   
+  console.log('🎯 目標按鈕:', targetBtn ? '找到' : '未找到');
+  console.log('🎯 目標內容:', targetContent ? '找到' : '未找到');
+  
   if (targetBtn && targetContent) {
     targetBtn.classList.add('active');
     targetContent.classList.add('active');
+    
+    console.log('✅ 頁籤切換完成:', tabName);
     
     // 特殊處理：切換到預覽頁時更新預覽
     if (tabName === 'preview') {
       setTimeout(() => {
         console.log('🔄 更新預覽內容...');
-        renderPreview();
-        renderShareJsonBox();
+        try {
+          renderPreview();
+          renderShareJsonBox();
+        } catch (e) {
+          console.error('❌ 預覽更新失敗:', e);
+        }
       }, 300); // 等待動畫完成
     }
+  } else {
+    console.error('❌ 頁籤切換失敗 - 找不到目標元素');
+    console.error('   按鈕選擇器:', `[data-tab="${tabName}"]`);
+    console.error('   內容選擇器:', `tab-${tabName}`);
   }
 }
 
