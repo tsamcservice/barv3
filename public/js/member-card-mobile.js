@@ -1,9 +1,29 @@
+// 🚀 手機版會員卡系統 - v20250624
+// LIFF ID: 2007327814-DGly5XNk (手機版專用)
+// 更新日期: 2025-06-24
+
+// 版本標識
+const VERSION_TAG = 'MOBILE-v20250624';
+const IS_MOBILE_VERSION = true;
+
+// 手機版功能開關
+const MOBILE_FEATURES = {
+  enhancedUI: true,           // 手機版UI優化
+  bridgeShare: true,          // 橋接分享準備
+  deviceDetection: true,      // 設備檢測
+  debugMode: true,           // 開發期間的調試模式
+  touchOptimization: true    // 觸控優化
+};
+
+console.log(`🚀 啟動手機版會員卡系統 ${VERSION_TAG}`);
+console.log('📱 LIFF ID:', '2007327814-DGly5XNk');
+
 // 版本標記函數
 function createVersionTag() {
   return 'v20250623-MOBILE-BASE';
 }
 
-// 🆕 設備指示器更新（保留登入狀況顯示）
+// 🆕 手機版設備指示器更新
 function updateDeviceIndicator() {
   const indicator = document.getElementById('deviceIndicator');
   if (!indicator) return;
@@ -20,8 +40,71 @@ function updateDeviceIndicator() {
   
   const status = isLoggedIn ? '已登入' : '未登入';
   
-  indicator.textContent = `${deviceType === 'mobile' ? '📱' : '💻'} ${deviceType.toUpperCase()} | ${isInLineApp ? 'LINE內' : 'LINE外'} | ${status}`;
-  indicator.style.background = isLoggedIn ? 'rgba(76, 175, 80, 0.9)' : 'rgba(255, 152, 0, 0.9)';
+  // 手機版專用顯示邏輯
+  let displayText = '';
+  let bgColor = '';
+  
+  if (isMobile) {
+    displayText = `📱 手機版 | ${isInLineApp ? 'LINE內' : 'LINE外'} | ${status}`;
+    bgColor = isLoggedIn ? 'rgba(76, 175, 80, 0.9)' : 'rgba(255, 152, 0, 0.9)';
+  } else {
+    displayText = `💻 桌機版 | ⚠️ 建議使用手機 | ${status}`;
+    bgColor = 'rgba(244, 67, 54, 0.9)'; // 紅色警告
+  }
+  
+  indicator.textContent = displayText;
+  indicator.style.background = bgColor;
+  
+  // 手機版專用：非手機設備顯示提示
+  if (MOBILE_FEATURES.deviceDetection && !isMobile) {
+    showNonMobileWarning();
+  }
+}
+
+// 非手機設備警告
+function showNonMobileWarning() {
+  if (document.getElementById('nonMobileWarning')) return; // 避免重複顯示
+  
+  const warning = document.createElement('div');
+  warning.id = 'nonMobileWarning';
+  warning.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(244, 67, 54, 0.95);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 10000;
+    max-width: 300px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+  
+  warning.innerHTML = `
+    <h3 style="margin: 0 0 10px 0;">📱 手機版專用</h3>
+    <p style="margin: 0 0 15px 0;">此頁面專為手機設計<br>建議使用手機瀏覽器開啟</p>
+    <button onclick="this.parentElement.remove()" style="
+      background: white;
+      color: #f44336;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    ">我知道了</button>
+  `;
+  
+  document.body.appendChild(warning);
+  
+  // 5秒後自動隱藏
+  setTimeout(() => {
+    if (warning.parentElement) {
+      warning.remove();
+    }
+  }, 5000);
 }
 
 // LIFF 初始化與登入（恢復原始版本）
@@ -39,8 +122,16 @@ async function initLiffAndLogin() {
 async function handleAutoShareMode() {
   const pageId = getQueryParam('pageId');
   const userId = getQueryParam('userId');
+  const bridgeShare = getQueryParam('bridgeShare');
   
-  console.log('🔍 檢查自動分享模式:', { pageId, userId });
+  console.log('🔍 檢查自動分享模式:', { pageId, userId, bridgeShare: !!bridgeShare });
+  
+  // 🆕 橋接分享模式檢測
+  if (bridgeShare && MOBILE_FEATURES.bridgeShare) {
+    console.log('🌉 進入橋接分享模式');
+    await handleBridgeShare(bridgeShare);
+    return true;
+  }
   
   if (pageId && !userId) {
     console.log('📤 進入自動分享模式，頁面ID:', pageId);
@@ -49,6 +140,184 @@ async function handleAutoShareMode() {
   }
   
   return false;
+}
+
+// 🆕 橋接分享處理
+async function handleBridgeShare(bridgeData) {
+  try {
+    console.log('🌉 處理橋接分享請求...');
+    
+    // 解析橋接資料
+    let sharePackage;
+    try {
+      sharePackage = JSON.parse(decodeURIComponent(bridgeData));
+      console.log('📦 橋接分享資料包:', sharePackage);
+    } catch (e) {
+      throw new Error('橋接資料解析失敗');
+    }
+    
+    // 驗證資料包
+    if (!sharePackage.action || sharePackage.action !== 'bridgeShare') {
+      throw new Error('無效的橋接請求');
+    }
+    
+    if (!sharePackage.flexMessage || !sharePackage.altText) {
+      throw new Error('缺少必要的分享資料');
+    }
+    
+    // 顯示橋接分享介面
+    showBridgeShareInterface(sharePackage);
+    
+    // 執行LIFF分享
+    await executeBridgeShare(sharePackage);
+    
+  } catch (error) {
+    console.error('❌ 橋接分享處理失敗:', error);
+    showBridgeShareError(error.message);
+  }
+}
+
+// 執行橋接分享
+async function executeBridgeShare(sharePackage) {
+  try {
+    // 確保LIFF已初始化
+    if (!window.liff) {
+      throw new Error('LIFF未載入');
+    }
+    
+    await liff.init({ liffId });
+    
+    if (!liff.isLoggedIn()) {
+      console.log('🔐 用戶未登入，啟動登入流程...');
+      liff.login();
+      return;
+    }
+    
+    console.log('📤 執行橋接分享...');
+    
+    // 使用shareTargetPicker分享
+    const result = await liff.shareTargetPicker([{
+      type: 'flex',
+      altText: sharePackage.altText,
+      contents: sharePackage.flexMessage
+    }]);
+    
+    console.log('✅ 橋接分享成功:', result);
+    
+    // 通知桌機版分享完成
+    notifyBridgeShareComplete(result);
+    
+  } catch (error) {
+    console.error('❌ 橋接分享執行失敗:', error);
+    notifyBridgeShareError(error.message);
+  }
+}
+
+// 通知桌機版分享完成
+function notifyBridgeShareComplete(result) {
+  if (window.opener) {
+    window.opener.postMessage({
+      type: 'shareComplete',
+      result: result,
+      timestamp: Date.now()
+    }, '*');
+    
+    // 顯示成功訊息並關閉視窗
+    showBridgeShareSuccess();
+    setTimeout(() => {
+      window.close();
+    }, 2000);
+  } else {
+    // 沒有父視窗，顯示成功訊息
+    showBridgeShareSuccess();
+  }
+}
+
+// 通知桌機版分享錯誤
+function notifyBridgeShareError(errorMessage) {
+  if (window.opener) {
+    window.opener.postMessage({
+      type: 'shareError',
+      error: errorMessage,
+      timestamp: Date.now()
+    }, '*');
+  }
+  
+  showBridgeShareError(errorMessage);
+}
+
+// 顯示橋接分享介面
+function showBridgeShareInterface(sharePackage) {
+  const container = document.querySelector('.container');
+  if (!container) return;
+  
+  // 隱藏原有內容
+  const sections = container.querySelectorAll('.form-section, .promo-section, .preview-section');
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // 創建橋接分享介面
+  const bridgeInterface = document.createElement('div');
+  bridgeInterface.id = 'bridgeShareInterface';
+  bridgeInterface.style.cssText = `
+    text-align: center;
+    padding: 40px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin: 20px 0;
+  `;
+  
+  bridgeInterface.innerHTML = `
+    <div style="font-size: 48px; margin-bottom: 20px;">🌉</div>
+    <h2 style="color: #333; margin-bottom: 10px;">橋接分享模式</h2>
+    <p style="color: #666; margin-bottom: 20px;">正在準備從桌機版分享到LINE...</p>
+    <div style="margin: 20px 0;">
+      <strong>分享內容：</strong>${sharePackage.altText}
+    </div>
+    <div id="bridgeShareStatus" style="
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin: 20px 0;
+      color: #666;
+    ">準備中...</div>
+  `;
+  
+  container.appendChild(bridgeInterface);
+}
+
+// 顯示橋接分享成功
+function showBridgeShareSuccess() {
+  const status = document.getElementById('bridgeShareStatus');
+  if (status) {
+    status.innerHTML = `
+      <div style="color: #4caf50; font-weight: bold;">
+        ✅ 分享成功！
+      </div>
+      <div style="margin-top: 10px; font-size: 14px;">
+        視窗將在2秒後自動關閉
+      </div>
+    `;
+    status.style.background = '#e8f5e8';
+  }
+}
+
+// 顯示橋接分享錯誤
+function showBridgeShareError(errorMessage) {
+  const status = document.getElementById('bridgeShareStatus');
+  if (status) {
+    status.innerHTML = `
+      <div style="color: #f44336; font-weight: bold;">
+        ❌ 分享失敗
+      </div>
+      <div style="margin-top: 10px; font-size: 14px;">
+        ${errorMessage}
+      </div>
+    `;
+    status.style.background = '#ffebee';
+  }
 }
 
 // 🆕 統一的自動分享處理
@@ -96,7 +365,15 @@ async function handleAutoShare(pageId) {
 
 // 🆕 響應式功能載入
 function loadResponsiveFeatures() {
-  const { isMobile } = UNIFIED_LIFF.config;
+  // 手機版強制載入手機功能
+  if (IS_MOBILE_VERSION) {
+    console.log('📱 手機版專用 - 載入手機功能...');
+    loadMobileFeatures();
+    return;
+  }
+  
+  // 備用邏輯（理論上不會執行到）
+  const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
   
   if (isMobile) {
     console.log('📱 載入手機版功能...');
@@ -107,25 +384,150 @@ function loadResponsiveFeatures() {
   }
 }
 
+// 🆕 手機版初始化檢查
+function initMobileVersionCheck() {
+  console.log(`🚀 手機版會員卡系統初始化 ${VERSION_TAG}`);
+  console.log('📱 LIFF ID:', liffId);
+  console.log('🔧 功能開關:', MOBILE_FEATURES);
+  
+  // 檢查必要元素
+  const requiredElements = [
+    'deviceIndicator',
+    'main-card-preview',
+    'cardForm'
+  ];
+  
+  const missingElements = requiredElements.filter(id => !document.getElementById(id));
+  
+  if (missingElements.length > 0) {
+    console.warn('⚠️ 缺少必要元素:', missingElements);
+  } else {
+    console.log('✅ 所有必要元素已就緒');
+  }
+  
+  // 檢查LIFF SDK
+  if (window.liff) {
+    console.log('✅ LIFF SDK已載入');
+  } else {
+    console.error('❌ LIFF SDK未載入');
+  }
+  
+  // 初始化設備指示器
+  if (MOBILE_FEATURES.deviceDetection) {
+    updateDeviceIndicator();
+  }
+}
+
 // 🆕 手機版特殊功能
 function loadMobileFeatures() {
+  console.log('📱 載入手機版特殊功能...');
+  
   // 手機版特殊優化
   document.body.classList.add('mobile-mode');
   
-  // 調整輸入框樣式防止縮放
-  const inputs = document.querySelectorAll('input[type="text"], input[type="url"]');
-  inputs.forEach(input => {
-    input.style.fontSize = '16px';
-  });
-  
-  // 手機版預覽優化
-  const preview = document.getElementById('main-card-preview');
-  if (preview) {
-    preview.style.overflowX = 'scroll';
-    preview.addEventListener('touchstart', function(e) {
-      // 啟用觸控滑動
+  if (MOBILE_FEATURES.touchOptimization) {
+    // 調整輸入框樣式防止iOS縮放
+    const inputs = document.querySelectorAll('input[type="text"], input[type="url"], input[type="color"]');
+    inputs.forEach(input => {
+      input.style.fontSize = '16px'; // 防止iOS縮放
+      input.style.padding = '12px 8px'; // 增大觸控區域
+    });
+    
+    // 調整按鈕尺寸
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(button => {
+      if (button.offsetHeight < 44) { // Apple建議最小44px
+        button.style.minHeight = '44px';
+        button.style.padding = '12px 16px';
+      }
     });
   }
+  
+  if (MOBILE_FEATURES.enhancedUI) {
+    // 手機版預覽優化
+    const preview = document.getElementById('main-card-preview');
+    if (preview) {
+      preview.style.overflowX = 'auto';
+      preview.style.webkitOverflowScrolling = 'touch'; // iOS滑動優化
+      
+      // 觸控滑動提示
+      let touchStartX = 0;
+      let touchEndX = 0;
+      
+      preview.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        // 顯示滑動提示
+        showScrollHint();
+      });
+      
+      preview.addEventListener('touchend', function(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+      });
+      
+      function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = touchStartX - touchEndX;
+        
+        if (Math.abs(diff) > swipeThreshold) {
+          console.log('📱 檢測到滑動手勢:', diff > 0 ? '向左' : '向右');
+        }
+      }
+    }
+    
+    // 表單區域優化
+    const formSections = document.querySelectorAll('.form-section, .promo-section, .preview-section');
+    formSections.forEach(section => {
+      section.style.marginBottom = '16px';
+      section.style.padding = '16px';
+    });
+  }
+}
+
+// 滑動提示
+function showScrollHint() {
+  const hint = document.getElementById('scrollHint');
+  if (hint) return; // 已存在則不重複顯示
+  
+  const hintElement = document.createElement('div');
+  hintElement.id = 'scrollHint';
+  hintElement.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    z-index: 1000;
+    animation: fadeInOut 2s ease-in-out;
+  `;
+  hintElement.textContent = '👆 左右滑動查看完整卡片';
+  
+  // 添加CSS動畫
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      50% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    }
+  `;
+  document.head.appendChild(style);
+  
+  document.body.appendChild(hintElement);
+  
+  // 2秒後移除
+  setTimeout(() => {
+    if (hintElement.parentElement) {
+      hintElement.remove();
+    }
+    if (style.parentElement) {
+      style.remove();
+    }
+  }, 2000);
 }
 
 // 🆕 桌面版特殊功能
@@ -178,14 +580,14 @@ const defaultCard = {
   button_1_url: 'https://lin.ee/JLLIBlP',
   button_1_color: '#A4924A', // 按鈕顏色 
   s_button_text: '分享給好友',
-  s_button_url: 'https://liff.line.me/2007327814-BdWpj70m?pageId=M01001', // 初始值為 LIFF+頁面ID
+  s_button_url: 'https://liff.line.me/2007327814-DGly5XNk?pageId=M01001', // 🚀 手機版專用 LIFF+頁面ID
   s_button_color: '#A4924B',
   card_alt_title: '我在呈璽/呈璽'
 };
 
 // 取得 LINE 頭像與名字
 let liffProfile = { displayName: '', pictureUrl: '', userId: '' };
-const liffId = '2007327814-BdWpj70m';
+const liffId = '2007327814-DGly5XNk'; // 🚀 手機版專用LIFF ID
 
 // 🔄 修改：統一的用戶資訊顯示
 function renderLiffUserInfo(profile) {
@@ -3259,11 +3661,34 @@ async function initGeneralMode() {
   }
 }
 
-// 🔄 頁面載入完成後執行統一初始化
+// 🔄 頁面載入完成後執行手機版專用初始化
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('📄 DOM載入完成，啟動統一LIFF系統...');
+  console.log('📄 DOM載入完成，啟動手機版會員卡系統...');
+  
+  // 🆕 手機版專用初始化檢查
+  initMobileVersionCheck();
   
   // 延遲執行確保LIFF SDK完全載入
-  setTimeout(initUnifiedSystem, 500);
+  setTimeout(() => {
+    console.log('🚀 開始手機版統一LIFF系統初始化...');
+    initUnifiedSystem();
+  }, 500);
+  
+  // 🆕 視窗大小變化時更新設備指示器
+  window.addEventListener('resize', () => {
+    if (MOBILE_FEATURES.deviceDetection) {
+      updateDeviceIndicator();
+    }
+  });
+  
+  // 🆕 監聽來自桌機版的訊息（橋接分享）
+  window.addEventListener('message', (event) => {
+    console.log('📨 收到跨視窗訊息:', event.data);
+    
+    if (event.data.type === 'bridgeShareRequest') {
+      console.log('🌉 收到橋接分享請求');
+      handleBridgeShare(event.data.shareData);
+    }
+  });
 });
  
