@@ -15,6 +15,19 @@ const MOBILE_FEATURES = {
   touchOptimization: true    // 觸控優化
 };
 
+// 🆕 統一LIFF物件 - 手機版專用
+const UNIFIED_LIFF = {
+  isLoggedIn: false,
+  profile: {
+    userId: '',
+    displayName: '',
+    pictureUrl: ''
+  },
+  config: {
+    isMobile: true // 手機版固定為true
+  }
+};
+
 console.log(`🚀 啟動手機版會員卡系統 ${VERSION_TAG}`);
 console.log('📱 LIFF ID:', '2007327814-DGly5XNk');
 
@@ -3854,6 +3867,42 @@ function initMobileNavigation() {
   }
 }
 
+// 🎨 初始化顏色預覽功能
+function initColorPreviews() {
+  console.log('🎨 初始化顏色預覽功能...');
+  
+  const colorInputs = [
+    { input: 'main_title_1_color', preview: 'main_title_1_preview_block' },
+    { input: 'main_title_2_color', preview: 'main_title_2_preview_block' },
+    { input: 'name_color1', preview: 'name_color1_preview_block' },
+    { input: 'button_1_color', preview: 'button_1_color_preview_block' },
+    { input: 's_button_color', preview: 's_button_color_preview_block' }
+  ];
+  
+  colorInputs.forEach(({ input, preview }) => {
+    const colorInput = document.getElementById(input);
+    const previewBlock = document.getElementById(preview);
+    
+    if (colorInput && previewBlock) {
+      // 初始化預覽顏色
+      previewBlock.style.backgroundColor = colorInput.value;
+      
+      // 監聽顏色變化
+      colorInput.addEventListener('input', (e) => {
+        previewBlock.style.backgroundColor = e.target.value;
+        console.log(`🎨 更新顏色預覽 ${input}:`, e.target.value);
+      });
+      
+      colorInput.addEventListener('change', (e) => {
+        previewBlock.style.backgroundColor = e.target.value;
+        console.log(`🎨 確認顏色選擇 ${input}:`, e.target.value);
+      });
+    }
+  });
+  
+  console.log('✅ 顏色預覽功能初始化完成');
+}
+
 // 🔄 頁面載入完成後執行手機版專用初始化
 document.addEventListener('DOMContentLoaded', function() {
   console.log('📄 DOM載入完成，啟動手機版會員卡系統...');
@@ -3866,6 +3915,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 🆕 初始化手機版導航功能
   initMobileNavigation();
+  
+  // 🆕 初始化顏色預覽功能
+  initColorPreviews();
   
   // 延遲執行確保LIFF SDK完全載入
   setTimeout(() => {
