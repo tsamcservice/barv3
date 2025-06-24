@@ -3659,6 +3659,54 @@ function fillFormWithData(cardData) {
   console.log('✅ 表單資料填充完成');
 }
 
+// 🔄 統一LIFF初始化函數
+async function initUnifiedLiff() {
+  try {
+    console.log('🚀 開始LIFF初始化...');
+    
+    if (!window.liff) {
+      console.log('❌ LIFF SDK未載入');
+      return false;
+    }
+    
+    // 初始化LIFF
+    await liff.init({ liffId: '2007327814-DGly5XNk' });
+    console.log('✅ LIFF初始化成功');
+    
+    // 檢查登入狀態
+    if (!liff.isLoggedIn()) {
+      console.log('🔑 用戶未登入，跳轉至登入頁面');
+      liff.login();
+      return false;
+    }
+    
+    // 獲取用戶資料
+    const profile = await liff.getProfile();
+    console.log('👤 獲取用戶資料成功:', profile.displayName);
+    
+    // 更新UNIFIED_LIFF物件
+    UNIFIED_LIFF.isLoggedIn = true;
+    UNIFIED_LIFF.profile = {
+      userId: profile.userId,
+      displayName: profile.displayName,
+      pictureUrl: profile.pictureUrl
+    };
+    
+    // 更新全域變數（相容性）
+    window.liffProfile = profile;
+    
+    // 更新設備指示器
+    updateDeviceIndicator();
+    
+    return true;
+    
+  } catch (error) {
+    console.error('❌ LIFF初始化失敗:', error);
+    updateDeviceIndicator();
+    return false;
+  }
+}
+
 // 🔄 統一的主初始化函數
 async function initUnifiedSystem() {
   console.log('🚀 統一LIFF系統初始化開始...');

@@ -173,11 +173,38 @@
         
         <div id="status" class="status" style="display: none;"></div>
         
+        <!-- 🆕 初始點數設定區域 -->
+        <div class="test-section" style="margin-top: 40px;">
+            <h3>💰 初始點數設定</h3>
+            <p>設定新用戶首次建立會員卡時的初始點數</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
+                <div class="setting-item">
+                    <div class="position-label">頁面ID</div>
+                    <input type="text" id="pageId" value="M01001" 
+                           style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px;">
+                </div>
+                <div class="setting-item">
+                    <div class="position-label">初始點數</div>
+                    <input type="number" id="initialPoints" value="100" min="0" max="10000" step="10"
+                           style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px; font-size: 18px; font-weight: bold;">
+                    <div class="percentage-label">點數</div>
+                </div>
+            </div>
+            
+            <button class="test-btn" onclick="saveInitialPointsSetting()" style="background: #28a745; font-size: 16px; padding: 12px 24px;">
+                💾 儲存初始點數設定
+            </button>
+            
+            <div id="initialPointsStatus" style="margin-top: 12px; padding: 8px; border-radius: 6px; display: none;"></div>
+        </div>
+
         <div class="test-section">
             <h3>🧪 測試功能</h3>
             <p>測試點數API功能 (使用臨時資料)</p>
             <button class="test-btn" onclick="testAPI()">測試點數計算API</button>
             <button class="test-btn" onclick="testSettings()">測試設定API</button>
+            <button class="test-btn" onclick="testInitialPointsAPI()">測試初始點數API</button>
             <div id="testResults" style="margin-top: 12px; font-family: monospace; font-size: 12px;"></div>
         </div>
     </div>
@@ -344,8 +371,100 @@
             }
         }
         
+        // 🆕 儲存初始點數設定
+        async function saveInitialPointsSetting() {
+            const pageId = document.getElementById('pageId').value.trim();
+            const initialPoints = parseInt(document.getElementById('initialPoints').value);
+            const statusDiv = document.getElementById('initialPointsStatus');
+            
+            if (!pageId) {
+                showInitialPointsStatus('❌ 請輸入頁面ID', 'error');
+                return;
+            }
+            
+            if (isNaN(initialPoints) || initialPoints < 0) {
+                showInitialPointsStatus('❌ 請輸入有效的點數值 (≥0)', 'error');
+                return;
+            }
+            
+            try {
+                showInitialPointsStatus('💾 儲存中...', 'info');
+                
+                // 這裡可以擴展為API調用，目前先存到localStorage作為示範
+                const settingKey = `initialPoints_${pageId}`;
+                localStorage.setItem(settingKey, initialPoints.toString());
+                
+                // 未來可以擴展為後端API調用
+                // const response = await fetch('/api/initial-points-settings', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ pageId, initialPoints })
+                // });
+                
+                showInitialPointsStatus(`✅ 已設定 ${pageId} 的初始點數為 ${initialPoints} 點`, 'success');
+                
+            } catch (error) {
+                showInitialPointsStatus('❌ 儲存失敗: ' + error.message, 'error');
+            }
+        }
+        
+        // 🆕 顯示初始點數設定狀態
+        function showInitialPointsStatus(message, type) {
+            const status = document.getElementById('initialPointsStatus');
+            status.textContent = message;
+            status.className = type === 'success' ? 'success' : type === 'error' ? 'error' : '';
+            status.style.display = 'block';
+            
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 4000);
+            }
+        }
+        
+        // 🆕 測試初始點數API
+        async function testInitialPointsAPI() {
+            const pageId = document.getElementById('pageId').value.trim() || 'M01001';
+            
+            try {
+                // 測試讀取設定
+                const settingKey = `initialPoints_${pageId}`;
+                const storedPoints = localStorage.getItem(settingKey);
+                
+                const result = {
+                    pageId: pageId,
+                    storedInitialPoints: storedPoints ? parseInt(storedPoints) : null,
+                    defaultPoints: 100,
+                    note: '目前使用localStorage儲存，未來可擴展為後端API'
+                };
+                
+                document.getElementById('testResults').innerHTML = 
+                    '<strong>初始點數API測試結果:</strong><br>' + 
+                    JSON.stringify(result, null, 2);
+                    
+            } catch (error) {
+                document.getElementById('testResults').innerHTML = 
+                    '<strong>測試失敗:</strong> ' + error.message;
+            }
+        }
+        
+        // 🆕 載入初始點數設定
+        function loadInitialPointsSettings() {
+            const pageId = document.getElementById('pageId').value.trim() || 'M01001';
+            const settingKey = `initialPoints_${pageId}`;
+            const storedPoints = localStorage.getItem(settingKey);
+            
+            if (storedPoints) {
+                document.getElementById('initialPoints').value = storedPoints;
+                showInitialPointsStatus(`✅ 已載入 ${pageId} 的設定: ${storedPoints} 點`, 'success');
+            }
+        }
+        
         // 頁面載入時自動載入設定
-        window.onload = loadSettings;
+        window.onload = function() {
+            loadSettings();
+            loadInitialPointsSettings();
+        };
     </script>
 </body>
 </html> 
