@@ -929,7 +929,26 @@ async function fillAllFieldsWithProfile() {
         // 🔧 關鍵：如果有card_order，暫存到window.pendingCardData
         if (personalCard.card_order) {
           console.log('📋 暫存card_order資料:', personalCard.card_order);
-          window.pendingCardData = personalCard;
+          // 解析 card_order（可能是字串）
+          let cardOrder = personalCard.card_order;
+          if (typeof cardOrder === 'string') {
+            try {
+              cardOrder = JSON.parse(cardOrder);
+              console.log('📋 解析card_order字串:', cardOrder);
+            } catch (e) {
+              console.log('❌ card_order解析失敗:', e);
+              cardOrder = null;
+            }
+          }
+          
+          if (cardOrder && Array.isArray(cardOrder)) {
+            window.pendingCardData = { ...personalCard, card_order: cardOrder };
+            console.log('✅ card_order暫存成功:', cardOrder);
+          } else {
+            console.log('⚠️ card_order格式不正確，跳過暫存');
+          }
+        } else {
+          console.log('⚠️ 個人卡片沒有card_order資料');
         }
       } else {
         console.log('⚠️ 未找到用戶個人卡片，使用預設資料');
@@ -948,8 +967,10 @@ async function fillAllFieldsWithProfile() {
   if(document.getElementById('s_button_url')){
     setInputDefaultStyle(document.getElementById('s_button_url'), liffShareUrl);
   }
-  renderPreview();
-  renderShareJsonBox();
+  
+  // 🔧 修復排序問題：移除重複的預覽渲染，讓loadPromoCards處理完card_order後再渲染
+  // renderPreview();
+  // renderShareJsonBox();
   
   // 🎯 關鍵修復：在表單資料填入完成後才初始化圖片預覽
   console.log('🎯 表單資料已填入，開始初始化圖片預覽...');
@@ -2129,9 +2150,12 @@ function renderPromoCardListSortable() {
   const container = document.getElementById('promo-cards');
   if (!container) return;
   
-  // 檢查是否需要初始化
-  if (allCardsSortable.length === 0 || !allCardsSortable.some(card => card.type === 'main')) {
+  // 🔧 修復：只有在完全沒有卡片時才初始化，避免覆蓋從資料庫載入的排序
+  if (allCardsSortable.length === 0) {
+    console.log('⚠️ allCardsSortable為空，執行初始化');
     initAllCardsSortable();
+  } else {
+    console.log('✅ allCardsSortable已有資料，跳過初始化以保持排序:', allCardsSortable.map(c => c.id));
   }
   
   container.innerHTML = '';
@@ -2823,8 +2847,9 @@ async function loadPromoCards() {
     if (result.success && Array.isArray(result.data)) {
       promoCardList = result.data;
       renderPromoCardSelector();
-      initAllCardsSortable();
-      renderPromoCardListSortable();
+      
+      // 🔧 修復：先檢查是否有暫存的card_order資料，再決定是否初始化
+      let hasProcessedCardOrder = false;
       
       // **修復問題2：在宣傳卡片載入完成後處理card_order排序**
       if (window.pendingCardData) {
@@ -2881,9 +2906,10 @@ async function loadPromoCards() {
           if (newAllCards.length > 0) {
             allCardsSortable = newAllCards;
             selectedPromoCards = newSelectedPromo;
+            hasProcessedCardOrder = true;
             renderPromoCardSelector(); // **修復問題2-2：重新渲染選擇器以正確顯示狀態**
             renderPromoCardListSortable();
-            console.log('卡片排序處理完成');
+            console.log('✅ 卡片排序處理完成，順序:', allCardsSortable.map(c => c.id));
           }
         } else {
           console.log('沒有有效的card_order數據');
@@ -2891,6 +2917,13 @@ async function loadPromoCards() {
         delete window.pendingCardData; // 清除暫存資料
       } else {
         console.log('沒有找到暫存的卡片資料');
+      }
+      
+      // 🔧 只有在沒有處理card_order的情況下才執行預設初始化
+      if (!hasProcessedCardOrder) {
+        console.log('📋 沒有card_order資料，執行預設初始化');
+        initAllCardsSortable();
+        renderPromoCardListSortable();
       }
     }
   } catch (e) {
@@ -3617,10 +3650,13 @@ async function loadPersonalCard(pageId, userId) {
     const result = await response.json();
     console.log('👤 個人卡片API回應:', result);
     
-    if (result.success && result.data) {
-      return result.data;
+    // 🔧 修復：API返回的是陣列，需要取第一個元素
+    if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+      console.log('✅ 找到個人卡片資料:', result.data[0]);
+      return result.data[0];
     }
     
+    console.log('⚠️ 沒有找到個人卡片資料');
     return null;
   } catch (error) {
     console.log('👤 個人卡片載入失敗:', error);
@@ -3772,7 +3808,12 @@ async function initGeneralMode() {
     // 初始化所有功能
     initImagePreviews();
     initImageLibraryModal();
+    
+    // 🔧 關鍵修復：先載入宣傳卡片並處理排序，再渲染預覽
     await loadPromoCards();
+    
+    // 🔧 修復：只有在loadPromoCards完成後才渲染預覽，確保排序正確
+    console.log('🎯 開始渲染預覽，當前排序:', allCardsSortable.map(c => c.id));
     renderPreview();
     renderShareJsonBox();
     
