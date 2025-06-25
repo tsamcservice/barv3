@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>我專屬的會員卡片 (手機版)</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="js/flex2html.css">
@@ -18,27 +18,36 @@
             background: #f0f2f5;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
+            height: 100%;
         }
         
-        /* 🔄 修改：單欄垂直布局 */
+        html {
+            height: 100%;
+        }
+        
+        /* 🔄 修改：單欄垂直布局 - 全屏模式 */
         .container { 
-            max-width: 800px;
-            margin: 32px auto;
-            padding: 0 16px;
+            max-width: 100%;
+            margin: 0;
+            padding: 0 8px;
+            min-height: 100vh;
         }
         
-        /* 📱 手機版優化 */
+        /* 📱 手機版優化 - 全屏模式 */
         @media (max-width: 768px) {
             .container {
-                margin: 16px auto;
-                padding: 0 8px;
+                margin: 0;
+                padding: 0 4px;
+                min-height: 100vh;
             }
             
             .form-section,
             .promo-section,
             .preview-section {
-                margin-bottom: 16px;
-                padding: 16px;
+                margin-bottom: 8px;
+                padding: 12px;
+                border-radius: 4px;
             }
             
             .section-title {
@@ -56,6 +65,10 @@
             button.save-button {
                 padding: 16px;
                 font-size: 18px;
+            }
+            
+            .form-group {
+                margin-bottom: 12px;
             }
         }
         
@@ -165,6 +178,24 @@
             border-radius: 4px;
             padding: 8px;
             background: #fafafa;
+        }
+        
+        /* 位置標籤樣式 */
+        .position-labels {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 0 20px;
+        }
+        
+        .position-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: bold;
+            background: #e8f5e8;
+            padding: 4px 8px;
+            border-radius: 12px;
+            border: 1px solid #4caf50;
         }
         
         /* 💻 預覽區域樣式優化 */
@@ -968,14 +999,21 @@
             <div class="promo-section">
                 <div class="promo-controls">
                     <button type="button" id="toggle-promo-selector" class="add-promo-btn">
-                        <span>➕</span> 點選加入附加卡片
+                        <span>➕</span> 點選加入或刪除活動卡
                     </button>
                 </div>
                 <div class="promo-selector">
                     <div id="promo-card-selector" class="promo-list" style="display:none;"></div>
                 </div>
                 <div class="promo-selected">
-                    <div class="promo-hint">📱 拖拉卡片左右排序</div>
+                    <div class="promo-hint">📱 按卡片下方箭頭左右排序</div>
+                    <div class="position-labels">
+                        <span class="position-label">位置1</span>
+                        <span class="position-label">位置2</span>
+                        <span class="position-label">位置3</span>
+                        <span class="position-label">位置4</span>
+                        <span class="position-label">位置5</span>
+                    </div>
                     <div id="promo-cards" class="promo-list"></div>
                 </div>
             </div>
