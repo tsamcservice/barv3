@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>我專屬的會員卡片 (手機測試版)</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="js/flex2html.css">
+    <script src="js/flex2html.min.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    
+
+    
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            height: 100%;
+        }
+        
+        html {
+            height: 100%;
+        }
+        
+        /* 🔄 修改：單欄垂直布局 - 全屏模式 */
+        .container { 
+            max-width: 100%;
+            margin: 0;
+            padding: 0 8px;
+            min-height: 100vh;
+        }
+        
+        /* 📱 手機版優化 - 全屏模式 */
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                padding: 0 4px;
+                min-height: 100vh;
+            }
+            
+            .form-section,
+            .promo-section,
+            .preview-section {
+                margin-bottom: 8px;
+                padding: 12px;
+                border-radius: 4px;
+            }
+            
+            .section-title {
+                font-size: 18px;
+            }
+            
+            input[type="text"], 
+            input[type="url"], 
+            input[type="color"] {
+                font-size: 16px; /* 防止iOS縮放 */
+                padding: 12px 8px;
+            }
+            
+            button[type="submit"],
+            button.save-button {
+                padding: 16px;
+                font-size: 18px;
+            }
+            
+            .form-group {
+                margin-bottom: 12px;
+            }
+        }
+        
+        /* 🔄 修改：統一的區塊樣式 */
+        .form-section,
+        .promo-section,
+        .preview-section { 
+            background: #fff; 
+            padding: 24px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+        
+        .form-group { 
+            margin-bottom: 16px; 
+        }
+        label { 
+            display: block; 
+            font-weight: bold; 
+            margin-bottom: 4px;
+            color: #333;
+        }
+        input[type="text"], 
+        input[type="url"], 
+        input[type="color"] { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="text"]:focus, 
+        input[type="url"]:focus { 
+            border-color: #4caf50;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+        }
+        
+        /* 🎨 宣傳卡片區塊樣式 */
+        .promo-list { 
+            display: flex; 
+            gap: 8px; 
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .promo-card-thumb { 
+            border: 2px solid #ddd; 
+            border-radius: 6px; 
+            width: 120px; 
+            height: 160px; 
+            overflow: hidden; 
+            cursor: pointer; 
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .promo-card-thumb:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .promo-card-thumb.selected { 
+            border-color: #4caf50;
+            box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+        }
+        .promo-card-thumb .sort-btn { 
+            position: absolute; 
+            top: 4px; 
+            right: 4px; 
+            background: #fff; 
+            border: 1px solid #ddd; 
+            border-radius: 50%; 
+            width: 24px; 
+            height: 24px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        .promo-card-thumb .sort-btn:hover {
+            background: #f5f5f5;
+            border-color: #4caf50;
+        }
+        .sort-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .promo-controls {
+            margin-bottom: 16px;
+        }
+        
+        .promo-selector {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        
+        .promo-selected {
+            max-height: 300px; /* 🔧 增加高度讓整張小卡片看得到 */
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px;
+            background: #fafafa;
+        }
+        
+        /* 位置標籤樣式 */
+        .position-labels {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 0 20px;
+        }
+        
+        .position-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: bold;
+            background: #e8f5e8;
+            padding: 4px 8px;
+            border-radius: 12px;
+            border: 1px solid #4caf50;
+        }
+        
+        /* 💻 預覽區域樣式優化 */
+        .preview-container {
+            position: relative;
+            margin: 16px 0;
+        }
+        
+        /* 🔧 修正flex2html預覽：固定尺寸避免壓縮 */
+        #main-card-preview {
+            position: relative;
+            margin: 0 auto;
+            background: transparent;
+            /* 🔧 增大預覽區域以適應組合卡片 */
+            min-height: 320px;
+            width: 100%;
+            max-width: 600px; /* 🔧 進一步增大容器寬度 */
+            /* 🔧 強化水平滑動功能 */
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch; /* iOS滑動優化 */
+            /* 🔧 確保滑動區域可見 */
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            /* 🔧 新增：確保滑動軌跡可見 */
+            scrollbar-width: thin;
+            scrollbar-color: #4caf50 #f1f1f1;
+        }
+        
+        /* 🔧 WebKit 瀏覽器的滑動軌跡樣式 */
+        #main-card-preview::-webkit-scrollbar {
+            height: 8px;
+        }
+        #main-card-preview::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        #main-card-preview::-webkit-scrollbar-thumb {
+            background: #4caf50;
+            border-radius: 4px;
+        }
+        #main-card-preview::-webkit-scrollbar-thumb:hover {
+            background: #45a049;
+        }
+        
+        /* 確保chatbox內的內容正常顯示 */
+        #main-card-preview .chatbox {
+            background-color: #849ebf;
+            /* 🔧 關鍵修改：固定寬度550px，不再使用min-width */
+            width: 550px; /* 固定寬度確保不壓縮 */
+            height: auto;
+            min-height: 300px;
+            margin: 0; /* 🔧 移除auto居中，讓滑動正常 */
+            padding: 25px 12px;
+            border-radius: 8px;
+            /* 🔧 防止任何形式的縮放或壓縮 */
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        
+        /* 🔧 手機版特別優化 - 確保550px寬度 */
+        @media (max-width: 768px) {
+            #main-card-preview {
+                max-width: 100%; /* 容器可以是手機全寬 */
+                min-height: 320px;
+                /* 🔧 確保水平滑動 */
+                overflow-x: scroll; /* 強制顯示滑動條 */
+            }
+            
+            #main-card-preview .chatbox {
+                /* 🔧 手機版維持550px固定寬度 */
+                width: 550px; /* 超出手機寬度，可滑動查看 */
+                min-height: 320px;
+                padding: 25px 12px;
+                /* 🔧 關鍵：防止任何壓縮 */
+                flex-shrink: 0;
+                transform: none; /* 防止任何變形 */
+            }
+        }
+        
+        /* 🔧 平板版優化 */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            #main-card-preview {
+                max-width: 600px;
+            }
+            
+            #main-card-preview .chatbox {
+                width: 550px; /* 平板版也使用550px */
+                min-height: 300px;
+            }
+        }
+        
+        /* 🔧 電腦版優化 */
+        @media (min-width: 1025px) {
+            #main-card-preview {
+                max-width: 600px;
+            }
+            
+            #main-card-preview .chatbox {
+                width: 550px; /* 電腦版也使用550px，可滑動查看組合卡片 */
+                min-height: 300px;
+            }
+        }
+        
+        /* JSON區域樣式 */
+        #shareJsonBox {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        #shareJsonBox h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        
+        #shareJsonBox pre {
+            font-size: 11px;
+            line-height: 1.3;
+            user-select: text;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #fff;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            overflow: auto;
+            max-height: 400px;
+            margin: 0;
+        }
+        
+        /* 載入中狀態 */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4caf50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 儲存按鈕樣式 */
+        button[type="submit"],
+        button.save-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.2s ease;
+        }
+        button[type="submit"]:hover,
+        button.save-button:hover {
+            background: #45a049;
+        }
+        button[type="submit"]:disabled,
+        button.save-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        /* 錯誤訊息樣式 */
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 16px 0;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+
+        /* 圖片上傳按鈕樣式 */
+        .image-upload-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .image-upload-group input[type="file"] {
+            flex: 1;
+            order: 2; /* 將檔案選擇放在中間 */
+        }
+        .image-upload-group button {
+            padding: 8px 16px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .image-upload-group .select-btn {
+            background: #2196f3;
+        }
+        .image-upload-group .line-profile-btn {
+            background: #00c300;
+        }
+        
+
+        
+        /* 圖片資訊顯示 */
+        .image-info {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #666;
+            padding: 4px 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+        .image-info.show {
+            display: block;
+        }
+        
+        /* 圖片庫選擇器樣式 */
+        .image-library-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .image-library-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .image-library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .image-library-item {
+            position: relative;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 8px;
+            transition: all 0.2s ease;
+        }
+        .image-library-item:hover {
+            border-color: #4caf50;
+            box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+        }
+        .image-library-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .image-library-item .name {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .close-modal {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 圖片預覽樣式 */
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
+        }
+        .image-preview.show {
+            display: block;
+        }
+        
+        /* JSON複製按鈕 */
+        .json-copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        /* 區塊標題樣式 */
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #4caf50;
+        }
+        
+        /* 🆕 設備指示器 */
+        .device-indicator {
+            position: fixed;
+            top: 8px;
+            left: 8px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1001;
+        }
+        
+        /* 📱 手機版頁籤樣式 */
+        .mobile-tabs {
+            display: flex;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab-btn:not(.active) {
+            color: #666;
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+        }
+        
+        .tab-btn:not(.active):hover {
+            background: #f8f9fa;
+            color: #4caf50;
+        }
+        
+        .tab-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .tab-text {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* 頁籤內容 */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 美化表單樣式 */
+        .field-hint {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #4caf50;
+        }
+        
+        .field-hint-inline {
+            color: #999;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        
+        /* 附加卡片區域美化 */
+        .add-promo-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .add-promo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76,175,80,0.3);
+        }
+        
+        .add-promo-btn span {
+            font-size: 18px;
+        }
+        
+        .promo-hint {
+            margin: 16px 0;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px dashed #ddd;
+        }
+        
+        /* 預覽區域美化 */
+        .preview-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .share-btn {
+            background: linear-gradient(135deg, #00c300, #00a000);
+            color: white;
+        }
+        
+        .save-btn {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        /* JSON區域美化 */
+        .json-section {
+            margin-top: 20px;
+        }
+        
+        .json-toggle {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .toggle-btn {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-btn:hover {
+            background: #e9ecef;
+            color: #4caf50;
+            border-color: #4caf50;
+        }
+        
+        /* 🎨 新的顏色選擇器樣式 */
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .color-picker-container input[type="color"] {
+            width: 80px;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+        
+        .color-picker-container input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+            border-radius: 6px;
+        }
+        
+        .color-picker-container input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .color-preview-block {
+            flex: 1;
+            height: 50px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            min-width: 120px;
+            position: relative;
+        }
+        
+        .color-preview-block::after {
+            content: '預覽顏色';
+        }
+
+        /* 手機版特別優化 */
+        @media (max-width: 768px) {
+            .mobile-tabs {
+                margin: 16px 8px 20px 8px;
+            }
+            
+            .tab-btn {
+                padding: 12px 4px;
+            }
+            
+            .tab-icon {
+                font-size: 18px;
+            }
+            
+            .tab-text {
+                font-size: 11px;
+            }
+            
+            .preview-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .action-btn {
+                padding: 14px;
+                font-size: 15px;
+            }
+            
+            .color-picker-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            
+            .color-picker-container input[type="color"] {
+                width: 100%;
+                height: 50px;
+            }
+            
+            .color-preview-block {
+                height: 50px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 🆕 設備指示器 -->
+    <div class="device-indicator" id="deviceIndicator">
+        載入中...
+    </div>
+    
+    <div style="position:fixed;top:0;right:0;z-index:1000;padding:12px 24px 0 0;text-align:right;">
+        <span id="liffUserInfo" style="display:inline-flex;align-items:center;gap:8px;"></span>
+    </div>
+    
+            <h1 style="text-align:center; margin-top:24px;">🧪 我專屬的會員卡片 (極速分享測試版)</h1>
+        <div style="background: #ff9800; color: white; padding: 8px; text-align: center; font-size: 14px; border-radius: 4px; margin: 8px 16px;">
+            ⚡ 極速分享測試版 - 目標：1秒內完成分享至LINE
+        </div>
+          <div style="text-align:center; margin-bottom:20px; color:#666; font-size:14px;">
+          🧪 測試版 LIFF ID: 2007648986-3LJzyYbK | 版本: v20250625-TEST
+      </div>
+    
+
+    
+    <div class="container">
+        <!-- 📱 手機版頁籤導航 -->
+        <div class="mobile-tabs">
+            <button class="tab-btn active" data-tab="text-image">
+                <div class="tab-icon">📝</div>
+                <div class="tab-text">卡片編輯</div>
+            </button>
+            <button class="tab-btn" data-tab="promo-cards">
+                <div class="tab-icon">🎨</div>
+                <div class="tab-text">附加卡片</div>
+            </button>
+            <button class="tab-btn" data-tab="preview">
+                <div class="tab-icon">👀</div>
+                <div class="tab-text">卡片預覽</div>
+            </button>
+        </div>
+
+        <!-- 📝 第一頁：文字圖片區 -->
+        <div class="tab-content active" id="tab-text-image">
+            <div class="form-section">
+                <div class="liff-user" id="liffUser"></div>
+                <form id="cardForm">
+                    <div class="form-group">
+                        <label>卡片預覽標題 <span style="color:#999;font-size:12px;font-weight:normal;">（未開啟卡片前，在LINE顯示的文字訊息，內為主標題/會員名字）</span></label>
+                        <input type="text" id="card_alt_title" name="card_alt_title">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>主圖 <span class="field-hint-inline">(建議圖片比例1:1)</span></label>
+                        <input type="url" id="main_image_url" name="main_image_url">
+                        <div class="image-upload-group">
+                            <button type="button" class="select-btn" id="main_image_select_btn">圖片庫</button>
+                            <input type="file" id="main_image_upload" accept="image/*">
+                            <button type="button" id="main_image_upload_btn">上傳</button>
+                        </div>
+                        <img id="main_image_preview" class="image-preview">
+                        <div class="image-info" id="main_image_info"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>主圖後連結</label>
+                        <input type="url" id="main_image_link" name="main_image_link">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>主標題</label>
+                        <input type="text" id="main_title_1" name="main_title_1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>主標題顏色</label>
+                        <input type="color" id="main_title_1_color" name="main_title_1_color" value="#000000" style="width: 100%; height: 50px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; padding: 0;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>副標題</label>
+                        <textarea id="main_title_2" name="main_title_2" rows="3" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;resize:vertical;font-family:inherit;" placeholder="輸入副標題（可多行）"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>副標題顏色</label>
+                        <input type="color" id="main_title_2_color" name="main_title_2_color" value="#000000" style="width: 100%; height: 50px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; padding: 0;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>會員圖片 <span class="field-hint-inline">(內定為LINE頭貼，建議比例1:1)</span></label>
+                        <input type="url" id="member_image_url" name="member_image_url">
+                        <div class="image-upload-group">
+                            <button type="button" class="select-btn" id="member_image_select_btn">圖片庫</button>
+                            <input type="file" id="member_image_upload" accept="image/*">
+                            <button type="button" id="member_image_upload_btn">上傳</button>
+                            <button type="button" class="line-profile-btn" id="member_line_profile_btn">使用LINE頭貼</button>
+                        </div>
+                        <img id="member_image_preview" class="image-preview">
+                        <div class="image-info" id="member_image_info"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>會員圖片後連結</label>
+                        <input type="url" id="member_image_link" name="member_image_link">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>會員名字</label>
+                        <input type="text" id="display_name" name="display_name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>會員名字顏色</label>
+                        <input type="color" id="name_color1" name="name_color1" value="#A4924C" style="width: 100%; height: 50px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; padding: 0;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>按鈕文字</label>
+                        <input type="text" id="button_1_text" name="button_1_text">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>按鈕後連結</label>
+                        <input type="url" id="button_1_url" name="button_1_url">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>按鈕顏色</label>
+                        <input type="color" id="button_1_color" name="button_1_color" value="#A4924A" style="width: 100%; height: 50px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; padding: 0;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>分享按鈕文字</label>
+                        <input type="text" id="s_button_text" name="s_button_text">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>分享按鈕顏色</label>
+                        <input type="color" id="s_button_color" name="s_button_color" value="#A4924B" style="width: 100%; height: 50px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; padding: 0;">
+                    </div>
+
+                    <!-- 隱藏欄位 - 保留功能但不顯示 -->
+                    <div style="display: none;">
+                        <input type="url" id="snow_image_url" name="snow_image_url">
+                        <input type="file" id="snow_image_upload" accept="image/*">
+                        <button type="button" class="select-btn" id="snow_image_select_btn">圖片庫</button>
+                        <button type="button" id="snow_image_upload_btn">上傳</button>
+                        <img id="snow_image_preview" class="image-preview">
+                        <div class="image-info" id="snow_image_info"></div>
+                        
+                        <input type="url" id="calendar_image_url" name="calendar_image_url">
+                        <input type="file" id="calendar_image_upload" accept="image/*">
+                        <button type="button" class="select-btn" id="calendar_image_select_btn">圖片庫</button>
+                        <button type="button" id="calendar_image_upload_btn">上傳</button>
+                        <img id="calendar_image_preview" class="image-preview">
+                        <div class="image-info" id="calendar_image_info"></div>
+                        <input type="url" id="calendar_image_link" name="calendar_image_link">
+                        
+                        <input type="text" id="amember_id" name="amember_id">
+                        
+                        <input type="url" id="love_icon_url" name="love_icon_url">
+                        <input type="file" id="love_icon_upload" accept="image/*">
+                        <button type="button" class="select-btn" id="love_icon_select_btn">圖片庫</button>
+                        <button type="button" id="love_icon_upload_btn">上傳</button>
+                        <img id="love_icon_preview" class="image-preview">
+                        <div class="image-info" id="love_icon_info"></div>
+                        <input type="url" id="love_icon_link" name="love_icon_link">
+                        
+                        <input type="text" id="pageview" name="pageview">
+                        <input type="url" id="s_button_url" name="s_button_url" readonly>
+                    </div>
+                    
+                    <button type="submit" class="save-button">💾 儲存卡片</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 🎨 第二頁：附加卡片區 -->
+        <div class="tab-content" id="tab-promo-cards">
+            <div class="promo-section">
+                <div class="promo-controls">
+                    <button type="button" id="toggle-promo-selector" class="add-promo-btn">
+                        <span>➕</span> 點選加入或刪除活動卡
+                    </button>
+                </div>
+                <div class="promo-selector">
+                    <div id="promo-card-selector" class="promo-list" style="display:none;"></div>
+                </div>
+                <div class="promo-selected">
+                    <div class="promo-hint">📱 按卡片下方箭頭左右排序</div>
+                    <div class="position-labels">
+                        <span class="position-label">位置1</span>
+                        <span class="position-label">位置2</span>
+                        <span class="position-label">位置3</span>
+                        <span class="position-label">位置4</span>
+                        <span class="position-label">位置5</span>
+                    </div>
+                    <div id="promo-cards" class="promo-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 👀 第三頁：卡片預覽區 -->
+        <div class="tab-content" id="tab-preview">
+            <div class="preview-section">
+                <div class="preview-actions">
+                    <button type="button" onclick="shareToLine()" class="action-btn share-btn">
+                        📱 分享到LINE
+                    </button>
+                    <button type="button" onclick="document.getElementById('cardForm').dispatchEvent(new Event('submit'))" class="action-btn save-btn">
+                        💾 儲存卡片
+                    </button>
+                </div>
+                
+                <div class="preview-container">
+                    <div id="main-card-preview">
+                        <div class="chatbox">
+                            <!-- flex2html內容將插入這裡 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- JSON資料區域 -->
+                <div class="json-section">
+                    <div class="json-toggle">
+                        <button type="button" id="toggle-json" class="toggle-btn">
+                            📋 顯示/隱藏 JSON 資料
+                        </button>
+                    </div>
+                    <div id="shareJsonBox" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 圖片庫選擇器模態框 -->
+    <div id="imageLibraryModal" class="image-library-modal">
+        <div class="image-library-content">
+            <span class="close-modal">&times;</span>
+            <h3>選擇已上傳的圖片</h3>
+            <div class="image-library-grid" id="imageLibraryGrid">
+                <!-- 圖片列表將動態載入 -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/mcard-mtest.js"></script>
+</body>
+</html> 
