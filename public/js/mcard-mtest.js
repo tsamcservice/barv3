@@ -1,9 +1,9 @@
 // 🚀 手機版會員卡系統 - v20250625-TEST
-// LIFF ID: 2007648986-3LJzyYbK (手機測試版專用)
+// LIFF ID: 2007327814-OoJBbnwP (同CHANNEL ID測試版)
 // 更新日期: 2025-06-25
 
 // 版本標識
-const VERSION_TAG = 'MOBILE-TEST-v20250625';  
+const VERSION_TAG = 'MOBILE-TEST-v20250625-SAME-CHANNEL';  
 const IS_MOBILE_VERSION = true;
 
 // 手機版功能開關
@@ -29,7 +29,7 @@ const UNIFIED_LIFF = {
 };
 
 console.log(`🚀 啟動手機測試版會員卡系統 ${VERSION_TAG}`);
-console.log('📱 LIFF ID:', '2007648986-3LJzyYbK');
+console.log('📱 LIFF ID:', '2007327814-OoJBbnwP');
 
 // 版本標記函數
 function createVersionTag() {
@@ -631,14 +631,14 @@ const defaultCard = {
   button_1_url: 'https://lin.ee/JLLIBlP',
   button_1_color: '#A4924A', // 按鈕顏色 
   s_button_text: '分享給好友',
-      s_button_url: 'https://liff.line.me/2007648986-3LJzyYbK?pageId=M01001', // 🚀 手機測試版專用 LIFF+頁面ID
+      s_button_url: 'https://liff.line.me/2007327814-OoJBbnwP?pageId=M01001', // 🚀 同CHANNEL ID測試版 LIFF+頁面ID
   s_button_color: '#A4924B',
   card_alt_title: '我在呈璽/呈璽'
 };
 
 // 取得 LINE 頭像與名字
 let liffProfile = { displayName: '', pictureUrl: '', userId: '' };
-const liffId = '2007648986-3LJzyYbK'; // 🚀 手機測試版專用LIFF ID
+const liffId = '2007327814-OoJBbnwP'; // 🚀 同CHANNEL ID測試版LIFF ID
 
 // 🔄 修改：統一的用戶資訊顯示
 function renderLiffUserInfo(profile) {
@@ -3457,56 +3457,25 @@ function showAutoShareError(message) {
   }
 }
 
-// 🧪 測試版本：同時嘗試載入原版本資料
+// 🚀 極簡版本：直接載入個人卡片 (同CHANNEL ID，相同USER ID)
 async function loadPersonalCard(pageId, userId) {
   try {
     console.log('👤 載入個人卡片:', { pageId, userId });
     
-    // 🧪 先嘗試載入當前測試版USER ID的資料
-    let response = await fetch(`/api/cards?pageId=${pageId}&userId=${userId}`);
-    let result = await response.json();
+    const response = await fetch(`/api/cards?pageId=${pageId}&userId=${userId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('👤 個人卡片API回應:', result);
     
     if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
-      console.log('✅ 找到測試版本卡片資料:', result.data[0]);
+      console.log('✅ 找到個人卡片資料:', result.data[0]);
       return result.data[0];
     }
     
-    // 🔄 如果測試版沒有資料，嘗試查詢所有M01001的資料並選擇最新的
-    console.log('⚠️ 測試版本沒有資料，嘗試載入原版本資料...');
-    response = await fetch(`/api/cards?pageId=${pageId}`);
-    result = await response.json();
-    
-    if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
-      // 選擇最新更新的資料 (有line_user_id的)
-      const userCards = result.data.filter(card => card.line_user_id);
-      if (userCards.length > 0) {
-        // 按更新時間排序，取最新的
-        const latestCard = userCards.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
-        console.log('✅ 找到原版本卡片資料，自動匯入測試版:', latestCard);
-        
-        // 🆕 自動複製到測試版USER ID下 (可選)
-        try {
-          const copyResponse = await fetch('/api/cards', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...latestCard,
-              line_user_id: userId, // 使用測試版USER ID
-              id: undefined // 讓資料庫自動生成新ID
-            })
-          });
-          if (copyResponse.ok) {
-            console.log('✅ 原版本資料已複製到測試版');
-          }
-        } catch (copyError) {
-          console.log('⚠️ 資料複製失敗:', copyError);
-        }
-        
-        return latestCard;
-      }
-    }
-    
-    console.log('⚠️ 沒有找到任何卡片資料');
+    console.log('⚠️ 沒有找到個人卡片資料');
     return null;
   } catch (error) {
     console.log('👤 個人卡片載入失敗:', error);
@@ -3578,7 +3547,7 @@ async function initUnifiedLiff() {
     }
     
     // 初始化LIFF
-    await liff.init({ liffId: '2007648986-3LJzyYbK' });
+    await liff.init({ liffId: '2007327814-OoJBbnwP' });
     console.log('✅ LIFF初始化成功');
     
     // 檢查登入狀態
