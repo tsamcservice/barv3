@@ -1,9 +1,9 @@
-// 🚀 手機版會員卡系統 - v20250626-FINAL
-// LIFF ID: 2007327814-DGly5XNk (手機版正式版)
-// 更新日期: 2025-06-26
+// 🚀 手機版會員卡系統 - v20250624
+// LIFF ID: 2007327814-DGly5XNk (手機版專用)
+// 更新日期: 2025-06-24
 
 // 版本標識
-const VERSION_TAG = 'MOBILE-v20250626-FINAL';  
+const VERSION_TAG = 'MOBILE-v20250624';
 const IS_MOBILE_VERSION = true;
 
 // 手機版功能開關
@@ -718,14 +718,14 @@ const defaultCard = {
   button_1_url: 'https://lin.ee/JLLIBlP',
   button_1_color: '#A4924A', // 按鈕顏色 
   s_button_text: '分享給好友',
-      s_button_url: 'https://liff.line.me/2007327814-DGly5XNk?pageId=M01001', // 🚀 手機版正式版 LIFF+頁面ID
+  s_button_url: 'https://liff.line.me/2007327814-DGly5XNk?pageId=M01001', // 🚀 手機版專用 LIFF+頁面ID
   s_button_color: '#A4924B',
   card_alt_title: '我在呈璽/呈璽'
 };
 
 // 取得 LINE 頭像與名字
 let liffProfile = { displayName: '', pictureUrl: '', userId: '' };
-const liffId = '2007327814-DGly5XNk'; // 🚀 同CHANNEL ID測試版LIFF ID
+const liffId = '2007327814-DGly5XNk'; // 🚀 手機版專用LIFF ID
 
 // 🔄 修改：統一的用戶資訊顯示
 function renderLiffUserInfo(profile) {
@@ -2328,14 +2328,17 @@ window.moveCardRight = function(idx) {
   renderPromoCardListSortable();
 };
 
-// 🚀 高效能點數系統 - 先分享後處理策略
+// 重構 shareToLine
 async function shareToLine() {
   if (!window.liff) return alert('LIFF 未載入');
   
+  // 顯示分享準備提示
+  alert('🚀 準備分享會員卡至LINE\n\n⚠️ 請勿封鎖跳出視窗');
+  
+  // 顯示載入動畫
   showShareLoading();
   
   try {
-    // 🚀 步驟1：快速LIFF初始化
     await liff.init({ liffId });
     if (!liff.isLoggedIn()) {
       hideShareLoading();
@@ -2343,428 +2346,232 @@ async function shareToLine() {
       return;
     }
     
-    // 🚀 步驟2：並行處理 - 同時進行分享準備和點數檢查
-    const formData = getFormData();
+    // **步驟1：準備分享資料並檢查點數**
+    let mainCardId = null;
+    let currentPoints = 100; // 預設點數
+    let mainCardExists = false;
     
-    // 並行執行：分享內容生成 + 點數查詢
-    const [flexJson, pointsData] = await Promise.all([
-      // A. 快速生成分享內容
-      generateShareContent(formData),
-      // B. 並行查詢用戶點數 (不阻塞分享)
-      checkUserPointsAsync(liffProfile.userId)
-    ]);
+    try {
+      const res = await fetch(`/api/cards?pageId=M01001&userId=${liffProfile.userId}`);
+      const result = await res.json();
+      if (result.success && result.data && result.data.length > 0) {
+        mainCardId = result.data[0].id;
+        currentPoints = result.data[0].user_points || 0;
+        mainCardExists = true;
+        console.log('✅ 找到現有主卡:', mainCardId, '點數:', currentPoints);
+      } else {
+        console.log('⚠️ 未找到現有主卡，將使用臨時ID進行分享');
+      }
+    } catch (e) {
+      console.error('取得主卡資料失敗:', e);
+    }
     
-    // 🚀 步驟3：立即分享 (不等待點數處理)
-    const cleanFlexJson = cleanFlexJsonForShare(flexJson);
-    console.log('📤 高速分享 FLEX JSON');
+    // 🔧 修復：確保主卡始終參與分享，即使不存在於資料庫
+    // 如果沒有現有主卡，使用臨時ID，後端會特殊處理
+    if (!mainCardId) {
+      mainCardId = 'temp-main-card-' + Date.now();
+      console.log('🆕 使用臨時主卡ID:', mainCardId);
+    }
     
-    await liff.shareTargetPicker([cleanFlexJson])
-      .then(async () => {
-        hideShareLoading();
+    // 建立卡片ID清單並加入位置資訊 (位置對應整體排列索引)
+    const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
+      id: c.id === 'main' ? mainCardId : c.id, 
+      type: c.type,
+      position: i, // 位置就是在整體排列中的索引 (0,1,2,3,4 對應 A,B,C,D,E)
+      isTemp: c.id === 'main' && !mainCardExists // 標記是否為臨時卡片
+    })).filter(c => c.id);
+    
+    console.log('🎯 卡片位置資訊:', cardIdTypeArr.map(c => ({ type: c.type, position: c.position, id: c.id })));
+    
+    // 計算所需點數 (每張卡片10點)
+    const requiredPoints = cardIdTypeArr.length * 10;
+    
+    // **點數檢查**
+    if (currentPoints < requiredPoints) {
+      hideShareLoading();
+      alert(`❌ 點數不足無法分享\n\n目前點數: ${currentPoints}點\n需要點數: ${requiredPoints}點\n不足點數: ${requiredPoints - currentPoints}點`);
+      return;
+    }
+    
+    // **步驟2：執行分享交易 (包含pageview更新和點數處理)**
+    let shareResult = null;
+    if (cardIdTypeArr.length > 0) {
+      try {
+        const response = await fetch('/api/cards/pageview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            cardIdTypeArr,
+            includePointsTransaction: true,
+            userId: liffProfile.userId
+          })
+        });
         
-        // 🎯 步驟4：分享成功後，背景處理點數交易
-        processPointsTransactionBackground(pointsData, formData);
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || '點數交易失敗');
+        }
         
-        // 🚀 立即顯示成功訊息 (不等待點數處理)
-        showFastShareSuccess(pointsData);
-        closeOrRedirect();
-      })
-      .catch((error) => {
+        shareResult = result.pointsTransaction;
+        console.log('✅ 分享交易完成:', shareResult);
+        
+      } catch (e) {
         hideShareLoading();
-        console.log('分享取消或失敗:', error);
-        closeOrRedirect();
-      });
+        console.error('分享交易錯誤詳情:', e);
+        
+        // 🔧 改進錯誤訊息顯示
+        let errorMessage = '❌ 分享交易失敗\n\n';
+        if (e.message.includes('點數不足')) {
+          errorMessage += '💰 ' + e.message + '\n\n請先儲值點數後再試。';
+        } else if (e.message.includes('不存在')) {
+          errorMessage += '🔍 ' + e.message + '\n\n請檢查卡片設定是否正確。';
+        } else {
+          errorMessage += '⚠️ ' + e.message;
+        }
+        
+        alert(errorMessage);
+        return;
+      }
+    }
+    
+    // **步驟3：使用交易結果更新資料，避免額外API調用**
+    let latestPageview = getFormData().pageview;
+    let latestPoints = currentPoints;
+    
+    if (shareResult && shareResult.pointsResults && shareResult.pointsResults.length > 0) {
+      // 從交易結果中取得最新的主卡點數
+      const mainCardResult = shareResult.pointsResults.find(r => r.type === 'main');
+      if (mainCardResult) {
+        latestPoints = mainCardResult.finalBalance;
+        console.log('ShareToLine: 從交易結果取得最新點數:', latestPoints);
+      }
       
-  } catch (err) {
-    hideShareLoading();
-    alert('分享失敗: ' + err.message);
-  }
-}
-
-// 🚀 快速生成分享內容 (非阻塞)
-async function generateShareContent(formData) {
-  let flexJson;
-  if (allCardsSortable && allCardsSortable.length > 1) {
-    // 多卡片模式：生成carousel
-    const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
-    if (mainCardIndex !== -1) {
-      allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...formData, page_id: 'M01001' });
+      // pageview 增加 (每張卡片+1)
+      latestPageview = (parseInt(getFormData().pageview) || 0) + cardIdTypeArr.length;
+      console.log('ShareToLine: 計算最新pageview:', latestPageview);
+    }
+    
+    // **步驟4：用最新資料重新生成flexJson**
+    const mainIdx = allCardsSortable.findIndex(c => c.type === 'main');
+    if (mainIdx !== -1) {
+      allCardsSortable[mainIdx].flex_json = getMainBubble({ 
+        ...getFormData(), 
+        pageview: latestPageview, 
+        user_points: latestPoints,
+        page_id: 'M01001' 
+      });
+      allCardsSortable[mainIdx].img = getFormData().main_image_url || defaultCard.main_image_url;
     }
     
     const flexArr = allCardsSortable.map(c => c.flex_json);
-    flexJson = {
-      type: 'flex',
-      altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
-      contents: {
-        type: 'carousel',
-        contents: flexArr
-      }
-    };
-  } else {
-    // 單卡片模式
-    flexJson = {
-      type: 'flex',
-      altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
-      contents: getMainBubble({ ...formData, page_id: 'M01001' })
-    };
-  }
-  return flexJson;
-}
-
-// 🚀 並行點數查詢 (不阻塞分享) - 🔧 修正：使用正確的初始點數
-async function checkUserPointsAsync(userId) {
-  try {
-    const response = await fetch(`/api/cards?pageId=M01001&userId=${userId}`);
-    const result = await response.json();
-    
-    if (result.success && result.data && result.data.length > 0) {
-      return {
-        mainCardId: result.data[0].id,
-        currentPoints: result.data[0].user_points || 168, // 🔧 修正：使用設定頁面的初始點數
-        cardExists: true,
-        cardData: result.data[0]
-      };
-    }
-    
-    // 🔧 修正：新用戶使用正確的初始點數和卡片ID格式
-    return {
-      mainCardId: null, // 讓後端自動生成正確的ID
-      currentPoints: 168, // 🔧 修正：使用設定頁面的初始點數168點
-      cardExists: false,
-      cardData: null
-    };
-  } catch (error) {
-    console.log('⚠️ 點數查詢失敗，使用預設值:', error);
-    return {
-      mainCardId: null, // 讓後端自動生成
-      currentPoints: 168, // 🔧 修正：使用正確的初始點數
-      cardExists: false,
-      cardData: null
-    };
-  }
-}
-
-// 🎯 背景處理點數交易和資料儲存 (分享後執行，不阻塞用戶)
-async function processPointsTransactionBackground(pointsData, formData) {
-  try {
-    console.log('🎯 背景處理點數交易和資料儲存...');
-    
-    // 計算需要的點數
-    const cardCount = allCardsSortable ? allCardsSortable.length : 1;
-    const requiredPoints = cardCount * 10;
-    
-    // 🔧 修正1: 並行處理資料儲存和點數交易
-    const savePromises = [];
-    
-    // A. 儲存表單資料和排序 (無論點數是否足夠都要儲存)
-    savePromises.push(saveCardDataBackground(pointsData, formData));
-    
-         // B. 如果點數足夠，執行點數交易
-     if (pointsData.currentPoints >= requiredPoints) {
-       const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
-         id: c.id === 'main' ? (pointsData.mainCardId || 'main') : c.id, // 🔧 修正：處理null的mainCardId
-         type: c.type,
-         position: i, // 這裡保持從0開始，在processPointsTransaction中統一轉換
-         isTemp: c.id === 'main' && !pointsData.cardExists
-       })).filter(c => c.id);
-       
-       savePromises.push(processPointsTransaction(cardIdTypeArr, pointsData));
-    } else {
-      console.log('⚠️ 點數不足，但分享已完成，將儲存資料');
-      showPointsWarning(pointsData.currentPoints, requiredPoints);
-    }
-    
-    // 等待所有背景處理完成
-    const results = await Promise.allSettled(savePromises);
-    console.log('✅ 背景處理完成:', results);
-    
-  } catch (error) {
-    console.log('⚠️ 背景處理失敗:', error);
-  }
-}
-
-// 🔧 新增：背景儲存卡片資料
-async function saveCardDataBackground(pointsData, formData) {
-  try {
-    console.log('💾 背景儲存卡片資料...');
-    
-    // 生成完整的FLEX JSON
     let flexJson;
-    if (allCardsSortable && allCardsSortable.length > 1) {
-      const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
-      if (mainCardIndex !== -1) {
-        allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...formData, page_id: 'M01001' });
-        allCardsSortable[mainCardIndex].img = formData.main_image_url || defaultCard.main_image_url;
-      }
-      
-      const flexArr = allCardsSortable.map(c => c.flex_json);
+    if (flexArr.length === 1) {
       flexJson = {
         type: 'flex',
-        altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
+        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
+        contents: flexArr[0]
+      };
+    } else {
+      flexJson = {
+        type: 'flex',
+        altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1,
         contents: {
           type: 'carousel',
           contents: flexArr
         }
       };
-    } else {
-      flexJson = {
-        type: 'flex',
-        altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
-        contents: getMainBubble({ ...formData, page_id: 'M01001' })
-      };
     }
     
-    // 清理FLEX JSON用於儲存
+    console.log('ShareToLine: 重新生成flexJson，pageview:', latestPageview);
+    
+    // **清理FLEX JSON用於儲存**
     const cleanFlexJsonForSave = cleanFlexJsonForShare(flexJson);
     
-    // 準備儲存資料
-    const saveData = {
-      page_id: 'M01001',
-      line_user_id: liffProfile.userId,
-      ...formData,
-      flex_json: cleanFlexJsonForSave,
-      card_order: allCardsSortable ? allCardsSortable.map(c => c.id) : ['main']
-    };
+    const formData = getFormData();
+    const { pageview, ...formDataWithoutPageview } = formData;
     
-    // 儲存到資料庫
     const response = await fetch('/api/cards', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(saveData)
-    });
-    
-    if (response.ok) {
-      console.log('✅ 卡片資料儲存成功');
-      return { success: true };
-    } else {
-      throw new Error('儲存失敗');
-    }
-    
-  } catch (error) {
-    console.log('⚠️ 卡片資料儲存失敗:', error);
-    return { success: false, error };
-  }
-}
-
-// 🔧 修正：處理點數交易 (統一位置從1開始)
-async function processPointsTransaction(cardIdTypeArr, pointsData) {
-  try {
-    console.log('💰 處理點數交易...');
-    
-    // 🔧 修正：位置編號保持一致，不需要+1，因為API內部會正確處理
-    const correctedCardIdTypeArr = cardIdTypeArr.map(card => ({
-      ...card,
-      position: card.position // 保持原始位置，從0開始
-    }));
-    
-    const transactionResponse = await fetch('/api/cards/pageview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        cardIdTypeArr: correctedCardIdTypeArr,
-        includePointsTransaction: true,
-        userId: liffProfile.userId,
-        backgroundProcess: true
+      body: JSON.stringify({
+        page_id: 'M01001',
+        line_user_id: liffProfile.userId,
+        ...formDataWithoutPageview,
+        flex_json: cleanFlexJsonForSave,
+        card_order: allCardsSortable.map(c => c.id)
       })
     });
-    
-    if (transactionResponse.ok) {
-      const transactionResult = await transactionResponse.json();
-      console.log('✅ 背景點數交易完成:', transactionResult);
-      
-      // 更新本地顯示的點數
-      updateLocalPointsDisplay(transactionResult);
-      
-      // 顯示點數交易結果通知
-      showPointsTransactionResult(transactionResult);
-      
-      return { success: true, result: transactionResult };
-    } else {
-      throw new Error('點數交易失敗');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || '儲存失敗');
     }
     
-  } catch (error) {
-    console.log('⚠️ 點數交易失敗:', error);
-    return { success: false, error };
-  }
-}
-
-// 🚀 快速分享成功提示 - 🔧 修正：直接顯示實際回饋數據
-function showFastShareSuccess(pointsData) {
-  const cardCount = allCardsSortable ? allCardsSortable.length : 1;
-  const mainCardDeduction = 10; // 主卡固定扣除10點
-  
-  let message = '✅ 分享卡片成功！！\n\n';
-  
-  // 🔧 修正：主卡點數
-  message += `💳 主卡點數：${pointsData.currentPoints}點\n`;
-  
-  if (pointsData.currentPoints >= mainCardDeduction) {
-    // 🔧 修正：只顯示主卡扣除點數
-    message += `💰 本次分享扣除點數：${mainCardDeduction}點\n\n`;
+    // 步驟5：更新前端顯示
+    if (document.getElementById('pageview')) {
+      document.getElementById('pageview').value = formatPageview(latestPageview);
+    }
     
-    // 🔧 修正：計算實際回饋點數
-    const rewardDetails = calculateRewardPoints(mainCardDeduction);
-    const totalReward = rewardDetails.reduce((sum, detail) => sum + detail.reward, 0);
-    
-    message += `💰 分享回饋：${totalReward}點\n`;
-    
-    // 🔧 修正：顯示實際回饋明細 (位置從1開始)
-    rewardDetails.forEach(detail => {
-      const cardTypeText = detail.cardType === 'main' ? '分享卡' : '活動卡';
-      message += `位置${detail.position + 1}-${cardTypeText}：回饋${detail.reward}點\n`;
-    });
-    
-    message += '\n🎯 點數交易處理中，請稍候...\n';
-  } else {
-    message += `💸 需要點數：${mainCardDeduction}點\n`;
-    message += `❌ 不足點數：${mainCardDeduction - pointsData.currentPoints}點\n\n`;
-    message += '⚠️ 點數不足，但分享已完成\n';
-  }
-  
-  message += '\n💾 卡片及回饋點數已儲存\n';
-  message += '📝 請記得關閉本會員卡編修頁面';
-  alert(message);
-}
-
-// 🔧 新增：計算實際回饋點數 (依據設定頁面的公式)
-function calculateRewardPoints(deductedPoints) {
-  const rewardDetails = [];
-  
-  if (allCardsSortable && allCardsSortable.length > 0) {
-    allCardsSortable.forEach((card, index) => {
-      let rewardRate = 0;
-      
-      // 依據位置設定回饋比例 (對應點數設定頁面)
-      switch (index) {
-        case 0: rewardRate = 0.80; break; // 位置1: 80%
-        case 1: rewardRate = 0.50; break; // 位置2: 50%
-        case 2: rewardRate = 0.10; break; // 位置3: 10%
-        case 3: rewardRate = 0.10; break; // 位置4: 10%
-        case 4: rewardRate = 0.10; break; // 位置5: 10%
-        default: rewardRate = 0.05; break; // 其他位置: 5%
+    // **修復預覽更新問題：確保allCardsSortable陣列同步最新狀態**
+    if (allCardsSortable && allCardsSortable.length > 0) {
+      // 重新初始化allCardsSortable，確保包含最新的主卡片
+      const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
+      if (mainCardIndex !== -1) {
+        // 更新主卡片的資料
+        allCardsSortable[mainCardIndex] = {
+          type: 'main',
+          id: 'main',
+          flex_json: getMainBubble({ ...getFormData(), pageview: latestPageview, page_id: 'M01001' }),
+          img: getFormData().main_image_url || defaultCard.main_image_url
+        };
+        console.log('✅ 已更新allCardsSortable中的主卡片，pageview:', latestPageview);
       }
-      
-      const reward = Math.floor(deductedPoints * rewardRate);
-      
-      rewardDetails.push({
-        position: index, // 從0開始，顯示時+1
-        cardType: card.type,
-        reward: reward
-      });
-    });
-  }
-  
-  return rewardDetails;
-}
-
-// 💡 點數不足警告 (非阻塞)
-function showPointsWarning(currentPoints, requiredPoints) {
-  // 可以用toast通知或其他非阻塞方式
-  console.log(`⚠️ 點數不足警告: 目前${currentPoints}點，需要${requiredPoints}點`);
-  
-  // 如果頁面還開著，可以顯示溫和提醒
-  setTimeout(() => {
-    if (!document.hidden) {
-      const warningDiv = document.createElement('div');
-      warningDiv.style.cssText = `
-        position: fixed; top: 20px; right: 20px; z-index: 10000;
-        background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px;
-        padding: 12px 16px; color: #856404; font-size: 14px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        max-width: 300px; animation: slideIn 0.3s ease;
-      `;
-      warningDiv.innerHTML = `
-        <div style="font-weight: bold; margin-bottom: 4px;">⚠️ 點數提醒</div>
-        <div>分享已完成，但點數不足</div>
-        <div style="font-size: 12px; margin-top: 4px;">
-          目前: ${currentPoints}點 | 需要: ${requiredPoints}點
-        </div>
-      `;
-      document.body.appendChild(warningDiv);
-      
-      // 5秒後自動消失
-      setTimeout(() => {
-        if (warningDiv.parentNode) {
-          warningDiv.remove();
+    }
+    
+    renderPreview();
+    renderShareJsonBox();
+    
+    // **步驟6：清理FLEX JSON並分享**
+    const cleanFlexJson = cleanFlexJsonForShare(flexJson);
+    console.log('📤 分享清理後的FLEX JSON');
+    await liff.shareTargetPicker([cleanFlexJson])
+      .then(() => {
+        hideShareLoading();
+        window.shareConfirmed = false; // 🔧 重置確認標記
+        
+        // 顯示分享成功與點數交易結果
+        let successMessage = '✅ 分享會員卡成功！\n\n';
+        if (shareResult) {
+          successMessage += '💰 分享結果：\n';
+          // 🔧 修復：只顯示分享卡扣除的10點，不顯示總扣除點數
+          successMessage += `• 扣除分享點數：10點\n\n`;
+          
+                      // 🔧 修復：顯示詳細的回饋明細
+          if (shareResult.rewardDetails && shareResult.rewardDetails.length > 0) {
+            successMessage += '🎯 分享回饋點數明細：\n';
+            shareResult.rewardDetails.forEach(detail => {
+              const cardTypeText = detail.cardType === 'main' ? '分享卡' : '活動卡';
+              const rewardText = `+${detail.reward.toFixed(0)}點`;
+              successMessage += `回饋(位置${detail.position + 1})-${cardTypeText}:${rewardText}\n`;
+            });
+            successMessage += `總回饋點數:${shareResult.totalRewarded.toFixed(0)}點\n\n`;
+          }
         }
-      }, 5000);
-    }
-  }, 2000); // 分享完成2秒後顯示
-}
-
-// 🎯 更新本地點數顯示
-function updateLocalPointsDisplay(transactionResult) {
-  if (transactionResult.pointsResults && transactionResult.pointsResults.length > 0) {
-    const mainCardResult = transactionResult.pointsResults.find(r => r.type === 'main');
-    if (mainCardResult) {
-      // 更新頁面上的點數顯示
-      const pointsElements = document.querySelectorAll('[data-points-display]');
-      pointsElements.forEach(el => {
-        el.textContent = mainCardResult.finalBalance;
+        successMessage += '📝 請記得關閉本會員卡編修頁面';
+        
+        alert(successMessage);
+        closeOrRedirect();
+      })
+      .catch((error) => {
+        hideShareLoading();
+        window.shareConfirmed = false; // 🔧 重置確認標記
+        console.log('分享取消或失敗:', error);
+        // 不顯示錯誤訊息，因為用戶可能主動取消分享
+        closeOrRedirect();
       });
-      
-      console.log('✅ 本地點數顯示已更新:', mainCardResult.finalBalance);
-    }
-  }
-}
-
-// 🎉 顯示點數交易結果 (背景完成後) - 🔧 修正：調整視窗高度和圖示
-function showPointsTransactionResult(transactionResult) {
-  if (!document.hidden && transactionResult.pointsTransaction) {
-    const result = transactionResult.pointsTransaction;
-    
-    // 🔧 修正：增加視窗高度和調整樣式
-    const notificationDiv = document.createElement('div');
-    notificationDiv.style.cssText = `
-      position: fixed; top: 20px; right: 20px; z-index: 10000;
-      background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px;
-      padding: 20px 24px; color: #155724; font-size: 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      max-width: 380px; min-height: 200px; animation: slideIn 0.3s ease;
-      line-height: 1.6;
-    `;
-    
-    let content = '<div style="font-weight: bold; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center;"><img src="docs/20250626-TEST7.jpg" style="width: 24px; height: 24px; margin-right: 8px; border-radius: 4px;"> 分享卡片成功！！</div>';
-    
-    // 🔧 修正：只顯示主卡扣除的10點
-    content += `<div style="color: #d32f2f; font-size: 14px; margin-bottom: 12px;">`;
-    content += `💰 扣除分享點數: -10點</div>`;
-    
-    // 🔧 修正：顯示詳細的回饋明細
-    if (result.rewardDetails && result.rewardDetails.length > 0) {
-      content += '<div style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">';
-      content += '<div style="font-weight: bold; margin-bottom: 8px;">🎁 分享回饋明細:</div>';
-      
-      result.rewardDetails.forEach(detail => {
-        const cardTypeText = detail.cardType === 'main' ? '分享卡' : '活動卡';
-        content += `• 位置${detail.position + 1}-${cardTypeText}: +${detail.reward}點<br>`;
-      });
-      
-      content += `<div style="font-weight: bold; color: #2e7d32; margin-top: 8px; font-size: 15px;">`;
-      content += `總回饋點數: +${result.totalRewarded}點</div>`;
-      content += '</div>';
-    }
-    
-    // 🔧 修正：顯示最終點數餘額
-    if (result.pointsResults && result.pointsResults.length > 0) {
-      const mainCardResult = result.pointsResults.find(r => r.type === 'main');
-      if (mainCardResult) {
-        content += `<div style="font-weight: bold; color: #1976d2; font-size: 15px; margin-top: 8px;">`;
-        content += `💳 目前點數餘額: ${mainCardResult.finalBalance}點</div>`;
-      }
-    }
-    
-    notificationDiv.innerHTML = content;
-    document.body.appendChild(notificationDiv);
-    
-    // 12秒後自動消失 (增加時間)
-    setTimeout(() => {
-      if (notificationDiv.parentNode) {
-        notificationDiv.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notificationDiv.remove(), 300);
-      }
-    }, 12000);
+  } catch (err) {
+    hideShareLoading();
+    window.shareConfirmed = false; // 🔧 重置確認標記
+    alert('儲存或分享失敗: ' + err.message);
   }
 }
 
@@ -3916,7 +3723,7 @@ function showAutoShareError(message) {
   }
 }
 
-// 🚀 極簡版本：直接載入個人卡片 (同CHANNEL ID，相同USER ID)
+// 載入個人卡片
 async function loadPersonalCard(pageId, userId) {
   try {
     console.log('👤 載入個人卡片:', { pageId, userId });
@@ -3929,6 +3736,7 @@ async function loadPersonalCard(pageId, userId) {
     const result = await response.json();
     console.log('👤 個人卡片API回應:', result);
     
+    // 🔧 修復：API返回的是陣列，需要取第一個元素
     if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
       console.log('✅ 找到個人卡片資料:', result.data[0]);
       return result.data[0];
@@ -4006,7 +3814,7 @@ async function initUnifiedLiff() {
     }
     
     // 初始化LIFF
-    await liff.init({ liffId: '2007327814-OoJBbnwP' });
+    await liff.init({ liffId: '2007327814-DGly5XNk' });
     console.log('✅ LIFF初始化成功');
     
     // 檢查登入狀態
@@ -4075,54 +3883,30 @@ async function initUnifiedSystem() {
   }
 }
 
-// 🧪 測試版本一般模式初始化 - 延遲載入優化版本
+// 一般模式初始化
 async function initGeneralMode() {
   try {
-    // 🚀 優化：並行處理用戶資料載入
-    const profilePromise = UNIFIED_LIFF.profile.userId ? 
-      fillAllFieldsWithProfile() : Promise.resolve();
+    // 填充LINE用戶資料
+    if (UNIFIED_LIFF.profile.userId) {
+      await fillAllFieldsWithProfile();
+    }
     
-    // 立即初始化必要的UI功能（不等待）
+    // 初始化所有功能
     initImagePreviews();
+    initImageLibraryModal();
     
-    // 等待用戶資料載入完成
-    await profilePromise;
+    // 🔧 關鍵修復：先載入宣傳卡片並處理排序，再渲染預覽
+    await loadPromoCards();
     
-    // 🧪 測試版本：延遲載入宣傳卡片，改善初始載入速度
-    // await loadPromoCards(); // 移到頁籤切換時載入
+    // 🔧 修復：只有在loadPromoCards完成後才渲染預覽，確保排序正確
+    console.log('🎯 開始渲染預覽，當前排序:', allCardsSortable.map(c => c.id));
+    renderPreview();
+    renderShareJsonBox();
     
-    // 🆕 簡化預覽：只渲染主卡片
-    renderMainCardPreview();
-    
-    console.log('✅ 測試版本初始化完成 (快速模式)');
+    console.log('✅ 一般模式初始化完成');
   } catch (error) {
     console.error('❌ 一般模式初始化失敗:', error);
   }
-}
-
-// 🆕 新增：快速主卡預覽渲染
-function renderMainCardPreview() {
-  const bubble = getMainBubble(getFormData());
-  const flexJson = {
-    type: 'flex',
-    altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
-    contents: bubble
-  };
-  
-  const preview = document.getElementById('main-card-preview');
-  if (!preview) return;
-  
-  let chatbox = preview.querySelector('.chatbox');
-  if (!chatbox) {
-    chatbox = document.createElement('div');
-    chatbox.className = 'chatbox';
-    preview.appendChild(chatbox);
-  }
-  chatbox.innerHTML = '';
-  
-  const tempId = 'temp-chatbox-' + Date.now();
-  chatbox.id = tempId;
-  flex2html(tempId, flexJson);
 }
 
 // 📱 手機版頁籤切換功能

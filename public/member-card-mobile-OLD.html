@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>專屬會員分享卡 (手機版)</title>
+    <title>我專屬的會員卡片 (手機版)</title>
     <link rel="stylesheet" href="css/style.css?v=20250626">
     <link rel="stylesheet" href="js/flex2html.css?v=20250626">
     <script src="js/flex2html.min.js"></script>
@@ -196,29 +196,6 @@
             padding: 4px 8px;
             border-radius: 12px;
             border: 1px solid #4caf50;
-        }
-        
-        /* 🎯 點數通知動畫 */
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
         }
         
         /* 💻 預覽區域樣式優化 */
@@ -574,7 +551,7 @@
             z-index: 1001;
         }
         
-        /* 📱 手機版頁籤樣式 */
+        /* 📱 手機版頁籤樣式 - 優化版 */
         .mobile-tabs {
             display: flex;
             background: #fff;
@@ -582,42 +559,71 @@
             box-shadow: 0 2px 12px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             overflow: hidden;
+            border: 2px solid #e0e0e0;
         }
         
         .tab-btn {
             flex: 1;
             background: transparent;
             border: none;
-            padding: 16px 8px;
+            padding: 18px 8px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .tab-btn:last-child {
+            border-right: none;
         }
         
         .tab-btn:not(.active) {
             color: #666;
+            background: #fafafa;
         }
         
         .tab-btn.active {
             background: linear-gradient(135deg, #4caf50, #45a049);
             color: white;
             box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+            border-color: #4caf50;
+            transform: translateY(-1px);
         }
         
         .tab-btn:not(.active):hover {
-            background: #f8f9fa;
+            background: #f0f8f0;
             color: #4caf50;
+            border-color: #4caf50;
         }
         
         .tab-icon {
-            font-size: 20px;
-            margin-bottom: 4px;
+            font-size: 22px;
+            margin-bottom: 6px;
+            display: block;
         }
         
         .tab-text {
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        
+        /* 🔧 手機版頁籤響應式優化 */
+        @media (max-width: 480px) {
+            .tab-btn {
+                padding: 16px 4px;
+            }
+            
+            .tab-icon {
+                font-size: 20px;
+                margin-bottom: 4px;
+            }
+            
+            .tab-text {
+                font-size: 13px;
+                font-weight: 600;
+            }
         }
         
         /* 頁籤內容 */
@@ -857,7 +863,10 @@
         <span id="liffUserInfo" style="display:inline-flex;align-items:center;gap:8px;"></span>
     </div>
     
-    <h1 style="text-align:center; margin-top:24px;">📱 專屬會員分享卡 (手機版)</h1>
+    <h1 style="text-align:center; margin-top:24px;">📱 我專屬的會員卡片 (手機版)</h1>
+    <div style="text-align:center; margin-bottom:20px; color:#666; font-size:14px;">
+        🚀 LIFF ID: 2007327814-DGly5XNk | 版本: v20250624
+    </div>
     
 
     
@@ -1082,24 +1091,6 @@
             </div>
         </div>
     </div>
-    
-    <!-- 版權資訊區域 -->
-    <footer style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-top: 1px solid #e0e0e0; text-align: center;">
-        <div style="color: #666; font-size: 12px; line-height: 1.5;">
-            <div style="margin-bottom: 8px;">
-                <strong>📱 專屬會員分享卡系統</strong>
-            </div>
-            <div style="margin-bottom: 4px;">
-                🚀 LIFF ID: 2007327814-DGly5XNk | 版本: v20250626-FINAL
-            </div>
-            <div style="margin-bottom: 4px;">
-                📅 更新日期: 2025-06-26 | 手機版正式版
-            </div>
-            <div style="font-size: 11px; color: #999;">
-                © 2025 專屬會員分享卡系統 - 快速分享，精準行銷
-            </div>
-        </div>
-    </footer>
     
     <script src="js/member-card-mobile.js"></script>
 </body>
