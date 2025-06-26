@@ -551,7 +551,7 @@
             z-index: 1001;
         }
         
-        /* 📱 手機版頁籤樣式 */
+        /* 📱 手機版頁籤樣式 - 優化版 */
         .mobile-tabs {
             display: flex;
             background: #fff;
@@ -559,42 +559,71 @@
             box-shadow: 0 2px 12px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             overflow: hidden;
+            border: 2px solid #e0e0e0;
         }
         
         .tab-btn {
             flex: 1;
             background: transparent;
             border: none;
-            padding: 16px 8px;
+            padding: 18px 8px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .tab-btn:last-child {
+            border-right: none;
         }
         
         .tab-btn:not(.active) {
             color: #666;
+            background: #fafafa;
         }
         
         .tab-btn.active {
             background: linear-gradient(135deg, #4caf50, #45a049);
             color: white;
             box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+            border-color: #4caf50;
+            transform: translateY(-1px);
         }
         
         .tab-btn:not(.active):hover {
-            background: #f8f9fa;
+            background: #f0f8f0;
             color: #4caf50;
+            border-color: #4caf50;
         }
         
         .tab-icon {
-            font-size: 20px;
-            margin-bottom: 4px;
+            font-size: 22px;
+            margin-bottom: 6px;
+            display: block;
         }
         
         .tab-text {
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        
+        /* 🔧 手機版頁籤響應式優化 */
+        @media (max-width: 480px) {
+            .tab-btn {
+                padding: 16px 4px;
+            }
+            
+            .tab-icon {
+                font-size: 20px;
+                margin-bottom: 4px;
+            }
+            
+            .tab-text {
+                font-size: 13px;
+                font-weight: 600;
+            }
         }
         
         /* 頁籤內容 */
@@ -850,11 +879,11 @@
             </button>
             <button class="tab-btn" data-tab="promo-cards">
                 <div class="tab-icon">🎨</div>
-                <div class="tab-text">附加卡片</div>
+                <div class="tab-text">附加活動卡</div>
             </button>
             <button class="tab-btn" data-tab="preview">
                 <div class="tab-icon">👀</div>
-                <div class="tab-text">卡片預覽</div>
+                <div class="tab-text">預覽及分享</div>
             </button>
         </div>
 
