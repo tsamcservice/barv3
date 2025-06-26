@@ -2325,7 +2325,7 @@ async function generateShareContent(formData) {
   return flexJson;
 }
 
-// 🚀 並行點數查詢 (不阻塞分享)
+// 🚀 並行點數查詢 (不阻塞分享) - 🔧 修正：使用正確的初始點數
 async function checkUserPointsAsync(userId) {
   try {
     const response = await fetch(`/api/cards?pageId=M01001&userId=${userId}`);
@@ -2334,23 +2334,24 @@ async function checkUserPointsAsync(userId) {
     if (result.success && result.data && result.data.length > 0) {
       return {
         mainCardId: result.data[0].id,
-        currentPoints: result.data[0].user_points || 0,
+        currentPoints: result.data[0].user_points || 168, // 🔧 修正：使用設定頁面的初始點數
         cardExists: true,
         cardData: result.data[0]
       };
     }
     
+    // 🔧 修正：新用戶使用正確的初始點數和卡片ID格式
     return {
-      mainCardId: 'temp-main-card-' + Date.now(),
-      currentPoints: 100, // 新用戶預設點數
+      mainCardId: null, // 讓後端自動生成正確的ID
+      currentPoints: 168, // 🔧 修正：使用設定頁面的初始點數168點
       cardExists: false,
       cardData: null
     };
   } catch (error) {
     console.log('⚠️ 點數查詢失敗，使用預設值:', error);
     return {
-      mainCardId: 'temp-main-card-' + Date.now(),
-      currentPoints: 100,
+      mainCardId: null, // 讓後端自動生成
+      currentPoints: 168, // 🔧 修正：使用正確的初始點數
       cardExists: false,
       cardData: null
     };
@@ -2372,16 +2373,16 @@ async function processPointsTransactionBackground(pointsData, formData) {
     // A. 儲存表單資料和排序 (無論點數是否足夠都要儲存)
     savePromises.push(saveCardDataBackground(pointsData, formData));
     
-    // B. 如果點數足夠，執行點數交易
-    if (pointsData.currentPoints >= requiredPoints) {
-      const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
-        id: c.id === 'main' ? pointsData.mainCardId : c.id, 
-        type: c.type,
-        position: i,
-        isTemp: c.id === 'main' && !pointsData.cardExists
-      })).filter(c => c.id);
-      
-      savePromises.push(processPointsTransaction(cardIdTypeArr, pointsData));
+         // B. 如果點數足夠，執行點數交易
+     if (pointsData.currentPoints >= requiredPoints) {
+       const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
+         id: c.id === 'main' ? (pointsData.mainCardId || 'main') : c.id, // 🔧 修正：處理null的mainCardId
+         type: c.type,
+         position: i, // 這裡保持從0開始，在processPointsTransaction中統一轉換
+         isTemp: c.id === 'main' && !pointsData.cardExists
+       })).filter(c => c.id);
+       
+       savePromises.push(processPointsTransaction(cardIdTypeArr, pointsData));
     } else {
       console.log('⚠️ 點數不足，但分享已完成，將儲存資料');
       showPointsWarning(pointsData.currentPoints, requiredPoints);
@@ -2459,16 +2460,22 @@ async function saveCardDataBackground(pointsData, formData) {
   }
 }
 
-// 🔧 新增：處理點數交易
+// 🔧 修正：處理點數交易 (統一位置從1開始)
 async function processPointsTransaction(cardIdTypeArr, pointsData) {
   try {
     console.log('💰 處理點數交易...');
+    
+    // 🔧 修正：統一位置編號從1開始 (position + 1)
+    const correctedCardIdTypeArr = cardIdTypeArr.map(card => ({
+      ...card,
+      position: card.position + 1 // 前端位置從1開始
+    }));
     
     const transactionResponse = await fetch('/api/cards/pageview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        cardIdTypeArr,
+        cardIdTypeArr: correctedCardIdTypeArr,
         includePointsTransaction: true,
         userId: liffProfile.userId,
         backgroundProcess: true
@@ -2496,39 +2503,73 @@ async function processPointsTransaction(cardIdTypeArr, pointsData) {
   }
 }
 
-// 🚀 快速分享成功提示 (不等待點數處理) - 🔧 修正2: 完整顯示點數資訊
+// 🚀 快速分享成功提示 - 🔧 修正：直接顯示實際回饋數據
 function showFastShareSuccess(pointsData) {
   const cardCount = allCardsSortable ? allCardsSortable.length : 1;
-  const requiredPoints = cardCount * 10;
+  const mainCardDeduction = 10; // 主卡固定扣除10點
   
-  let message = '✅ 分享會員卡成功！\n\n';
+  let message = '✅ 分享卡片成功！！\n\n';
   
-  // 🔧 修正：顯示目前點數
-  message += `💳 目前點數：${pointsData.currentPoints}點\n`;
+  // 🔧 修正：主卡點數
+  message += `💳 主卡點數：${pointsData.currentPoints}點\n`;
   
-  if (pointsData.currentPoints >= requiredPoints) {
-    message += `💰 扣除分享點數：${requiredPoints}點\n`;
-    message += `💳 預估剩餘點數：${pointsData.currentPoints - requiredPoints}點\n\n`;
+  if (pointsData.currentPoints >= mainCardDeduction) {
+    // 🔧 修正：只顯示主卡扣除點數
+    message += `💰 本次分享扣除點數：${mainCardDeduction}點\n\n`;
     
-    // 🔧 修正：預告分享回饋明細
-    message += '🎯 分享回饋明細 (處理中)：\n';
-    if (allCardsSortable && allCardsSortable.length > 0) {
-      allCardsSortable.forEach((card, index) => {
-        const cardTypeText = card.type === 'main' ? '分享卡' : '活動卡';
-        const position = index + 1;
-        message += `• 位置${position}-${cardTypeText}: 回饋點數計算中...\n`;
-      });
-    }
+    // 🔧 修正：計算實際回饋點數
+    const rewardDetails = calculateRewardPoints(mainCardDeduction);
+    const totalReward = rewardDetails.reduce((sum, detail) => sum + detail.reward, 0);
+    
+    message += `💰 分享回饋：${totalReward}點\n`;
+    
+    // 🔧 修正：顯示實際回饋明細 (位置從1開始)
+    rewardDetails.forEach(detail => {
+      const cardTypeText = detail.cardType === 'main' ? '分享卡' : '活動卡';
+      message += `位置${detail.position + 1}-${cardTypeText}：回饋${detail.reward}點\n`;
+    });
+    
     message += '\n🎯 點數交易處理中，請稍候...\n';
   } else {
-    message += `💸 需要點數：${requiredPoints}點\n`;
-    message += `❌ 不足點數：${requiredPoints - pointsData.currentPoints}點\n\n`;
+    message += `💸 需要點數：${mainCardDeduction}點\n`;
+    message += `❌ 不足點數：${mainCardDeduction - pointsData.currentPoints}點\n\n`;
     message += '⚠️ 點數不足，但分享已完成\n';
   }
   
-  message += '\n💾 卡片資料儲存中...\n';
+  message += '\n💾 卡片及回饋點數已儲存\n';
   message += '📝 請記得關閉本會員卡編修頁面';
   alert(message);
+}
+
+// 🔧 新增：計算實際回饋點數 (依據設定頁面的公式)
+function calculateRewardPoints(deductedPoints) {
+  const rewardDetails = [];
+  
+  if (allCardsSortable && allCardsSortable.length > 0) {
+    allCardsSortable.forEach((card, index) => {
+      let rewardRate = 0;
+      
+      // 依據位置設定回饋比例 (對應點數設定頁面)
+      switch (index) {
+        case 0: rewardRate = 0.80; break; // 位置1: 80%
+        case 1: rewardRate = 0.50; break; // 位置2: 50%
+        case 2: rewardRate = 0.10; break; // 位置3: 10%
+        case 3: rewardRate = 0.10; break; // 位置4: 10%
+        case 4: rewardRate = 0.10; break; // 位置5: 10%
+        default: rewardRate = 0.05; break; // 其他位置: 5%
+      }
+      
+      const reward = Math.floor(deductedPoints * rewardRate);
+      
+      rewardDetails.push({
+        position: index, // 從0開始，顯示時+1
+        cardType: card.type,
+        reward: reward
+      });
+    });
+  }
+  
+  return rewardDetails;
 }
 
 // 💡 點數不足警告 (非阻塞)
@@ -2582,7 +2623,7 @@ function updateLocalPointsDisplay(transactionResult) {
   }
 }
 
-// 🎉 顯示點數交易結果 (背景完成後) - 🔧 修正3: 完整顯示回饋明細
+// 🎉 顯示點數交易結果 (背景完成後) - 🔧 修正：統一位置顯示和扣除點數
 function showPointsTransactionResult(transactionResult) {
   if (!document.hidden && transactionResult.pointsTransaction) {
     const result = transactionResult.pointsTransaction;
@@ -2599,20 +2640,19 @@ function showPointsTransactionResult(transactionResult) {
     
     let content = '<div style="font-weight: bold; margin-bottom: 8px;">🎯 點數交易完成</div>';
     
-    // 🔧 修正：顯示扣除的分享點數
-    const cardCount = allCardsSortable ? allCardsSortable.length : 1;
-    const deductedPoints = cardCount * 10;
+    // 🔧 修正：只顯示主卡扣除的10點
     content += `<div style="color: #d32f2f; font-size: 13px; margin-bottom: 8px;">`;
-    content += `💰 扣除分享點數: -${deductedPoints}點</div>`;
+    content += `💰 扣除分享點數: -10點</div>`;
     
-    // 🔧 修正：顯示詳細的回饋明細
+    // 🔧 修正：顯示詳細的回饋明細 (位置已經在後端統一處理)
     if (result.rewardDetails && result.rewardDetails.length > 0) {
       content += '<div style="font-size: 13px; line-height: 1.4; margin-bottom: 8px;">';
       content += '<div style="font-weight: bold; margin-bottom: 4px;">🎁 分享回饋明細:</div>';
       
       result.rewardDetails.forEach(detail => {
         const cardTypeText = detail.cardType === 'main' ? '分享卡' : '活動卡';
-        content += `• 位置${detail.position + 1}-${cardTypeText}: +${detail.reward}點<br>`;
+        // 🔧 修正：位置已經在後端統一處理，直接顯示
+        content += `• 位置${detail.position}-${cardTypeText}: +${detail.reward}點<br>`;
       });
       
       content += `<div style="font-weight: bold; color: #2e7d32; margin-top: 4px;">`;
@@ -2632,7 +2672,7 @@ function showPointsTransactionResult(transactionResult) {
     notificationDiv.innerHTML = content;
     document.body.appendChild(notificationDiv);
     
-    // 10秒後自動消失 (增加時間讓用戶看清楚)
+    // 10秒後自動消失
     setTimeout(() => {
       if (notificationDiv.parentNode) {
         notificationDiv.style.animation = 'slideOut 0.3s ease';
