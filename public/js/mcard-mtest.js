@@ -2357,32 +2357,113 @@ async function checkUserPointsAsync(userId) {
   }
 }
 
-// 🎯 背景處理點數交易 (分享後執行，不阻塞用戶)
+// 🎯 背景處理點數交易和資料儲存 (分享後執行，不阻塞用戶)
 async function processPointsTransactionBackground(pointsData, formData) {
   try {
-    console.log('🎯 背景處理點數交易...');
+    console.log('🎯 背景處理點數交易和資料儲存...');
     
     // 計算需要的點數
     const cardCount = allCardsSortable ? allCardsSortable.length : 1;
     const requiredPoints = cardCount * 10;
     
-    // 檢查點數是否足夠
-    if (pointsData.currentPoints < requiredPoints) {
-      console.log('⚠️ 點數不足，但分享已完成');
-      // 可以發送通知或記錄，但不影響已完成的分享
+    // 🔧 修正1: 並行處理資料儲存和點數交易
+    const savePromises = [];
+    
+    // A. 儲存表單資料和排序 (無論點數是否足夠都要儲存)
+    savePromises.push(saveCardDataBackground(pointsData, formData));
+    
+    // B. 如果點數足夠，執行點數交易
+    if (pointsData.currentPoints >= requiredPoints) {
+      const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
+        id: c.id === 'main' ? pointsData.mainCardId : c.id, 
+        type: c.type,
+        position: i,
+        isTemp: c.id === 'main' && !pointsData.cardExists
+      })).filter(c => c.id);
+      
+      savePromises.push(processPointsTransaction(cardIdTypeArr, pointsData));
+    } else {
+      console.log('⚠️ 點數不足，但分享已完成，將儲存資料');
       showPointsWarning(pointsData.currentPoints, requiredPoints);
-      return;
     }
     
-    // 準備交易資料
-    const cardIdTypeArr = allCardsSortable.map((c, i) => ({ 
-      id: c.id === 'main' ? pointsData.mainCardId : c.id, 
-      type: c.type,
-      position: i,
-      isTemp: c.id === 'main' && !pointsData.cardExists
-    })).filter(c => c.id);
+    // 等待所有背景處理完成
+    const results = await Promise.allSettled(savePromises);
+    console.log('✅ 背景處理完成:', results);
     
-    // 執行點數交易 (背景處理)
+  } catch (error) {
+    console.log('⚠️ 背景處理失敗:', error);
+  }
+}
+
+// 🔧 新增：背景儲存卡片資料
+async function saveCardDataBackground(pointsData, formData) {
+  try {
+    console.log('💾 背景儲存卡片資料...');
+    
+    // 生成完整的FLEX JSON
+    let flexJson;
+    if (allCardsSortable && allCardsSortable.length > 1) {
+      const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
+      if (mainCardIndex !== -1) {
+        allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...formData, page_id: 'M01001' });
+        allCardsSortable[mainCardIndex].img = formData.main_image_url || defaultCard.main_image_url;
+      }
+      
+      const flexArr = allCardsSortable.map(c => c.flex_json);
+      flexJson = {
+        type: 'flex',
+        altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
+        contents: {
+          type: 'carousel',
+          contents: flexArr
+        }
+      };
+    } else {
+      flexJson = {
+        type: 'flex',
+        altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
+        contents: getMainBubble({ ...formData, page_id: 'M01001' })
+      };
+    }
+    
+    // 清理FLEX JSON用於儲存
+    const cleanFlexJsonForSave = cleanFlexJsonForShare(flexJson);
+    
+    // 準備儲存資料
+    const saveData = {
+      page_id: 'M01001',
+      line_user_id: liffProfile.userId,
+      ...formData,
+      flex_json: cleanFlexJsonForSave,
+      card_order: allCardsSortable ? allCardsSortable.map(c => c.id) : ['main']
+    };
+    
+    // 儲存到資料庫
+    const response = await fetch('/api/cards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(saveData)
+    });
+    
+    if (response.ok) {
+      console.log('✅ 卡片資料儲存成功');
+      return { success: true };
+    } else {
+      throw new Error('儲存失敗');
+    }
+    
+  } catch (error) {
+    console.log('⚠️ 卡片資料儲存失敗:', error);
+    return { success: false, error };
+  }
+}
+
+// 🔧 新增：處理點數交易
+async function processPointsTransaction(cardIdTypeArr, pointsData) {
+  try {
+    console.log('💰 處理點數交易...');
+    
     const transactionResponse = await fetch('/api/cards/pageview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2390,7 +2471,7 @@ async function processPointsTransactionBackground(pointsData, formData) {
         cardIdTypeArr,
         includePointsTransaction: true,
         userId: liffProfile.userId,
-        backgroundProcess: true // 標記為背景處理
+        backgroundProcess: true
       })
     });
     
@@ -2398,36 +2479,54 @@ async function processPointsTransactionBackground(pointsData, formData) {
       const transactionResult = await transactionResponse.json();
       console.log('✅ 背景點數交易完成:', transactionResult);
       
-      // 更新本地顯示的點數 (如果用戶還在頁面上)
+      // 更新本地顯示的點數
       updateLocalPointsDisplay(transactionResult);
       
       // 顯示點數交易結果通知
       showPointsTransactionResult(transactionResult);
+      
+      return { success: true, result: transactionResult };
+    } else {
+      throw new Error('點數交易失敗');
     }
     
   } catch (error) {
-    console.log('⚠️ 背景點數處理失敗:', error);
-    // 不影響已完成的分享，只記錄錯誤
+    console.log('⚠️ 點數交易失敗:', error);
+    return { success: false, error };
   }
 }
 
-// 🚀 快速分享成功提示 (不等待點數處理)
+// 🚀 快速分享成功提示 (不等待點數處理) - 🔧 修正2: 完整顯示點數資訊
 function showFastShareSuccess(pointsData) {
   const cardCount = allCardsSortable ? allCardsSortable.length : 1;
   const requiredPoints = cardCount * 10;
   
   let message = '✅ 分享會員卡成功！\n\n';
   
+  // 🔧 修正：顯示目前點數
+  message += `💳 目前點數：${pointsData.currentPoints}點\n`;
+  
   if (pointsData.currentPoints >= requiredPoints) {
-    message += `💰 將扣除分享點數：${requiredPoints}點\n`;
+    message += `💰 扣除分享點數：${requiredPoints}點\n`;
     message += `💳 預估剩餘點數：${pointsData.currentPoints - requiredPoints}點\n\n`;
-    message += '🎯 點數交易處理中，請稍候...\n';
+    
+    // 🔧 修正：預告分享回饋明細
+    message += '🎯 分享回饋明細 (處理中)：\n';
+    if (allCardsSortable && allCardsSortable.length > 0) {
+      allCardsSortable.forEach((card, index) => {
+        const cardTypeText = card.type === 'main' ? '分享卡' : '活動卡';
+        const position = index + 1;
+        message += `• 位置${position}-${cardTypeText}: 回饋點數計算中...\n`;
+      });
+    }
+    message += '\n🎯 點數交易處理中，請稍候...\n';
   } else {
+    message += `💸 需要點數：${requiredPoints}點\n`;
+    message += `❌ 不足點數：${requiredPoints - pointsData.currentPoints}點\n\n`;
     message += '⚠️ 點數不足，但分享已完成\n';
-    message += `💰 目前點數：${pointsData.currentPoints}點\n`;
-    message += `💸 需要點數：${requiredPoints}點\n\n`;
   }
   
+  message += '\n💾 卡片資料儲存中...\n';
   message += '📝 請記得關閉本會員卡編修頁面';
   alert(message);
 }
@@ -2483,7 +2582,7 @@ function updateLocalPointsDisplay(transactionResult) {
   }
 }
 
-// 🎉 顯示點數交易結果 (背景完成後)
+// 🎉 顯示點數交易結果 (背景完成後) - 🔧 修正3: 完整顯示回饋明細
 function showPointsTransactionResult(transactionResult) {
   if (!document.hidden && transactionResult.pointsTransaction) {
     const result = transactionResult.pointsTransaction;
@@ -2495,31 +2594,51 @@ function showPointsTransactionResult(transactionResult) {
       background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px;
       padding: 16px 20px; color: #155724; font-size: 14px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      max-width: 320px; animation: slideIn 0.3s ease;
+      max-width: 350px; animation: slideIn 0.3s ease;
     `;
     
     let content = '<div style="font-weight: bold; margin-bottom: 8px;">🎯 點數交易完成</div>';
     
+    // 🔧 修正：顯示扣除的分享點數
+    const cardCount = allCardsSortable ? allCardsSortable.length : 1;
+    const deductedPoints = cardCount * 10;
+    content += `<div style="color: #d32f2f; font-size: 13px; margin-bottom: 8px;">`;
+    content += `💰 扣除分享點數: -${deductedPoints}點</div>`;
+    
+    // 🔧 修正：顯示詳細的回饋明細
     if (result.rewardDetails && result.rewardDetails.length > 0) {
-      content += '<div style="font-size: 13px; line-height: 1.4;">';
+      content += '<div style="font-size: 13px; line-height: 1.4; margin-bottom: 8px;">';
+      content += '<div style="font-weight: bold; margin-bottom: 4px;">🎁 分享回饋明細:</div>';
+      
       result.rewardDetails.forEach(detail => {
         const cardTypeText = detail.cardType === 'main' ? '分享卡' : '活動卡';
-        content += `回饋 位置${detail.position + 1}-${cardTypeText}: +${detail.reward}點<br>`;
+        content += `• 位置${detail.position + 1}-${cardTypeText}: +${detail.reward}點<br>`;
       });
-      content += `<strong>總回饋: +${result.totalRewarded}點</strong>`;
+      
+      content += `<div style="font-weight: bold; color: #2e7d32; margin-top: 4px;">`;
+      content += `總回饋點數: +${result.totalRewarded}點</div>`;
       content += '</div>';
+    }
+    
+    // 🔧 修正：顯示最終點數餘額
+    if (result.pointsResults && result.pointsResults.length > 0) {
+      const mainCardResult = result.pointsResults.find(r => r.type === 'main');
+      if (mainCardResult) {
+        content += `<div style="font-weight: bold; color: #1976d2; font-size: 14px;">`;
+        content += `💳 目前點數餘額: ${mainCardResult.finalBalance}點</div>`;
+      }
     }
     
     notificationDiv.innerHTML = content;
     document.body.appendChild(notificationDiv);
     
-    // 8秒後自動消失
+    // 10秒後自動消失 (增加時間讓用戶看清楚)
     setTimeout(() => {
       if (notificationDiv.parentNode) {
         notificationDiv.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => notificationDiv.remove(), 300);
       }
-    }, 8000);
+    }, 10000);
   }
 }
 
