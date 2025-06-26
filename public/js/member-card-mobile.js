@@ -735,7 +735,6 @@ function renderLiffUserInfo(profile) {
   el.innerHTML = `
     <img src="${profile.pictureUrl}" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;">
     <span style="font-weight:bold;">${profile.displayName}</span>
-    <img src="https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png" style="width:24px;height:24px;vertical-align:middle;background:#06C755;border-radius:6px;box-shadow:0 1px 4px #0002;">
   `;
 }
 
@@ -1570,12 +1569,13 @@ function getMainBubble(cardData) {
   bubble._cardId = cardData.page_id || pageId; // 使用實際的pageId
   bubble._cardType = 'main'; // 標示為主卡片
   
-  // **新方案：在footer的action中加入隱藏的主卡標識（LINE規範內）**
-  if (bubble.footer && bubble.footer.contents && bubble.footer.contents[0]) {
-    // 在footer的action中加入pageId參數，LINE接受這種格式
-    const originalUri = bubble.footer.contents[0].action.uri;
-    bubble.footer.contents[0].action.uri = originalUri + `?cardType=main&pageId=${pageId}`;
-  }
+  // **完全移除Footer URI參數添加，避免影響外部連結**
+  // 主卡片識別改為完全依賴其他4種方法：
+  // 1. 零寬度空格標識 (最穩定)
+  // 2. _cardType 自定義欄位
+  // 3. _cardId 卡片ID
+  // 4. Pageview格式檢查
+  // 不再修改Footer URI，保持用戶原始設定
   
       // 只記錄一次，避免重複日誌
     if (!bubble._logged) {
