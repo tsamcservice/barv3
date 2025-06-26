@@ -4006,7 +4006,7 @@ async function initUnifiedLiff() {
     }
     
     // 初始化LIFF
-    await liff.init({ liffId: '2007327814-OoJBbnwP' });
+    await liff.init({ liffId: '2007327814-DGly5XNk' });
     console.log('✅ LIFF初始化成功');
     
     // 檢查登入狀態
