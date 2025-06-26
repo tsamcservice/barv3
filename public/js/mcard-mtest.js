@@ -1874,17 +1874,16 @@ window.onload = async function() {
             if (rewardResult.success) {
               console.log('💰 分享回饋成功:', rewardResult);
               
-              // 顯示回饋成功訊息
+              // 🔧 簡化：直接顯示回饋成功並立即關閉
               loadingDiv.innerHTML = `
                 <div style="font-size:18px;color:#4caf50;margin-top:60px;">
                   ✅ 分享成功！<br/>
-                  💰 獲得 ${rewardResult.rewardAmount} 點回饋<br/>
-                  <div style="font-size:14px;color:#666;margin-top:10px;">3秒後自動關閉...</div>
+                  💰 獲得 ${rewardResult.rewardAmount} 點回饋
                 </div>
               `;
               
-              // 3秒後關閉
-              setTimeout(closeOrRedirect, 3000);
+              // 🔧 優化：1秒後關閉，不需要等3秒
+              setTimeout(closeOrRedirect, 1000);
             } else {
               console.error('回饋處理失敗:', rewardResult.error);
               // 即使回饋失敗，分享還是成功的，所以正常關閉
@@ -2465,10 +2464,10 @@ async function processPointsTransaction(cardIdTypeArr, pointsData) {
   try {
     console.log('💰 處理點數交易...');
     
-    // 🔧 修正：統一位置編號從1開始 (position + 1)
+    // 🔧 修正：位置編號保持一致，不需要+1，因為API內部會正確處理
     const correctedCardIdTypeArr = cardIdTypeArr.map(card => ({
       ...card,
-      position: card.position + 1 // 前端位置從1開始
+      position: card.position // 保持原始位置，從0開始
     }));
     
     const transactionResponse = await fetch('/api/cards/pageview', {

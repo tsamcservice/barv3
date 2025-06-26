@@ -527,7 +527,12 @@
                         <div class="detail-label">附加位置</div>
                         <div class="detail-value">位置 ${transaction.position_index + 1}</div>
                     </div>
-                    ` : ''}
+                    ` : (transaction.transaction_type === 'reward_auto_share' ? `
+                    <div class="detail-item">
+                        <div class="detail-label">來源</div>
+                        <div class="detail-value">自動分享</div>
+                    </div>
+                    ` : '')}
                     ${transaction.reward_percentage ? `
                     <div class="detail-item">
                         <div class="detail-label">回饋比例</div>

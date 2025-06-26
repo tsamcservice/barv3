@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     // 4. 記錄交易
     const shareSessionId = crypto.randomUUID();
     
-    // 記錄回饋交易
+    // 🔧 修正：記錄回饋交易，position_index設為null，讓交易記錄顯示"自動分享"
     const { error: transactionError } = await supabase
       .from('points_transactions')
       .insert({
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
         balance_before: currentPoints,
         balance_after: newPoints,
         share_session_id: shareSessionId,
-        position_index: 4, // 自動分享固定為位置4（位置5最右邊）
+        position_index: null, // 🔧 設為null，讓前端顯示"自動分享"
         reward_percentage: actualRewardPercentage
       });
       
