@@ -3457,26 +3457,56 @@ function showAutoShareError(message) {
   }
 }
 
-// 載入個人卡片
+// 🧪 測試版本：同時嘗試載入原版本資料
 async function loadPersonalCard(pageId, userId) {
   try {
     console.log('👤 載入個人卡片:', { pageId, userId });
     
-    const response = await fetch(`/api/cards?pageId=${pageId}&userId=${userId}`);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    // 🧪 先嘗試載入當前測試版USER ID的資料
+    let response = await fetch(`/api/cards?pageId=${pageId}&userId=${userId}`);
+    let result = await response.json();
     
-    const result = await response.json();
-    console.log('👤 個人卡片API回應:', result);
-    
-    // 🔧 修復：API返回的是陣列，需要取第一個元素
     if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
-      console.log('✅ 找到個人卡片資料:', result.data[0]);
+      console.log('✅ 找到測試版本卡片資料:', result.data[0]);
       return result.data[0];
     }
     
-    console.log('⚠️ 沒有找到個人卡片資料');
+    // 🔄 如果測試版沒有資料，嘗試查詢所有M01001的資料並選擇最新的
+    console.log('⚠️ 測試版本沒有資料，嘗試載入原版本資料...');
+    response = await fetch(`/api/cards?pageId=${pageId}`);
+    result = await response.json();
+    
+    if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+      // 選擇最新更新的資料 (有line_user_id的)
+      const userCards = result.data.filter(card => card.line_user_id);
+      if (userCards.length > 0) {
+        // 按更新時間排序，取最新的
+        const latestCard = userCards.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+        console.log('✅ 找到原版本卡片資料，自動匯入測試版:', latestCard);
+        
+        // 🆕 自動複製到測試版USER ID下 (可選)
+        try {
+          const copyResponse = await fetch('/api/cards', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...latestCard,
+              line_user_id: userId, // 使用測試版USER ID
+              id: undefined // 讓資料庫自動生成新ID
+            })
+          });
+          if (copyResponse.ok) {
+            console.log('✅ 原版本資料已複製到測試版');
+          }
+        } catch (copyError) {
+          console.log('⚠️ 資料複製失敗:', copyError);
+        }
+        
+        return latestCard;
+      }
+    }
+    
+    console.log('⚠️ 沒有找到任何卡片資料');
     return null;
   } catch (error) {
     console.log('👤 個人卡片載入失敗:', error);
@@ -3617,30 +3647,54 @@ async function initUnifiedSystem() {
   }
 }
 
-// 一般模式初始化
+// 🧪 測試版本一般模式初始化 - 延遲載入優化版本
 async function initGeneralMode() {
   try {
-    // 填充LINE用戶資料
-    if (UNIFIED_LIFF.profile.userId) {
-      await fillAllFieldsWithProfile();
-    }
+    // 🚀 優化：並行處理用戶資料載入
+    const profilePromise = UNIFIED_LIFF.profile.userId ? 
+      fillAllFieldsWithProfile() : Promise.resolve();
     
-    // 初始化所有功能
+    // 立即初始化必要的UI功能（不等待）
     initImagePreviews();
-    initImageLibraryModal();
     
-    // 🔧 關鍵修復：先載入宣傳卡片並處理排序，再渲染預覽
-    await loadPromoCards();
+    // 等待用戶資料載入完成
+    await profilePromise;
     
-    // 🔧 修復：只有在loadPromoCards完成後才渲染預覽，確保排序正確
-    console.log('🎯 開始渲染預覽，當前排序:', allCardsSortable.map(c => c.id));
-    renderPreview();
-    renderShareJsonBox();
+    // 🧪 測試版本：延遲載入宣傳卡片，改善初始載入速度
+    // await loadPromoCards(); // 移到頁籤切換時載入
     
-    console.log('✅ 一般模式初始化完成');
+    // 🆕 簡化預覽：只渲染主卡片
+    renderMainCardPreview();
+    
+    console.log('✅ 測試版本初始化完成 (快速模式)');
   } catch (error) {
     console.error('❌ 一般模式初始化失敗:', error);
   }
+}
+
+// 🆕 新增：快速主卡預覽渲染
+function renderMainCardPreview() {
+  const bubble = getMainBubble(getFormData());
+  const flexJson = {
+    type: 'flex',
+    altText: getFormData().card_alt_title || getFormData().main_title_1 || defaultCard.main_title_1 || '我的會員卡',
+    contents: bubble
+  };
+  
+  const preview = document.getElementById('main-card-preview');
+  if (!preview) return;
+  
+  let chatbox = preview.querySelector('.chatbox');
+  if (!chatbox) {
+    chatbox = document.createElement('div');
+    chatbox.className = 'chatbox';
+    preview.appendChild(chatbox);
+  }
+  chatbox.innerHTML = '';
+  
+  const tempId = 'temp-chatbox-' + Date.now();
+  chatbox.id = tempId;
+  flex2html(tempId, flexJson);
 }
 
 // 📱 手機版頁籤切換功能
