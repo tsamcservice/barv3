@@ -2623,39 +2623,39 @@ function updateLocalPointsDisplay(transactionResult) {
   }
 }
 
-// 🎉 顯示點數交易結果 (背景完成後) - 🔧 修正：統一位置顯示和扣除點數
+// 🎉 顯示點數交易結果 (背景完成後) - 🔧 修正：調整視窗高度和圖示
 function showPointsTransactionResult(transactionResult) {
   if (!document.hidden && transactionResult.pointsTransaction) {
     const result = transactionResult.pointsTransaction;
     
-    // 創建優雅的通知
+    // 🔧 修正：增加視窗高度和調整樣式
     const notificationDiv = document.createElement('div');
     notificationDiv.style.cssText = `
       position: fixed; top: 20px; right: 20px; z-index: 10000;
       background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px;
-      padding: 16px 20px; color: #155724; font-size: 14px;
+      padding: 20px 24px; color: #155724; font-size: 14px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      max-width: 350px; animation: slideIn 0.3s ease;
+      max-width: 380px; min-height: 200px; animation: slideIn 0.3s ease;
+      line-height: 1.6;
     `;
     
-    let content = '<div style="font-weight: bold; margin-bottom: 8px;">🎯 點數交易完成</div>';
+    let content = '<div style="font-weight: bold; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center;"><img src="docs/20250626-TEST7.jpg" style="width: 24px; height: 24px; margin-right: 8px; border-radius: 4px;"> 分享卡片成功！！</div>';
     
     // 🔧 修正：只顯示主卡扣除的10點
-    content += `<div style="color: #d32f2f; font-size: 13px; margin-bottom: 8px;">`;
+    content += `<div style="color: #d32f2f; font-size: 14px; margin-bottom: 12px;">`;
     content += `💰 扣除分享點數: -10點</div>`;
     
-    // 🔧 修正：顯示詳細的回饋明細 (位置已經在後端統一處理)
+    // 🔧 修正：顯示詳細的回饋明細
     if (result.rewardDetails && result.rewardDetails.length > 0) {
-      content += '<div style="font-size: 13px; line-height: 1.4; margin-bottom: 8px;">';
-      content += '<div style="font-weight: bold; margin-bottom: 4px;">🎁 分享回饋明細:</div>';
+      content += '<div style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">';
+      content += '<div style="font-weight: bold; margin-bottom: 8px;">🎁 分享回饋明細:</div>';
       
       result.rewardDetails.forEach(detail => {
         const cardTypeText = detail.cardType === 'main' ? '分享卡' : '活動卡';
-        // 🔧 修正：位置已經在後端統一處理，直接顯示
-        content += `• 位置${detail.position}-${cardTypeText}: +${detail.reward}點<br>`;
+        content += `• 位置${detail.position + 1}-${cardTypeText}: +${detail.reward}點<br>`;
       });
       
-      content += `<div style="font-weight: bold; color: #2e7d32; margin-top: 4px;">`;
+      content += `<div style="font-weight: bold; color: #2e7d32; margin-top: 8px; font-size: 15px;">`;
       content += `總回饋點數: +${result.totalRewarded}點</div>`;
       content += '</div>';
     }
@@ -2664,7 +2664,7 @@ function showPointsTransactionResult(transactionResult) {
     if (result.pointsResults && result.pointsResults.length > 0) {
       const mainCardResult = result.pointsResults.find(r => r.type === 'main');
       if (mainCardResult) {
-        content += `<div style="font-weight: bold; color: #1976d2; font-size: 14px;">`;
+        content += `<div style="font-weight: bold; color: #1976d2; font-size: 15px; margin-top: 8px;">`;
         content += `💳 目前點數餘額: ${mainCardResult.finalBalance}點</div>`;
       }
     }
@@ -2672,13 +2672,13 @@ function showPointsTransactionResult(transactionResult) {
     notificationDiv.innerHTML = content;
     document.body.appendChild(notificationDiv);
     
-    // 10秒後自動消失
+    // 12秒後自動消失 (增加時間)
     setTimeout(() => {
       if (notificationDiv.parentNode) {
         notificationDiv.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => notificationDiv.remove(), 300);
       }
-    }, 10000);
+    }, 12000);
   }
 }
 
