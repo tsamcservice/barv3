@@ -729,12 +729,12 @@ const liffId = '2007327814-DGly5XNk'; // 🚀 同CHANNEL ID測試版LIFF ID
 
 // 🔄 修改：統一的用戶資訊顯示
 function renderLiffUserInfo(profile) {
-  const el = document.getElementById('liffUserInfo');
+  const el = document.getElementById('liffUser');
   if (!el) return;
   if (!profile) { el.innerHTML = ''; return; }
   el.innerHTML = `
-    <img src="${profile.pictureUrl}" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;">
-    <span style="font-weight:bold;">${profile.displayName}</span>
+    <img src="${profile.pictureUrl}" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+    <span style="font-weight:bold;color:#333;font-size:14px;">${profile.displayName}</span>
   `;
 }
 
