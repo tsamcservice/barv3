@@ -348,41 +348,128 @@ async function handleAutoShare(pageId) {
   try {
     console.log('📤 處理自動分享，頁面ID:', pageId);
     
-    // 隱藏編輯介面，只顯示預覽
-    hideEditingInterface();
+    // 🔧 優化：直接顯示分享載入狀態，不需要複雜的介面
+    const cardForm = document.getElementById('cardForm');
+    if (cardForm) cardForm.style.display = 'none';
+    const previewSection = document.querySelector('.preview-section');
+    if (previewSection) previewSection.style.display = 'none';
     
-    // 顯示載入狀態
-    showAutoShareLoading();
+    let loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+    loadingDiv.innerHTML = '<div style="font-size:20px;color:#4caf50;margin-top:60px;">🚀 正在自動分享...</div>';
+    document.body.appendChild(loadingDiv);
     
-    // 先嘗試載入個人卡片
-    let cardData = null;
-    if (UNIFIED_LIFF.isLoggedIn) {
-      console.log('👤 嘗試載入個人卡片...');
-      cardData = await loadPersonalCard(pageId, UNIFIED_LIFF.profile.userId);
-    }
+    let flexJson = null;
+    let cardId = null;
     
-    // 如果沒有個人卡片，載入預設卡片
-    if (!cardData) {
-      console.log('📋 載入預設卡片...');
-      cardData = await loadDefaultCard(pageId);
-    }
-    
-    if (cardData) {
-      console.log('✅ 卡片資料載入成功');
-      fillFormWithData(cardData);
-      await loadPromoCards();
-      renderPreview();
-      showAutoShareInterface();
+    // 🔧 優化：直接查詢並使用資料庫的JSON，不需要載入表單
+    if (UNIFIED_LIFF.profile.userId) {
+      // 1. pageId+userId：查詢個人卡片
+      const apiUrl = `/api/cards?pageId=${pageId}&userId=${UNIFIED_LIFF.profile.userId}`;
+      const result = await safeFetchJson(apiUrl);
+      flexJson = result?.data?.[0]?.flex_json;
+      cardId = result?.data?.[0]?.id;
     } else {
-      console.error('❌ 查無卡片資料');
-      showAutoShareError('查無卡片資料，無法分享');
+      // 2. 只有 pageId：查詢初始卡片（user_id 為 null）
+      const result = await safeFetchJson(`/api/cards?pageId=${pageId}`);
+      const defaultCard = Array.isArray(result?.data)
+        ? result.data.find(card => !card.line_user_id)
+        : null;
+      flexJson = defaultCard?.flex_json;
+      cardId = defaultCard?.id;
     }
+    
+    if (!flexJson) {
+      loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">查無卡片資料，無法分享</div>';
+      return;
+    }
+    
+    // 🔧 優化：直接更新pageview並分享，不需要渲染頁面
+    try {
+      // 建立要更新的卡片清單（主卡+宣傳卡）
+      let cardIdTypeArr = [{ id: cardId, type: 'main', position: 0 }];
+      
+      // 如果是carousel，還要包含宣傳卡片
+      if (flexJson.contents && flexJson.contents.type === 'carousel') {
+        const carouselContents = flexJson.contents.contents;
+        for (let i = 0; i < carouselContents.length; i++) {
+          const content = carouselContents[i];
+          if (!isMainCard(content) && content._cardId && content._cardId !== cardId) {
+            cardIdTypeArr.push({ id: content._cardId, type: 'promo', position: i });
+          }
+        }
+      }
+      
+      // 批次更新所有卡片的pageview
+      await fetch('/api/cards/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cardIdTypeArr })
+      });
+      
+      console.log('✅ Pageview更新完成，準備分享');
+    } catch (e) { 
+      console.log('⚠️ Pageview更新失敗，但繼續分享:', e);
+    }
+    
+    // 🔧 優化：直接分享，不需要顯示介面
+    const cleanFlexJson = cleanFlexJsonForShare(flexJson);
+    console.log('📤 自動分享：直接使用資料庫JSON');
+    
+    await liff.shareTargetPicker([cleanFlexJson])
+      .then(async () => {
+        // 🎯 分享成功後的10%回饋處理
+        try {
+          console.log('✅ 自動分享成功，開始處理10%回饋...');
+          
+          const rewardData = {
+            cardId: cardId,
+            userId: UNIFIED_LIFF.profile.userId,
+            source: 'auto_share'
+          };
+          
+          const rewardResponse = await fetch('/api/cards/auto-share-reward', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(rewardData)
+          });
+          
+          const rewardResult = await rewardResponse.json();
+          
+          if (rewardResult.success) {
+            console.log('💰 分享回饋成功:', rewardResult);
+            
+            // 🔧 簡化：直接顯示回饋成功並立即關閉
+            loadingDiv.innerHTML = `
+              <div style="font-size:18px;color:#4caf50;margin-top:60px;">
+                ✅ 分享成功！<br/>
+                💰 獲得 ${rewardResult.rewardAmount} 點回饋
+              </div>
+            `;
+            
+            // 🔧 優化：1秒後關閉，不需要等3秒
+            setTimeout(closeOrRedirect, 1000);
+          } else {
+            console.error('回饋處理失敗:', rewardResult.error);
+            closeOrRedirect();
+          }
+        } catch (error) {
+          console.error('回饋處理異常:', error);
+          closeOrRedirect();
+        }
+      })
+      .catch(() => {
+        console.log('分享取消或失敗');
+        closeOrRedirect();
+      });
     
   } catch (error) {
     console.error('❌ 自動分享處理失敗:', error);
-    showAutoShareError('載入失敗，請稍後再試');
-  } finally {
-    hideAutoShareLoading();
+    const loadingDiv = document.querySelector('.loading');
+    if (loadingDiv) {
+      loadingDiv.innerHTML = '<div style="color:#c62828;font-size:18px;">載入失敗，請稍後再試</div>';
+    }
+    setTimeout(closeOrRedirect, 2000);
   }
 }
 
