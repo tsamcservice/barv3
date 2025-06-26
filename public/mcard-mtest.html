@@ -198,6 +198,29 @@
             border: 1px solid #4caf50;
         }
         
+        /* 🎯 點數通知動畫 */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
         /* 💻 預覽區域樣式優化 */
         .preview-container {
             position: relative;
