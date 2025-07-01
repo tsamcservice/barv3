@@ -193,55 +193,70 @@
         }
         
         .promo-selector {
-            max-height: 260px;
+            max-height: 200px;
             overflow-y: visible;
             margin-bottom: 16px;
             border: 1px solid #e0e0e0;
             border-radius: 4px;
             padding: 8px;
+            background: #fafafa;
         }
         
-        /* 🔧 修正：確保promo-card-selector橫向滑動 */
+        /* 🔧 修正：讓選擇器區域與排序區一致 */
         #promo-card-selector {
-            gap: 8px !important;
-            overflow-x: auto !important;
-            overflow-y: visible !important;
-            flex-wrap: nowrap !important;
-            padding-bottom: 8px !important;
-            -webkit-overflow-scrolling: touch !important;
-            width: 100% !important;
+            gap: 8px;
+            margin-top: 16px;
+            overflow-x: auto;
+            overflow-y: visible;
+            flex-wrap: nowrap;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
         }
         
-        #promo-card-selector[style*="block"] {
+        /* 🔧 修正Toggle按鈕功能：使用屬性選擇器精確控制 */
+        #promo-card-selector[style*="display: block"] {
             display: flex !important;
         }
         
-        #promo-card-selector[style*="none"] {
+        #promo-card-selector[style*="display: none"] {
             display: none !important;
         }
         
+        /* 🔧 預設隱藏狀態 */
+        #promo-card-selector {
+            display: none;
+        }
+        
+        /* 🔧 讓選擇器卡片與排序區卡片尺寸一致 */
         #promo-card-selector .promo-card-thumb-select {
-            flex-shrink: 0 !important;
-            width: 120px !important;
-            min-width: 120px !important;
-            height: 220px !important;
-            border: 2px solid #ddd !important;
-            border-radius: 6px !important;
-            overflow: visible !important;
-            cursor: pointer !important;
-            position: relative !important;
-            transition: all 0.2s ease !important;
-            margin-right: 8px !important;
+            flex-shrink: 0;
+            width: 120px;
+            height: 160px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
         }
         
         #promo-card-selector .promo-card-thumb-select:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         
         #promo-card-selector .promo-card-thumb-select.selected {
-            border-color: #4caf50 !important;
-            box-shadow: 0 0 0 2px rgba(76,175,80,0.2) !important;
+            border-color: #4caf50;
+            box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+        }
+        
+        /* 📱 手機版選擇器滑動優化 */
+        @media (max-width: 768px) {
+            #promo-card-selector {
+                padding: 0 4px 8px 4px;
+                margin: 16px -4px 0 -4px;
+            }
         }
         
         .promo-selected {
@@ -1021,7 +1036,7 @@
         </div>
 
         <!-- 🎯 右上角用戶資訊 -->
-        <div style="position:fixed;top:0;right:0;z-index:1000;padding:12px 24px 0 0;text-align:right;">
+        <div style="position:absolute;top:0;right:8px;z-index:1000;padding:12px 0 0 0;text-align:right;">
             <div class="liff-user" id="liffUser"></div>
         </div>
 

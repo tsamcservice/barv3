@@ -3128,33 +3128,51 @@ async function updatePositionLabels() {
     const res = await fetch('/api/points-settings');
     const result = await res.json();
     
-    if (result.success && result.data) {
-      const settings = result.data;
+    if (result.success && result.data && Array.isArray(result.data)) {
+      const settingsArray = result.data;
+      console.log('📊 從API獲取的設定數據:', settingsArray);
       
       // 預設加成數值（如果API沒有返回對應數值）
-      const defaultBonuses = [80, 50, 30, 10, 0];
+      const defaultBonuses = [15, 12, 10, 8, 5]; // 對應設定頁面的預設值
       
       // 更新每個位置標籤
       for (let i = 1; i <= 5; i++) {
         const label = document.getElementById(`position-label-${i}`);
         if (label) {
-          let bonus = defaultBonuses[i-1];
+          let bonus = defaultBonuses[i-1]; // 預設值
           
-          // 嘗試從API設定中獲取對應的加成數值
-          if (settings[`promo_card_bonus_${i}`] !== undefined) {
-            bonus = parseInt(settings[`promo_card_bonus_${i}`]) || 0;
+          // 從API設定中獲取對應位置的回饋比例
+          const setting = settingsArray.find(s => s.position_index === (i-1));
+          if (setting && setting.reward_percentage !== undefined) {
+            bonus = parseFloat(setting.reward_percentage) || 0;
           }
           
           label.textContent = `位置${i}(+${bonus}%)`;
-          console.log(`📍 位置${i}標籤更新為: +${bonus}%`);
+          console.log(`📍 位置${i}標籤更新為: +${bonus}% (position_index: ${i-1})`);
         }
       }
     } else {
       console.log('⚠️ 點數設定API返回無效數據，使用預設值');
+      // 使用預設值
+      const defaultBonuses = [15, 12, 10, 8, 5];
+      for (let i = 1; i <= 5; i++) {
+        const label = document.getElementById(`position-label-${i}`);
+        if (label) {
+          label.textContent = `位置${i}(+${defaultBonuses[i-1]}%)`;
+        }
+      }
     }
   } catch (error) {
     console.error('❌ 更新位置標籤失敗:', error);
     console.log('📍 使用預設加成數值');
+    // 出錯時使用預設值
+    const defaultBonuses = [15, 12, 10, 8, 5];
+    for (let i = 1; i <= 5; i++) {
+      const label = document.getElementById(`position-label-${i}`);
+      if (label) {
+        label.textContent = `位置${i}(+${defaultBonuses[i-1]}%)`;
+      }
+    }
   }
 }
 
