@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>專屬會員分享卡 (手機版)</title>
-    <link rel="stylesheet" href="css/style.css?v=20250626">
-    <link rel="stylesheet" href="js/flex2html.css?v=20250626">
+    <link rel="stylesheet" href="css/style.css?v=20250627">
+    <link rel="stylesheet" href="js/flex2html.css?v=20250627">
     <script src="js/flex2html.min.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -627,7 +627,7 @@
         }
         
         .tab-text {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 600;
             line-height: 1.2;
         }
@@ -639,12 +639,12 @@
             }
             
             .tab-icon {
-                font-size: 20px;
+                font-size: 22px;
                 margin-bottom: 4px;
             }
             
             .tab-text {
-                font-size: 16px;
+                font-size: 18px;
                 font-weight: 600;
             }
         }
@@ -886,7 +886,7 @@
     <div class="container">
         <!-- 📱 手機版頁籤導航 -->
         <div class="mobile-tabs">
-            <button class="tab-btn active" data-tab="text-image">
+            <button class="tab-btn" data-tab="text-image">
                 <div class="tab-icon">📝</div>
                 <div class="tab-text">卡片編輯</div>
             </button>
@@ -894,7 +894,7 @@
                 <div class="tab-icon">🎨</div>
                 <div class="tab-text">附加活動卡</div>
             </button>
-            <button class="tab-btn" data-tab="preview">
+            <button class="tab-btn active" data-tab="preview">
                 <div class="tab-icon">👀</div>
                 <div class="tab-text">預覽及分享</div>
             </button>
@@ -906,7 +906,7 @@
         </div>
 
         <!-- 📝 第一頁：文字圖片區 -->
-        <div class="tab-content active" id="tab-text-image">
+        <div class="tab-content" id="tab-text-image">
             <div class="form-section">
                 <form id="cardForm">
                     <div class="form-group">
@@ -1066,7 +1066,7 @@
         </div>
 
         <!-- 👀 第三頁：卡片預覽區 -->
-        <div class="tab-content" id="tab-preview">
+        <div class="tab-content active" id="tab-preview">
             <div class="preview-section">
                 <div class="preview-actions">
                     <button type="button" onclick="shareToLine()" class="action-btn share-btn">
