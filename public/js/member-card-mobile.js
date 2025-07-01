@@ -3118,6 +3118,43 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
 let promoCardList = [];
 let selectedPromoCards = [];
 
+// 更新位置標籤顯示加成數值
+async function updatePositionLabels() {
+  try {
+    console.log('🔄 更新位置標籤加成數值...');
+    const res = await fetch('/api/points-settings');
+    const result = await res.json();
+    
+    if (result.success && result.data) {
+      const settings = result.data;
+      
+      // 預設加成數值（如果API沒有返回對應數值）
+      const defaultBonuses = [80, 50, 30, 10, 0];
+      
+      // 更新每個位置標籤
+      for (let i = 1; i <= 5; i++) {
+        const label = document.getElementById(`position-label-${i}`);
+        if (label) {
+          let bonus = defaultBonuses[i-1];
+          
+          // 嘗試從API設定中獲取對應的加成數值
+          if (settings[`promo_card_bonus_${i}`] !== undefined) {
+            bonus = parseInt(settings[`promo_card_bonus_${i}`]) || 0;
+          }
+          
+          label.textContent = `位置${i}(+${bonus}%)`;
+          console.log(`📍 位置${i}標籤更新為: +${bonus}%`);
+        }
+      }
+    } else {
+      console.log('⚠️ 點數設定API返回無效數據，使用預設值');
+    }
+  } catch (error) {
+    console.error('❌ 更新位置標籤失敗:', error);
+    console.log('📍 使用預設加成數值');
+  }
+}
+
 // 載入宣傳卡片時同時渲染 selector
 async function loadPromoCards() {
   try {
@@ -3126,6 +3163,9 @@ async function loadPromoCards() {
     if (result.success && Array.isArray(result.data)) {
       promoCardList = result.data;
       renderPromoCardSelector();
+      
+      // 🆕 載入位置標籤加成數值
+      await updatePositionLabels();
       
       // 🔧 修復：先檢查是否有暫存的card_order資料，再決定是否初始化
       let hasProcessedCardOrder = false;
