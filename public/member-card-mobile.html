@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>專屬會員分享卡 (手機版)</title>
-    <link rel="stylesheet" href="css/style.css?v=20250627">
-    <link rel="stylesheet" href="js/flex2html.css?v=20250627">
+    <link rel="stylesheet" href="css/style.css?v=20250627b">
+    <link rel="stylesheet" href="js/flex2html.css?v=20250627b">
     <script src="js/flex2html.min.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -627,7 +627,7 @@
         }
         
         .tab-text {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 600;
             line-height: 1.2;
         }
@@ -639,10 +639,18 @@
             }
             
             .tab-icon {
-                font-size: 22px;
+                font-size: 20px;
                 margin-bottom: 4px;
             }
             
+            .tab-text {
+                font-size: 20px;
+                font-weight: 600;
+            }
+        }
+        
+        /* 📱 專門針對手機設備的優化 */
+        @media (max-width: 480px) {
             .tab-text {
                 font-size: 18px;
                 font-weight: 600;

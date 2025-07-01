@@ -4088,11 +4088,22 @@ async function initGeneralMode() {
     // 等待用戶資料載入完成
     await profilePromise;
     
-    // 🧪 測試版本：延遲載入宣傳卡片，改善初始載入速度
-    // await loadPromoCards(); // 移到頁籤切換時載入
-    
-    // 🆕 簡化預覽：只渲染主卡片
-    renderMainCardPreview();
+    // 🆕 檢查當前活動頁籤，如果是預覽頁面，立即載入完整功能
+    const activeContent = document.querySelector('.tab-content.active');
+    if (activeContent && activeContent.id === 'tab-preview') {
+      console.log('📊 預設頁籤為預覽，載入完整預覽功能...');
+      // 載入宣傳卡片
+      await loadPromoCards();
+      window.promoCardsLoaded = true; // 標記已載入
+      // 渲染完整預覽
+      setTimeout(() => {
+        renderPreview();
+        renderShareJsonBox();
+      }, 500);
+    } else {
+      // 🆕 簡化預覽：只渲染主卡片
+      renderMainCardPreview();
+    }
     
     console.log('✅ 測試版本初始化完成 (快速模式)');
   } catch (error) {
@@ -4207,7 +4218,7 @@ function switchTab(tabName) {
     
     console.log('✅ 頁籤切換完成:', tabName);
     
-    // 特殊處理：切換到預覽頁時更新預覽
+    // 特殊處理：切換到不同頁籤時的資料載入
     if (tabName === 'preview') {
       setTimeout(() => {
         console.log('🔄 更新預覽內容...');
@@ -4218,6 +4229,20 @@ function switchTab(tabName) {
           console.error('❌ 預覽更新失敗:', e);
         }
       }, 300); // 等待動畫完成
+    } else if (tabName === 'promo-cards') {
+      // 載入宣傳卡片數據（如果還沒載入）
+      setTimeout(() => {
+        console.log('🔄 載入宣傳卡片資料...');
+        try {
+          if (!window.promoCardsLoaded) {
+            loadPromoCards().then(() => {
+              window.promoCardsLoaded = true;
+            });
+          }
+        } catch (e) {
+          console.error('❌ 宣傳卡片載入失敗:', e);
+        }
+      }, 300);
     }
   } else {
     console.error('❌ 頁籤切換失敗 - 找不到目標元素');
