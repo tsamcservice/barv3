@@ -3186,19 +3186,20 @@ async function updatePositionLabels() {
   initSyncScrolling();
 }
 
-// 🆕 新增：同步滑動功能
+// 🆕 新增：同步滑動功能 - 位置標籤與排序區卡片同步
 function initSyncScrolling() {
   const positionLabels = document.querySelector('.position-labels');
-  const promoList = document.querySelector('.promo-list');
+  const promoCards = document.querySelector('#promo-cards'); // 修正：使用排序區而非選擇區
   
-  if (!positionLabels || !promoList) {
+  if (!positionLabels || !promoCards) {
     console.log('⚠️ 未找到滑動同步目標元素');
+    console.log('位置標籤:', !!positionLabels, '排序區:', !!promoCards);
     return;
   }
   
   let isScrolling = false;
   
-  // 位置標籤滑動時，同步卡片區域
+  // 位置標籤滑動時，同步排序區卡片
   positionLabels.addEventListener('scroll', function() {
     if (isScrolling) return;
     isScrolling = true;
@@ -3212,11 +3213,11 @@ function initSyncScrolling() {
     
     const scrollRatio = this.scrollLeft / maxScrollLeft;
     
-    // 同步卡片區域滑動
-    const promoMaxScrollLeft = promoList.scrollWidth - promoList.clientWidth;
+    // 同步排序區卡片滑動
+    const promoMaxScrollLeft = promoCards.scrollWidth - promoCards.clientWidth;
     if (promoMaxScrollLeft > 0) {
       const targetScrollLeft = scrollRatio * promoMaxScrollLeft;
-      promoList.scrollLeft = targetScrollLeft;
+      promoCards.scrollLeft = targetScrollLeft;
     }
     
     setTimeout(() => {
@@ -3224,8 +3225,8 @@ function initSyncScrolling() {
     }, 50);
   });
   
-  // 卡片區域滑動時，同步位置標籤
-  promoList.addEventListener('scroll', function() {
+  // 排序區卡片滑動時，同步位置標籤
+  promoCards.addEventListener('scroll', function() {
     if (isScrolling) return;
     isScrolling = true;
     
@@ -3250,7 +3251,7 @@ function initSyncScrolling() {
     }, 50);
   });
   
-  console.log('✅ 同步滑動功能已初始化');
+  console.log('✅ 同步滑動功能已初始化 - 位置標籤與排序區同步');
 }
 
 // 載入宣傳卡片時同時渲染 selector
