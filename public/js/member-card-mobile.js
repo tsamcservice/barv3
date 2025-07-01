@@ -4153,12 +4153,24 @@ async function initGeneralMode() {
     const activeContent = document.querySelector('.tab-content.active');
     if (activeContent && activeContent.id === 'tab-preview') {
       console.log('📊 預設頁籤為預覽，載入完整預覽功能...');
-      // 🔧 修正：先載入宣傳卡片，再渲染預覽，避免閃爍
-      await loadPromoCards();
-      window.promoCardsLoaded = true; // 標記已載入
-      // 🔧 修正：直接渲染完整預覽，不要延遲
-      renderPreview();
-      renderShareJsonBox();
+      // 🔄 顯示載入提示
+      showPreviewLoading();
+      
+      try {
+        // 🔧 修正：先載入宣傳卡片，再渲染預覽，避免閃爍
+        await loadPromoCards();
+        window.promoCardsLoaded = true; // 標記已載入
+        
+        // 🔧 小延遲讓用戶看到載入提示
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // 🔧 修正：直接渲染完整預覽，不要延遲
+        renderPreview();
+        renderShareJsonBox();
+      } finally {
+        // 🔄 隱藏載入提示
+        hidePreviewLoading();
+      }
     } else {
       // 🆕 簡化預覽：只渲染主卡片
       renderMainCardPreview();
@@ -4282,10 +4294,17 @@ function switchTab(tabName) {
       // 🔧 修正：先確保宣傳卡片已載入，再渲染預覽
       if (!window.promoCardsLoaded) {
         console.log('🔄 載入宣傳卡片中...');
-        loadPromoCards().then(() => {
+        showPreviewLoading();
+        
+        loadPromoCards().then(async () => {
           window.promoCardsLoaded = true;
+          // 小延遲讓用戶看到載入提示
+          await new Promise(resolve => setTimeout(resolve, 600));
           renderPreview();
           renderShareJsonBox();
+          hidePreviewLoading();
+        }).catch(() => {
+          hidePreviewLoading();
         });
       } else {
         // 宣傳卡片已載入，直接渲染
@@ -4387,4 +4406,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+// 🔄 預覽載入提示函數
+function showPreviewLoading() {
+  const loadingDiv = document.getElementById('preview-loading');
+  const previewDiv = document.getElementById('main-card-preview');
+  
+  if (loadingDiv && previewDiv) {
+    loadingDiv.style.display = 'block';
+    previewDiv.style.display = 'none';
+    console.log('📊 顯示預覽載入提示');
+  }
+}
+
+function hidePreviewLoading() {
+  const loadingDiv = document.getElementById('preview-loading');
+  const previewDiv = document.getElementById('main-card-preview');
+  
+  if (loadingDiv && previewDiv) {
+    loadingDiv.style.display = 'none';
+    previewDiv.style.display = 'block';
+    console.log('✅ 隱藏預覽載入提示');
+  }
+}
  
