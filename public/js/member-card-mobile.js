@@ -2277,10 +2277,7 @@ function renderPromoCardSelector() {
   promoCardList.forEach(card => {
     const thumb = document.createElement('div');
     thumb.className = 'promo-card-thumb-select' + (selectedPromoCards.includes(card.id) ? ' selected' : '');
-    thumb.style.width = '120px';
-    thumb.style.height = '180px';
-    thumb.style.display = 'inline-block';
-    thumb.style.margin = '0 8px 8px 0';
+    // 移除內聯樣式，使用CSS控制
     thumb.innerHTML = `
       <div style="width:120px;text-align:center;margin-bottom:8px;">
         <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
