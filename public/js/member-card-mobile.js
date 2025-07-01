@@ -3186,10 +3186,10 @@ async function updatePositionLabels() {
   initSyncScrolling();
 }
 
-// 🆕 新增：同步滑動功能 - 位置標籤與排序區卡片同步
+// 🆕 新增：同步滑動功能 - 位置標籤與排序區卡片左對齊同步
 function initSyncScrolling() {
   const positionLabels = document.querySelector('.position-labels');
-  const promoCards = document.querySelector('#promo-cards'); // 修正：使用排序區而非選擇區
+  const promoCards = document.querySelector('#promo-cards');
   
   if (!positionLabels || !promoCards) {
     console.log('⚠️ 未找到滑動同步目標元素');
@@ -3198,60 +3198,58 @@ function initSyncScrolling() {
   }
   
   let isScrolling = false;
+  const CARD_WIDTH = 120 + 8; // 卡片寬度120px + gap 8px
+  const LABEL_WIDTH = 120 + 8; // 標籤寬度120px + gap 8px
   
-  // 位置標籤滑動時，同步排序區卡片
+  // 位置標籤滑動時，同步排序區卡片（左對齊）
   positionLabels.addEventListener('scroll', function() {
     if (isScrolling) return;
     isScrolling = true;
     
-    // 計算滑動比例
-    const maxScrollLeft = this.scrollWidth - this.clientWidth;
-    if (maxScrollLeft <= 0) {
-      isScrolling = false;
-      return;
-    }
+    // 🔧 修正：使用左對齊同步，位置1對應第1張卡片
+    const labelScrollLeft = this.scrollLeft;
     
-    const scrollRatio = this.scrollLeft / maxScrollLeft;
+    // 計算對應的卡片滑動位置（1:1對應）
+    const targetCardScroll = labelScrollLeft;
     
-    // 同步排序區卡片滑動
-    const promoMaxScrollLeft = promoCards.scrollWidth - promoCards.clientWidth;
-    if (promoMaxScrollLeft > 0) {
-      const targetScrollLeft = scrollRatio * promoMaxScrollLeft;
-      promoCards.scrollLeft = targetScrollLeft;
-    }
+    // 限制在卡片容器的最大滑動範圍內
+    const maxCardScroll = Math.max(0, promoCards.scrollWidth - promoCards.clientWidth);
+    const finalCardScroll = Math.min(targetCardScroll, maxCardScroll);
+    
+    promoCards.scrollLeft = finalCardScroll;
+    
+    console.log(`📍 位置標籤滑動: ${labelScrollLeft}px → 卡片滑動: ${finalCardScroll}px`);
     
     setTimeout(() => {
       isScrolling = false;
     }, 50);
   });
   
-  // 排序區卡片滑動時，同步位置標籤
+  // 排序區卡片滑動時，同步位置標籤（左對齊）
   promoCards.addEventListener('scroll', function() {
     if (isScrolling) return;
     isScrolling = true;
     
-    // 計算滑動比例
-    const maxScrollLeft = this.scrollWidth - this.clientWidth;
-    if (maxScrollLeft <= 0) {
-      isScrolling = false;
-      return;
-    }
+    // 🔧 修正：使用左對齊同步，第1張卡片對應位置1
+    const cardScrollLeft = this.scrollLeft;
     
-    const scrollRatio = this.scrollLeft / maxScrollLeft;
+    // 計算對應的標籤滑動位置（1:1對應）
+    const targetLabelScroll = cardScrollLeft;
     
-    // 同步位置標籤滑動
-    const labelsMaxScrollLeft = positionLabels.scrollWidth - positionLabels.clientWidth;
-    if (labelsMaxScrollLeft > 0) {
-      const targetScrollLeft = scrollRatio * labelsMaxScrollLeft;
-      positionLabels.scrollLeft = targetScrollLeft;
-    }
+    // 限制在標籤容器的最大滑動範圍內
+    const maxLabelScroll = Math.max(0, positionLabels.scrollWidth - positionLabels.clientWidth);
+    const finalLabelScroll = Math.min(targetLabelScroll, maxLabelScroll);
+    
+    positionLabels.scrollLeft = finalLabelScroll;
+    
+    console.log(`🎯 卡片滑動: ${cardScrollLeft}px → 位置標籤滑動: ${finalLabelScroll}px`);
     
     setTimeout(() => {
       isScrolling = false;
     }, 50);
   });
   
-  console.log('✅ 同步滑動功能已初始化 - 位置標籤與排序區同步');
+  console.log('✅ 同步滑動功能已初始化 - 左對齊同步，位置1對應第1張卡片');
 }
 
 // 載入宣傳卡片時同時渲染 selector
