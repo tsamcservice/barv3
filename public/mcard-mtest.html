@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>我專屬的會員卡片 (手機測試版)</title>
-    <link rel="stylesheet" href="css/style.css?v=20250626">
-    <link rel="stylesheet" href="js/flex2html.css?v=20250626">
+    <link rel="stylesheet" href="css/style.css?v=20250627i">
+    <link rel="stylesheet" href="js/flex2html.css?v=20250627i">
     <script src="js/flex2html.min.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -845,6 +845,212 @@
                 font-size: 14px;
             }
         }
+
+        /* 🔧 今日新增：頁籤文字大小強制優化 */
+        .tab-text {
+            font-size: 16px !important;
+        }
+
+        @media (max-width: 768px) {
+            .tab-text {
+                font-size: 22px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tab-text {
+                font-size: 20px !important;
+            }
+        }
+
+        /* 🔧 今日新增：統一頁面寬度 */
+        .container {
+            padding: 0 !important;
+        }
+
+        .form-section,
+        .promo-section,
+        .preview-section {
+            margin: 0 8px !important;
+            width: calc(100% - 16px) !important;
+            box-sizing: border-box !important;
+            max-width: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .form-section,
+            .promo-section,
+            .preview-section {
+                margin: 0 8px !important;
+                padding: 12px !important;
+            }
+        }
+
+        /* 🔧 今日新增：宣傳卡片選擇器優化 */
+        .promo-selector {
+            max-height: 280px !important;
+            overflow-y: visible;
+            margin-bottom: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px;
+            background: #fafafa;
+        }
+
+        /* 🔧 今日新增：修正Toggle按鈕功能 */
+        #promo-card-selector {
+            gap: 8px;
+            margin-top: 16px;
+            overflow-x: auto;
+            overflow-y: visible;
+            flex-wrap: nowrap;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+            display: none;
+        }
+
+        #promo-card-selector[style*="display: block"] {
+            display: flex !important;
+        }
+
+        #promo-card-selector[style*="display: none"] {
+            display: none !important;
+        }
+
+        /* 🔧 今日新增：選擇器卡片優化 */
+        #promo-card-selector .promo-card-thumb-select {
+            flex-shrink: 0;
+            width: 120px;
+            height: 220px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #promo-card-selector .promo-card-thumb-select img {
+            width: 100%;
+            height: auto;
+            max-height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        #promo-card-selector .promo-card-thumb-select p,
+        #promo-card-selector .promo-card-thumb-select small {
+            margin: 4px 2px !important;
+            line-height: 1.2 !important;
+            font-size: 10px !important;
+            padding: 2px !important;
+        }
+
+        #promo-card-selector .promo-card-thumb-select:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        #promo-card-selector .promo-card-thumb-select.selected {
+            border-color: #4caf50;
+            box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+        }
+
+        /* 🔧 今日新增：位置標籤寬度對齊 */
+        .position-labels {
+            display: flex;
+            gap: 8px;
+            margin: 8px 0;
+            padding: 0 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .position-label {
+            font-size: 11px;
+            color: #666;
+            font-weight: bold;
+            background: #e8f5e8;
+            padding: 3px 6px;
+            border-radius: 10px;
+            border: 1px solid #4caf50;
+            flex-shrink: 0;
+            width: 120px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* 🔧 今日新增：附加活動卡橫向滑動功能 */
+        .promo-list {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            overflow-x: auto;
+            overflow-y: visible;
+            flex-wrap: nowrap;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .promo-list .promo-card-thumb {
+            flex-shrink: 0;
+            width: 120px;
+            height: 160px;
+        }
+
+        @media (max-width: 768px) {
+            .promo-list {
+                padding: 0 4px 8px 4px;
+                margin: 16px -4px 0 -4px;
+            }
+            
+            .position-labels {
+                padding: 0 8px;
+                margin: 8px -4px;
+            }
+        }
+
+        /* 🔧 今日新增：預覽載入動畫 */
+        #preview-loading {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            background: #fff;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4caf50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .loading-hint {
+            color: #999;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -1037,11 +1243,11 @@
                 <div class="promo-selected">
                     <div class="promo-hint">📱 按卡片下方箭頭左右排序</div>
                     <div class="position-labels">
-                        <span class="position-label">位置1</span>
-                        <span class="position-label">位置2</span>
-                        <span class="position-label">位置3</span>
-                        <span class="position-label">位置4</span>
-                        <span class="position-label">位置5</span>
+                        <span class="position-label" id="position-label-1">位置1(+80%)</span>
+                        <span class="position-label" id="position-label-2">位置2(+50%)</span>
+                        <span class="position-label" id="position-label-3">位置3(+30%)</span>
+                        <span class="position-label" id="position-label-4">位置4(+10%)</span>
+                        <span class="position-label" id="position-label-5">位置5(+0%)</span>
                     </div>
                     <div id="promo-cards" class="promo-list"></div>
                 </div>
@@ -1061,6 +1267,13 @@
                 </div>
                 
                 <div class="preview-container">
+                    <!-- 🔄 預覽載入提示 -->
+                    <div id="preview-loading">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">載入中，請稍候...</div>
+                        <div class="loading-hint">正在準備您的專屬會員卡</div>
+                    </div>
+                    
                     <div id="main-card-preview">
                         <div class="chatbox">
                             <!-- flex2html內容將插入這裡 -->

@@ -976,6 +976,10 @@ function isMainCard(bubbleContent) {
 
 // 修改 fillAllFieldsWithProfile 與卡片資料填入流程
 async function fillAllFieldsWithProfile() {
+  // 🔄 今日新增：首次登入時顯示預覽載入提示
+  console.log('🔄 首次登入，顯示預覽載入動畫爭取時間...');
+  showPreviewLoading();
+  
   // 先填入預設值
   Object.keys(defaultCard).forEach(key => {
     if(document.getElementById(key)){
@@ -3204,6 +3208,10 @@ async function loadPromoCards() {
         initAllCardsSortable();
         renderPromoCardListSortable();
       }
+      
+      // 🔄 今日新增：載入完宣傳卡片後更新位置標籤
+      console.log('📋 宣傳卡片載入完成，更新位置標籤...');
+      updatePositionLabels();
     }
   } catch (e) {
     console.error('載入宣傳卡片失敗', e);
@@ -4209,13 +4217,26 @@ function switchTab(tabName) {
     
     // 特殊處理：切換到預覽頁時更新預覽
     if (tabName === 'preview') {
+      // 🔄 今日新增：顯示載入動畫
+      console.log('🔄 切換到預覽頁籤，顯示載入動畫...');
+      showPreviewLoading();
+      
       setTimeout(() => {
         console.log('🔄 更新預覽內容...');
         try {
           renderPreview();
           renderShareJsonBox();
+          
+          // 🔄 今日新增：完成後隱藏載入動畫
+          setTimeout(() => {
+            hidePreviewLoading();
+            console.log('✅ 預覽載入完成，隱藏載入動畫');
+          }, 500); // 給予時間讓預覽內容完成渲染
+          
         } catch (e) {
           console.error('❌ 預覽更新失敗:', e);
+          // 出錯時也要隱藏載入動畫
+          hidePreviewLoading();
         }
       }, 300); // 等待動畫完成
     }
@@ -4292,4 +4313,157 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+// 🔄 今日新增：預覽載入提示函數
+function showPreviewLoading() {
+  const loadingDiv = document.getElementById('preview-loading');
+  const previewDiv = document.getElementById('main-card-preview');
+  
+  if (loadingDiv && previewDiv) {
+    // 🔧 完全清空預覽內容，避免舊內容閃現
+    const chatbox = previewDiv.querySelector('.chatbox');
+    if (chatbox) {
+      chatbox.innerHTML = '';
+    }
+    
+    loadingDiv.style.display = 'block';
+    previewDiv.style.display = 'none';
+    console.log('📊 顯示預覽載入提示，已清空舊內容');
+  }
+}
+
+function hidePreviewLoading() {
+  const loadingDiv = document.getElementById('preview-loading');
+  const previewDiv = document.getElementById('main-card-preview');
+  
+  if (loadingDiv && previewDiv) {
+    loadingDiv.style.display = 'none';
+    previewDiv.style.display = 'block';
+    console.log('📊 隱藏預覽載入提示');
+  }
+}
+
+// 🔧 今日新增：更新位置標籤顯示加成數值
+async function updatePositionLabels() {
+  try {
+    console.log('🔄 更新位置標籤加成數值...');
+    const res = await fetch('/api/points-settings');
+    const result = await res.json();
+    
+    if (result.success && result.data && Array.isArray(result.data)) {
+      const settingsArray = result.data;
+      console.log('📊 從API獲取的設定數據:', settingsArray);
+      
+      // 預設加成數值（如果API沒有返回對應數值）
+      const defaultBonuses = [15, 12, 10, 8, 5]; // 對應設定頁面的預設值
+      
+      // 更新每個位置標籤
+      for (let i = 1; i <= 5; i++) {
+        const label = document.getElementById(`position-label-${i}`);
+        if (label) {
+          let bonus = defaultBonuses[i-1]; // 預設值
+          
+          // 從API設定中獲取對應位置的回饋比例
+          const setting = settingsArray.find(s => s.position_index === (i-1));
+          if (setting && setting.reward_percentage !== undefined) {
+            bonus = parseFloat(setting.reward_percentage) || 0;
+          }
+          
+          label.textContent = `位置${i}(+${bonus}%)`;
+          console.log(`📍 位置${i}標籤更新為: +${bonus}% (position_index: ${i-1})`);
+        }
+      }
+    } else {
+      console.log('⚠️ 點數設定API返回無效數據，使用預設值');
+      // 使用預設值
+      const defaultBonuses = [15, 12, 10, 8, 5];
+      for (let i = 1; i <= 5; i++) {
+        const label = document.getElementById(`position-label-${i}`);
+        if (label) {
+          label.textContent = `位置${i}(+${defaultBonuses[i-1]}%)`;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ 更新位置標籤失敗:', error);
+    console.log('📍 使用預設加成數值');
+    // 出錯時使用預設值
+    const defaultBonuses = [15, 12, 10, 8, 5];
+    for (let i = 1; i <= 5; i++) {
+      const label = document.getElementById(`position-label-${i}`);
+      if (label) {
+        label.textContent = `位置${i}(+${defaultBonuses[i-1]}%)`;
+      }
+    }
+  }
+  
+  // 🆕 初始化同步滑動功能
+  initSyncScrolling();
+}
+
+// 🆕 今日新增：同步滑動功能 - 位置標籤與排序區卡片左對齊同步
+function initSyncScrolling() {
+  const positionLabels = document.querySelector('.position-labels');
+  const promoCards = document.querySelector('#promo-cards');
+  
+  if (!positionLabels || !promoCards) {
+    console.log('⚠️ 未找到滑動同步目標元素');
+    console.log('位置標籤:', !!positionLabels, '排序區:', !!promoCards);
+    return;
+  }
+  
+  let isScrolling = false;
+  const CARD_WIDTH = 120 + 8; // 卡片寬度120px + gap 8px
+  const LABEL_WIDTH = 120 + 8; // 標籤寬度120px + gap 8px
+  
+  // 位置標籤滑動時，同步排序區卡片（左對齊）
+  positionLabels.addEventListener('scroll', function() {
+    if (isScrolling) return;
+    isScrolling = true;
+    
+    // 🔧 修正：使用左對齊同步，位置1對應第1張卡片
+    const labelScrollLeft = this.scrollLeft;
+    
+    // 計算對應的卡片滑動位置（1:1對應）
+    const targetCardScroll = labelScrollLeft;
+    
+    // 限制在卡片容器的最大滑動範圍內
+    const maxCardScroll = Math.max(0, promoCards.scrollWidth - promoCards.clientWidth);
+    const finalCardScroll = Math.min(targetCardScroll, maxCardScroll);
+    
+    promoCards.scrollLeft = finalCardScroll;
+    
+    console.log(`📍 位置標籤滑動: ${labelScrollLeft}px → 卡片滑動: ${finalCardScroll}px`);
+    
+    setTimeout(() => {
+      isScrolling = false;
+    }, 50);
+  });
+  
+  // 排序區卡片滑動時，同步位置標籤（左對齊）
+  promoCards.addEventListener('scroll', function() {
+    if (isScrolling) return;
+    isScrolling = true;
+    
+    // 🔧 修正：使用左對齊同步，第1張卡片對應位置1
+    const cardScrollLeft = this.scrollLeft;
+    
+    // 計算對應的標籤滑動位置（1:1對應）
+    const targetLabelScroll = cardScrollLeft;
+    
+    // 限制在標籤容器的最大滑動範圍內
+    const maxLabelScroll = Math.max(0, positionLabels.scrollWidth - positionLabels.clientWidth);
+    const finalLabelScroll = Math.min(targetLabelScroll, maxLabelScroll);
+    
+    positionLabels.scrollLeft = finalLabelScroll;
+    
+    console.log(`🎯 卡片滑動: ${cardScrollLeft}px → 位置標籤滑動: ${finalLabelScroll}px`);
+    
+    setTimeout(() => {
+      isScrolling = false;
+    }, 50);
+  });
+  
+  console.log('✅ 同步滑動功能已初始化 - 左對齊同步，位置1對應第1張卡片');
+}
  
