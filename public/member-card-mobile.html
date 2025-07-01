@@ -193,7 +193,7 @@
         }
         
         .promo-selector {
-            max-height: 180px;
+            max-height: 250px;
             overflow-y: visible;
             margin-bottom: 16px;
             border: 1px solid #e0e0e0;
@@ -228,14 +228,14 @@
             display: none;
         }
         
-        /* 🔧 選擇器卡片調整為較低高度，避免遮擋PAGEVIEW */
+        /* 🔧 選擇器卡片增加高度，完整顯示PAGEVIEW和已加入文字 */
         #promo-card-selector .promo-card-thumb-select {
             flex-shrink: 0;
             width: 120px;
-            height: 140px;
+            height: 220px;
             border: 2px solid #ddd;
             border-radius: 6px;
-            overflow: hidden;
+            overflow: visible;
             cursor: pointer;
             position: relative;
             transition: all 0.2s ease;
@@ -1014,10 +1014,10 @@
 <body>
     <!-- 移除右上角用戶信息和左上角設備指示器，將移到版權區 -->
     
-    <!-- 🎯 主標題與用戶資訊區 -->
-    <div style="display: flex; align-items: center; justify-content: center; position: relative; margin: 24px 16px 0 16px; min-height: 40px;">
-        <h1 style="text-align:center; margin:0; flex: 1; font-size: clamp(16px, 4vw, 24px); line-height: 1.2;">📱 專屬會員分享卡 (手機版)</h1>
-        <div style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); flex-shrink: 0;">
+    <!-- 🎯 主標題與用戶資訊區 - 左對齊避免重疊 -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin: 24px 16px 0 16px; min-height: 40px; gap: 8px;">
+        <h1 style="text-align:left; margin:0; flex: 0 1 auto; font-size: clamp(14px, 3.5vw, 20px); line-height: 1.2; max-width: calc(100% - 80px);">📱 專屬會員分享卡 (手機版)</h1>
+        <div style="flex: 0 0 auto; min-width: 70px; text-align: right;">
             <div class="liff-user" id="liffUser"></div>
         </div>
     </div>
