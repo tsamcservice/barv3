@@ -732,10 +732,10 @@ function renderLiffUserInfo(profile) {
   const el = document.getElementById('liffUserInfo');
   if (!el) return;
   if (!profile) { el.innerHTML = ''; return; }
+  // 🚫 移除咖啡杯圖片
   el.innerHTML = `
     <img src="${profile.pictureUrl}" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;">
     <span style="font-weight:bold;">${profile.displayName}</span>
-    <img src="https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png" style="width:24px;height:24px;vertical-align:middle;background:#06C755;border-radius:6px;box-shadow:0 1px 4px #0002;">
   `;
 }
 
@@ -2975,12 +2975,18 @@ window.addEventListener('DOMContentLoaded', function() {
   const selector = document.getElementById('promo-card-selector');
   if (toggleBtn && selector) {
     toggleBtn.onclick = function() {
-      if (selector.style.display === 'none') {
-        selector.style.display = '';
-        toggleBtn.textContent = '收合 <<';
+      console.log('🔧 Toggle按鈕被點擊');
+      console.log('🔧 目前display狀態:', selector.style.display);
+      
+      if (selector.style.display === 'none' || selector.style.display === '') {
+        // 🔧 修正：使用 'flex' 而不是空字串，匹配CSS選擇器
+        selector.style.display = 'flex';
+        toggleBtn.innerHTML = '<span>➖</span> 收合選擇器';
+        console.log('🔧 打開選擇器，設定為 flex');
       } else {
         selector.style.display = 'none';
-        toggleBtn.textContent = '點選加入 >>';
+        toggleBtn.innerHTML = '<span>➕</span> 點選加入或刪除活動卡';
+        console.log('🔧 關閉選擇器，設定為 none');
       }
     };
   }
@@ -4289,6 +4295,32 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 🆕 初始化手機版導航功能
   initMobileNavigation();
+  
+  // 🔧 檢查預設頁籤是否為預覽，若是則需要初始化預覽功能
+  const defaultActiveTab = document.querySelector('.tab-btn.active');
+  if (defaultActiveTab && defaultActiveTab.getAttribute('data-tab') === 'preview') {
+    console.log('🔄 預設頁籤為預覽，準備初始化預覽功能...');
+    
+    // 延遲初始化預覽，確保LIFF和資料都載入完成
+    setTimeout(() => {
+      console.log('🔄 開始初始化預設預覽頁籤功能...');
+      showPreviewLoading();
+      
+      // 再次延遲確保所有資料載入完成
+      setTimeout(() => {
+        try {
+          console.log('🔄 嘗試渲染預設預覽內容...');
+          renderPreview();
+          renderShareJsonBox();
+          hidePreviewLoading();
+          console.log('✅ 預設預覽頁籤初始化完成');
+        } catch (e) {
+          console.error('❌ 預設預覽初始化失敗:', e);
+          hidePreviewLoading();
+        }
+      }, 2000); // 給予足夠時間讓LIFF和資料載入
+    }, 1000);
+  }
   
   // 延遲執行確保LIFF SDK完全載入
   setTimeout(() => {
