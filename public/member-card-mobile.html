@@ -193,7 +193,7 @@
         }
         
         .promo-selector {
-            max-height: 200px;
+            max-height: 180px;
             overflow-y: visible;
             margin-bottom: 16px;
             border: 1px solid #e0e0e0;
@@ -228,11 +228,11 @@
             display: none;
         }
         
-        /* 🔧 讓選擇器卡片與排序區卡片尺寸一致 */
+        /* 🔧 選擇器卡片調整為較低高度，避免遮擋PAGEVIEW */
         #promo-card-selector .promo-card-thumb-select {
             flex-shrink: 0;
             width: 120px;
-            height: 160px;
+            height: 140px;
             border: 2px solid #ddd;
             border-radius: 6px;
             overflow: hidden;
@@ -1014,9 +1014,13 @@
 <body>
     <!-- 移除右上角用戶信息和左上角設備指示器，將移到版權區 -->
     
-    <h1 style="text-align:center; margin-top:24px;">📱 專屬會員分享卡 (手機版)</h1>
-    
-
+    <!-- 🎯 主標題與用戶資訊區 -->
+    <div style="display: flex; align-items: center; justify-content: center; position: relative; margin: 24px 16px 0 16px; min-height: 40px;">
+        <h1 style="text-align:center; margin:0; flex: 1; font-size: clamp(16px, 4vw, 24px); line-height: 1.2;">📱 專屬會員分享卡 (手機版)</h1>
+        <div style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); flex-shrink: 0;">
+            <div class="liff-user" id="liffUser"></div>
+        </div>
+    </div>
     
     <div class="container">
         <!-- 📱 手機版頁籤導航 -->
@@ -1033,11 +1037,6 @@
                 <div class="tab-icon">👀</div>
                 <div class="tab-text">預覽及分享</div>
             </button>
-        </div>
-
-        <!-- 🎯 右上角用戶資訊 -->
-        <div style="position:absolute;top:0;right:8px;z-index:1000;padding:12px 0 0 0;text-align:right;">
-            <div class="liff-user" id="liffUser"></div>
         </div>
 
         <!-- 📝 第一頁：文字圖片區 -->

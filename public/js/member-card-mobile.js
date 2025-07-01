@@ -4153,14 +4153,12 @@ async function initGeneralMode() {
     const activeContent = document.querySelector('.tab-content.active');
     if (activeContent && activeContent.id === 'tab-preview') {
       console.log('📊 預設頁籤為預覽，載入完整預覽功能...');
-      // 載入宣傳卡片
+      // 🔧 修正：先載入宣傳卡片，再渲染預覽，避免閃爍
       await loadPromoCards();
       window.promoCardsLoaded = true; // 標記已載入
-      // 渲染完整預覽
-      setTimeout(() => {
-        renderPreview();
-        renderShareJsonBox();
-      }, 500);
+      // 🔧 修正：直接渲染完整預覽，不要延遲
+      renderPreview();
+      renderShareJsonBox();
     } else {
       // 🆕 簡化預覽：只渲染主卡片
       renderMainCardPreview();
@@ -4281,15 +4279,26 @@ function switchTab(tabName) {
     
     // 特殊處理：切換到不同頁籤時的資料載入
     if (tabName === 'preview') {
-      setTimeout(() => {
-        console.log('🔄 更新預覽內容...');
-        try {
+      // 🔧 修正：先確保宣傳卡片已載入，再渲染預覽
+      if (!window.promoCardsLoaded) {
+        console.log('🔄 載入宣傳卡片中...');
+        loadPromoCards().then(() => {
+          window.promoCardsLoaded = true;
           renderPreview();
           renderShareJsonBox();
-        } catch (e) {
-          console.error('❌ 預覽更新失敗:', e);
-        }
-      }, 300); // 等待動畫完成
+        });
+      } else {
+        // 宣傳卡片已載入，直接渲染
+        setTimeout(() => {
+          console.log('🔄 更新預覽內容...');
+          try {
+            renderPreview();
+            renderShareJsonBox();
+          } catch (e) {
+            console.error('❌ 預覽更新失敗:', e);
+          }
+        }, 200); // 縮短延遲時間
+      }
     } else if (tabName === 'promo-cards') {
       // 載入宣傳卡片數據（如果還沒載入）
       setTimeout(() => {
