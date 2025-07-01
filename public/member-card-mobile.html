@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>專屬會員分享卡 (手機版)</title>
-    <link rel="stylesheet" href="css/style.css?v=20250627f">
+            <link rel="stylesheet" href="css/style.css?v=20250627g">
     <link rel="stylesheet" href="js/flex2html.css?v=20250627f">
     <script src="js/flex2html.min.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -193,7 +193,7 @@
         }
         
         .promo-selector {
-            max-height: 230px;
+            max-height: 280px;
             overflow-y: visible;
             margin-bottom: 16px;
             border: 1px solid #e0e0e0;
@@ -228,14 +228,14 @@
             display: none;
         }
         
-        /* 🔧 選擇器卡片優化：圖片限制在框內，適度降低高度 */
+        /* 🔧 選擇器卡片優化：圖片限制在框內，增加高度讓"已加入"文字可見 */
         #promo-card-selector .promo-card-thumb-select {
             flex-shrink: 0;
             width: 120px;
-            height: 200px;
+            height: 240px;
             border: 2px solid #ddd;
             border-radius: 6px;
-            overflow: hidden;
+            overflow: visible;
             cursor: pointer;
             position: relative;
             transition: all 0.2s ease;
@@ -247,9 +247,18 @@
         #promo-card-selector .promo-card-thumb-select img {
             width: 100%;
             height: auto;
-            max-height: 140px;
+            max-height: 130px;
             object-fit: cover;
             border-radius: 4px;
+        }
+        
+        /* 🔧 確保"已加入"等文字完全可見 */
+        #promo-card-selector .promo-card-thumb-select p,
+        #promo-card-selector .promo-card-thumb-select small {
+            margin: 4px 2px !important;
+            line-height: 1.2 !important;
+            font-size: 10px !important;
+            padding: 2px !important;
         }
         
         #promo-card-selector .promo-card-thumb-select:hover {

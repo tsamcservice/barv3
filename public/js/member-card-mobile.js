@@ -975,6 +975,13 @@ function isMainCard(bubbleContent) {
 
 // 修改 fillAllFieldsWithProfile 與卡片資料填入流程
 async function fillAllFieldsWithProfile() {
+  // 🔄 如果當前在預覽頁面，顯示載入提示（首次登入情況）
+  const activeContent = document.querySelector('.tab-content.active');
+  if (activeContent && activeContent.id === 'tab-preview') {
+    console.log('📊 首次登入且預設為預覽頁面，顯示載入提示');
+    showPreviewLoading();
+  }
+  
   // 先填入預設值
   Object.keys(defaultCard).forEach(key => {
     if(document.getElementById(key)){
@@ -3174,6 +3181,76 @@ async function updatePositionLabels() {
       }
     }
   }
+  
+  // 🆕 初始化同步滑動功能
+  initSyncScrolling();
+}
+
+// 🆕 新增：同步滑動功能
+function initSyncScrolling() {
+  const positionLabels = document.querySelector('.position-labels');
+  const promoList = document.querySelector('.promo-list');
+  
+  if (!positionLabels || !promoList) {
+    console.log('⚠️ 未找到滑動同步目標元素');
+    return;
+  }
+  
+  let isScrolling = false;
+  
+  // 位置標籤滑動時，同步卡片區域
+  positionLabels.addEventListener('scroll', function() {
+    if (isScrolling) return;
+    isScrolling = true;
+    
+    // 計算滑動比例
+    const maxScrollLeft = this.scrollWidth - this.clientWidth;
+    if (maxScrollLeft <= 0) {
+      isScrolling = false;
+      return;
+    }
+    
+    const scrollRatio = this.scrollLeft / maxScrollLeft;
+    
+    // 同步卡片區域滑動
+    const promoMaxScrollLeft = promoList.scrollWidth - promoList.clientWidth;
+    if (promoMaxScrollLeft > 0) {
+      const targetScrollLeft = scrollRatio * promoMaxScrollLeft;
+      promoList.scrollLeft = targetScrollLeft;
+    }
+    
+    setTimeout(() => {
+      isScrolling = false;
+    }, 50);
+  });
+  
+  // 卡片區域滑動時，同步位置標籤
+  promoList.addEventListener('scroll', function() {
+    if (isScrolling) return;
+    isScrolling = true;
+    
+    // 計算滑動比例
+    const maxScrollLeft = this.scrollWidth - this.clientWidth;
+    if (maxScrollLeft <= 0) {
+      isScrolling = false;
+      return;
+    }
+    
+    const scrollRatio = this.scrollLeft / maxScrollLeft;
+    
+    // 同步位置標籤滑動
+    const labelsMaxScrollLeft = positionLabels.scrollWidth - positionLabels.clientWidth;
+    if (labelsMaxScrollLeft > 0) {
+      const targetScrollLeft = scrollRatio * labelsMaxScrollLeft;
+      positionLabels.scrollLeft = targetScrollLeft;
+    }
+    
+    setTimeout(() => {
+      isScrolling = false;
+    }, 50);
+  });
+  
+  console.log('✅ 同步滑動功能已初始化');
 }
 
 // 載入宣傳卡片時同時渲染 selector
@@ -4153,7 +4230,7 @@ async function initGeneralMode() {
     const activeContent = document.querySelector('.tab-content.active');
     if (activeContent && activeContent.id === 'tab-preview') {
       console.log('📊 預設頁籤為預覽，載入完整預覽功能...');
-      // 🔄 顯示載入提示
+      // 🔄 立即顯示載入提示，不渲染任何卡片
       showPreviewLoading();
       
       try {
@@ -4172,7 +4249,7 @@ async function initGeneralMode() {
         hidePreviewLoading();
       }
     } else {
-      // 🆕 簡化預覽：只渲染主卡片
+      // 🆕 簡化預覽：只渲染主卡片（非預覽頁面）
       renderMainCardPreview();
     }
     
@@ -4413,9 +4490,15 @@ function showPreviewLoading() {
   const previewDiv = document.getElementById('main-card-preview');
   
   if (loadingDiv && previewDiv) {
+    // 🔧 完全清空預覽內容，避免舊內容閃現
+    const chatbox = previewDiv.querySelector('.chatbox');
+    if (chatbox) {
+      chatbox.innerHTML = '';
+    }
+    
     loadingDiv.style.display = 'block';
     previewDiv.style.display = 'none';
-    console.log('📊 顯示預覽載入提示');
+    console.log('📊 顯示預覽載入提示，已清空舊內容');
   }
 }
 
