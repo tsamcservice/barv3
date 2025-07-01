@@ -2970,15 +2970,21 @@ window.addEventListener('DOMContentLoaded', function() {
   const toggleBtn = document.getElementById('toggle-promo-selector');
   const selector = document.getElementById('promo-card-selector');
   if (toggleBtn && selector) {
+    // 儲存原始文字
+    const originalText = toggleBtn.innerHTML;
+    
     toggleBtn.onclick = function() {
-      if (selector.style.display === 'none') {
-        selector.style.display = '';
-        toggleBtn.textContent = '收合 <<';
+      if (selector.style.display === 'none' || selector.style.display === '') {
+        selector.style.display = 'block';
+        toggleBtn.innerHTML = '<span>➖</span> 收合 <<';
       } else {
         selector.style.display = 'none';
-        toggleBtn.textContent = '點選加入 >>';
+        toggleBtn.innerHTML = originalText; // 恢復原始文字
       }
     };
+    
+    // 初始狀態設定為隱藏
+    selector.style.display = 'none';
   }
 
   // 6. 載入宣傳卡片
