@@ -1,9 +1,9 @@
-// 🚀 手機版會員卡系統 - v20250625-TEST
-// LIFF ID: 2007327814-OoJBbnwP (同CHANNEL ID測試版)
-// 更新日期: 2025-06-25
+// 🚀 手機版會員卡系統 - v20250626-FINAL
+// LIFF ID: 2007327814-OoJBbnwP (MTEST測試版)
+// 更新日期: 2025-06-26
 
 // 版本標識
-const VERSION_TAG = 'MOBILE-TEST-v20250625-SAME-CHANNEL';  
+const VERSION_TAG = 'MOBILE-v20250626-FINAL';  
 const IS_MOBILE_VERSION = true;
 
 // 手機版功能開關
@@ -28,7 +28,7 @@ const UNIFIED_LIFF = {
   }
 };
 
-console.log(`🚀 啟動手機測試版會員卡系統 ${VERSION_TAG}`);
+console.log(`🚀 啟動手機版會員卡系統 ${VERSION_TAG}`);
 console.log('📱 LIFF ID:', '2007327814-OoJBbnwP');
 
 // 版本標記函數
@@ -718,24 +718,23 @@ const defaultCard = {
   button_1_url: 'https://lin.ee/JLLIBlP',
   button_1_color: '#A4924A', // 按鈕顏色 
   s_button_text: '分享給好友',
-      s_button_url: 'https://liff.line.me/2007327814-OoJBbnwP?pageId=M01001', // 🚀 同CHANNEL ID測試版 LIFF+頁面ID
+      s_button_url: 'https://liff.line.me/2007327814-OoJBbnwP?pageId=M01001', // 🚀 MTEST測試版 LIFF+頁面ID
   s_button_color: '#A4924B',
   card_alt_title: '我在呈璽/呈璽'
 };
 
 // 取得 LINE 頭像與名字
 let liffProfile = { displayName: '', pictureUrl: '', userId: '' };
-const liffId = '2007327814-OoJBbnwP'; // 🚀 同CHANNEL ID測試版LIFF ID
+const liffId = '2007327814-OoJBbnwP'; // 🚀 MTEST測試版LIFF ID
 
 // 🔄 修改：統一的用戶資訊顯示
 function renderLiffUserInfo(profile) {
-  const el = document.getElementById('liffUserInfo');
+  const el = document.getElementById('liffUser');
   if (!el) return;
   if (!profile) { el.innerHTML = ''; return; }
-  // 🚫 移除咖啡杯圖片
   el.innerHTML = `
-    <img src="${profile.pictureUrl}" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;">
-    <span style="font-weight:bold;">${profile.displayName}</span>
+    <img src="${profile.pictureUrl}" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+    <span style="font-weight:bold;color:#333;font-size:14px;">${profile.displayName}</span>
   `;
 }
 
@@ -976,9 +975,12 @@ function isMainCard(bubbleContent) {
 
 // 修改 fillAllFieldsWithProfile 與卡片資料填入流程
 async function fillAllFieldsWithProfile() {
-  // 🔄 今日新增：首次登入時顯示預覽載入提示
-  console.log('🔄 首次登入，顯示預覽載入動畫爭取時間...');
-  showPreviewLoading();
+  // 🔄 如果當前在預覽頁面，顯示載入提示（首次登入情況）
+  const activeContent = document.querySelector('.tab-content.active');
+  if (activeContent && activeContent.id === 'tab-preview') {
+    console.log('📊 首次登入且預設為預覽頁面，顯示載入提示');
+    showPreviewLoading();
+  }
   
   // 先填入預設值
   Object.keys(defaultCard).forEach(key => {
@@ -1574,12 +1576,13 @@ function getMainBubble(cardData) {
   bubble._cardId = cardData.page_id || pageId; // 使用實際的pageId
   bubble._cardType = 'main'; // 標示為主卡片
   
-  // **新方案：在footer的action中加入隱藏的主卡標識（LINE規範內）**
-  if (bubble.footer && bubble.footer.contents && bubble.footer.contents[0]) {
-    // 在footer的action中加入pageId參數，LINE接受這種格式
-    const originalUri = bubble.footer.contents[0].action.uri;
-    bubble.footer.contents[0].action.uri = originalUri + `?cardType=main&pageId=${pageId}`;
-  }
+  // **完全移除Footer URI參數添加，避免影響外部連結**
+  // 主卡片識別改為完全依賴其他4種方法：
+  // 1. 零寬度空格標識 (最穩定)
+  // 2. _cardType 自定義欄位
+  // 3. _cardId 卡片ID
+  // 4. Pageview格式檢查
+  // 不再修改Footer URI，保持用戶原始設定
   
       // 只記錄一次，避免重複日誌
     if (!bubble._logged) {
@@ -2281,10 +2284,7 @@ function renderPromoCardSelector() {
   promoCardList.forEach(card => {
     const thumb = document.createElement('div');
     thumb.className = 'promo-card-thumb-select' + (selectedPromoCards.includes(card.id) ? ' selected' : '');
-    thumb.style.width = '120px';
-    thumb.style.height = '180px';
-    thumb.style.display = 'inline-block';
-    thumb.style.margin = '0 8px 8px 0';
+    // 移除內聯樣式，使用CSS控制
     thumb.innerHTML = `
       <div style="width:120px;text-align:center;margin-bottom:8px;">
         <span style="display:inline-block;background:#fff;color:#222;font-size:15px;font-weight:bold;padding:2px 8px;border-radius:6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.main_title_1 || ''}</span>
@@ -2974,21 +2974,21 @@ window.addEventListener('DOMContentLoaded', function() {
   const toggleBtn = document.getElementById('toggle-promo-selector');
   const selector = document.getElementById('promo-card-selector');
   if (toggleBtn && selector) {
+    // 儲存原始文字
+    const originalText = toggleBtn.innerHTML;
+    
     toggleBtn.onclick = function() {
-      console.log('🔧 Toggle按鈕被點擊');
-      console.log('🔧 目前display狀態:', selector.style.display);
-      
       if (selector.style.display === 'none' || selector.style.display === '') {
-        // 🔧 修正：使用 'flex' 而不是空字串，匹配CSS選擇器
-        selector.style.display = 'flex';
-        toggleBtn.innerHTML = '<span>➖</span> 收合選擇器';
-        console.log('🔧 打開選擇器，設定為 flex');
+        selector.style.display = 'block';
+        toggleBtn.innerHTML = '<span>➖</span> 收合 <<';
       } else {
         selector.style.display = 'none';
-        toggleBtn.innerHTML = '<span>➕</span> 點選加入或刪除活動卡';
-        console.log('🔧 關閉選擇器，設定為 none');
+        toggleBtn.innerHTML = originalText; // 恢復原始文字
       }
     };
+    
+    // 初始狀態設定為隱藏
+    selector.style.display = 'none';
   }
 
   // 6. 載入宣傳卡片
@@ -3128,6 +3128,130 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
 let promoCardList = [];
 let selectedPromoCards = [];
 
+// 更新位置標籤顯示加成數值
+async function updatePositionLabels() {
+  try {
+    console.log('🔄 更新位置標籤加成數值...');
+    const res = await fetch('/api/points-settings');
+    const result = await res.json();
+    
+    if (result.success && result.data && Array.isArray(result.data)) {
+      const settingsArray = result.data;
+      console.log('📊 從API獲取的設定數據:', settingsArray);
+      
+      // 預設加成數值（如果API沒有返回對應數值）
+      const defaultBonuses = [15, 12, 10, 8, 5]; // 對應設定頁面的預設值
+      
+      // 更新每個位置標籤
+      for (let i = 1; i <= 5; i++) {
+        const label = document.getElementById(`position-label-${i}`);
+        if (label) {
+          let bonus = defaultBonuses[i-1]; // 預設值
+          
+          // 從API設定中獲取對應位置的回饋比例
+          const setting = settingsArray.find(s => s.position_index === (i-1));
+          if (setting && setting.reward_percentage !== undefined) {
+            bonus = parseFloat(setting.reward_percentage) || 0;
+          }
+          
+          label.textContent = `位置${i}(+${bonus}%)`;
+          console.log(`📍 位置${i}標籤更新為: +${bonus}% (position_index: ${i-1})`);
+        }
+      }
+    } else {
+      console.log('⚠️ 點數設定API返回無效數據，使用預設值');
+      // 使用預設值
+      const defaultBonuses = [15, 12, 10, 8, 5];
+      for (let i = 1; i <= 5; i++) {
+        const label = document.getElementById(`position-label-${i}`);
+        if (label) {
+          label.textContent = `位置${i}(+${defaultBonuses[i-1]}%)`;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ 更新位置標籤失敗:', error);
+    console.log('📍 使用預設加成數值');
+    // 出錯時使用預設值
+    const defaultBonuses = [15, 12, 10, 8, 5];
+    for (let i = 1; i <= 5; i++) {
+      const label = document.getElementById(`position-label-${i}`);
+      if (label) {
+        label.textContent = `位置${i}(+${defaultBonuses[i-1]}%)`;
+      }
+    }
+  }
+  
+  // 🆕 初始化同步滑動功能
+  initSyncScrolling();
+}
+
+// 🆕 新增：同步滑動功能 - 位置標籤與排序區卡片左對齊同步
+function initSyncScrolling() {
+  const positionLabels = document.querySelector('.position-labels');
+  const promoCards = document.querySelector('#promo-cards');
+  
+  if (!positionLabels || !promoCards) {
+    console.log('⚠️ 未找到滑動同步目標元素');
+    console.log('位置標籤:', !!positionLabels, '排序區:', !!promoCards);
+    return;
+  }
+  
+  let isScrolling = false;
+  const CARD_WIDTH = 120 + 8; // 卡片寬度120px + gap 8px
+  const LABEL_WIDTH = 120 + 8; // 標籤寬度120px + gap 8px
+  
+  // 位置標籤滑動時，同步排序區卡片（左對齊）
+  positionLabels.addEventListener('scroll', function() {
+    if (isScrolling) return;
+    isScrolling = true;
+    
+    // 🔧 修正：使用左對齊同步，位置1對應第1張卡片
+    const labelScrollLeft = this.scrollLeft;
+    
+    // 計算對應的卡片滑動位置（1:1對應）
+    const targetCardScroll = labelScrollLeft;
+    
+    // 限制在卡片容器的最大滑動範圍內
+    const maxCardScroll = Math.max(0, promoCards.scrollWidth - promoCards.clientWidth);
+    const finalCardScroll = Math.min(targetCardScroll, maxCardScroll);
+    
+    promoCards.scrollLeft = finalCardScroll;
+    
+    console.log(`📍 位置標籤滑動: ${labelScrollLeft}px → 卡片滑動: ${finalCardScroll}px`);
+    
+    setTimeout(() => {
+      isScrolling = false;
+    }, 50);
+  });
+  
+  // 排序區卡片滑動時，同步位置標籤（左對齊）
+  promoCards.addEventListener('scroll', function() {
+    if (isScrolling) return;
+    isScrolling = true;
+    
+    // 🔧 修正：使用左對齊同步，第1張卡片對應位置1
+    const cardScrollLeft = this.scrollLeft;
+    
+    // 計算對應的標籤滑動位置（1:1對應）
+    const targetLabelScroll = cardScrollLeft;
+    
+    // 限制在標籤容器的最大滑動範圍內
+    const maxLabelScroll = Math.max(0, positionLabels.scrollWidth - positionLabels.clientWidth);
+    const finalLabelScroll = Math.min(targetLabelScroll, maxLabelScroll);
+    
+    positionLabels.scrollLeft = finalLabelScroll;
+    
+    console.log(`🎯 卡片滑動: ${cardScrollLeft}px → 位置標籤滑動: ${finalLabelScroll}px`);
+    
+    setTimeout(() => {
+      isScrolling = false;
+    }, 50);
+  });
+  
+  console.log('✅ 同步滑動功能已初始化 - 左對齊同步，位置1對應第1張卡片');
+}
+
 // 載入宣傳卡片時同時渲染 selector
 async function loadPromoCards() {
   try {
@@ -3136,6 +3260,9 @@ async function loadPromoCards() {
     if (result.success && Array.isArray(result.data)) {
       promoCardList = result.data;
       renderPromoCardSelector();
+      
+      // 🆕 載入位置標籤加成數值
+      await updatePositionLabels();
       
       // 🔧 修復：先檢查是否有暫存的card_order資料，再決定是否初始化
       let hasProcessedCardOrder = false;
@@ -3214,10 +3341,6 @@ async function loadPromoCards() {
         initAllCardsSortable();
         renderPromoCardListSortable();
       }
-      
-      // 🔄 今日新增：載入完宣傳卡片後更新位置標籤
-      console.log('📋 宣傳卡片載入完成，更新位置標籤...');
-      updatePositionLabels();
     }
   } catch (e) {
     console.error('載入宣傳卡片失敗', e);
@@ -4102,11 +4225,32 @@ async function initGeneralMode() {
     // 等待用戶資料載入完成
     await profilePromise;
     
-    // 🧪 測試版本：延遲載入宣傳卡片，改善初始載入速度
-    // await loadPromoCards(); // 移到頁籤切換時載入
-    
-    // 🆕 簡化預覽：只渲染主卡片
-    renderMainCardPreview();
+    // 🆕 檢查當前活動頁籤，如果是預覽頁面，立即載入完整功能
+    const activeContent = document.querySelector('.tab-content.active');
+    if (activeContent && activeContent.id === 'tab-preview') {
+      console.log('📊 預設頁籤為預覽，載入完整預覽功能...');
+      // 🔄 立即顯示載入提示，不渲染任何卡片
+      showPreviewLoading();
+      
+      try {
+        // 🔧 修正：先載入宣傳卡片，再渲染預覽，避免閃爍
+        await loadPromoCards();
+        window.promoCardsLoaded = true; // 標記已載入
+        
+        // 🔧 小延遲讓用戶看到載入提示
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // 🔧 修正：直接渲染完整預覽，不要延遲
+        renderPreview();
+        renderShareJsonBox();
+      } finally {
+        // 🔄 隱藏載入提示
+        hidePreviewLoading();
+      }
+    } else {
+      // 🆕 簡化預覽：只渲染主卡片（非預覽頁面）
+      renderMainCardPreview();
+    }
     
     console.log('✅ 測試版本初始化完成 (快速模式)');
   } catch (error) {
@@ -4221,30 +4365,49 @@ function switchTab(tabName) {
     
     console.log('✅ 頁籤切換完成:', tabName);
     
-    // 特殊處理：切換到預覽頁時更新預覽
+    // 特殊處理：切換到不同頁籤時的資料載入
     if (tabName === 'preview') {
-      // 🔄 今日新增：顯示載入動畫
-      console.log('🔄 切換到預覽頁籤，顯示載入動畫...');
-      showPreviewLoading();
-      
-      setTimeout(() => {
-        console.log('🔄 更新預覽內容...');
-        try {
+      // 🔧 修正：先確保宣傳卡片已載入，再渲染預覽
+      if (!window.promoCardsLoaded) {
+        console.log('🔄 載入宣傳卡片中...');
+        showPreviewLoading();
+        
+        loadPromoCards().then(async () => {
+          window.promoCardsLoaded = true;
+          // 小延遲讓用戶看到載入提示
+          await new Promise(resolve => setTimeout(resolve, 600));
           renderPreview();
           renderShareJsonBox();
-          
-          // 🔄 今日新增：完成後隱藏載入動畫
-          setTimeout(() => {
-            hidePreviewLoading();
-            console.log('✅ 預覽載入完成，隱藏載入動畫');
-          }, 500); // 給予時間讓預覽內容完成渲染
-          
-        } catch (e) {
-          console.error('❌ 預覽更新失敗:', e);
-          // 出錯時也要隱藏載入動畫
           hidePreviewLoading();
+        }).catch(() => {
+          hidePreviewLoading();
+        });
+      } else {
+        // 宣傳卡片已載入，直接渲染
+        setTimeout(() => {
+          console.log('🔄 更新預覽內容...');
+          try {
+            renderPreview();
+            renderShareJsonBox();
+          } catch (e) {
+            console.error('❌ 預覽更新失敗:', e);
+          }
+        }, 200); // 縮短延遲時間
+      }
+    } else if (tabName === 'promo-cards') {
+      // 載入宣傳卡片數據（如果還沒載入）
+      setTimeout(() => {
+        console.log('🔄 載入宣傳卡片資料...');
+        try {
+          if (!window.promoCardsLoaded) {
+            loadPromoCards().then(() => {
+              window.promoCardsLoaded = true;
+            });
+          }
+        } catch (e) {
+          console.error('❌ 宣傳卡片載入失敗:', e);
         }
-      }, 300); // 等待動畫完成
+      }, 300);
     }
   } else {
     console.error('❌ 頁籤切換失敗 - 找不到目標元素');
@@ -4296,32 +4459,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // 🆕 初始化手機版導航功能
   initMobileNavigation();
   
-  // 🔧 檢查預設頁籤是否為預覽，若是則需要初始化預覽功能
-  const defaultActiveTab = document.querySelector('.tab-btn.active');
-  if (defaultActiveTab && defaultActiveTab.getAttribute('data-tab') === 'preview') {
-    console.log('🔄 預設頁籤為預覽，準備初始化預覽功能...');
-    
-    // 延遲初始化預覽，確保LIFF和資料都載入完成
-    setTimeout(() => {
-      console.log('🔄 開始初始化預設預覽頁籤功能...');
-      showPreviewLoading();
-      
-      // 再次延遲確保所有資料載入完成
-      setTimeout(() => {
-        try {
-          console.log('🔄 嘗試渲染預設預覽內容...');
-          renderPreview();
-          renderShareJsonBox();
-          hidePreviewLoading();
-          console.log('✅ 預設預覽頁籤初始化完成');
-        } catch (e) {
-          console.error('❌ 預設預覽初始化失敗:', e);
-          hidePreviewLoading();
-        }
-      }, 2000); // 給予足夠時間讓LIFF和資料載入
-    }, 1000);
-  }
-  
   // 延遲執行確保LIFF SDK完全載入
   setTimeout(() => {
     console.log('🚀 開始手機版統一LIFF系統初始化...');
@@ -4346,7 +4483,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// 🔄 今日新增：預覽載入提示函數
+// 🔄 預覽載入提示函數
 function showPreviewLoading() {
   const loadingDiv = document.getElementById('preview-loading');
   const previewDiv = document.getElementById('main-card-preview');
@@ -4371,131 +4508,7 @@ function hidePreviewLoading() {
   if (loadingDiv && previewDiv) {
     loadingDiv.style.display = 'none';
     previewDiv.style.display = 'block';
-    console.log('📊 隱藏預覽載入提示');
+    console.log('✅ 隱藏預覽載入提示');
   }
-}
-
-// 🔧 今日新增：更新位置標籤顯示加成數值
-async function updatePositionLabels() {
-  try {
-    console.log('🔄 更新位置標籤加成數值...');
-    const res = await fetch('/api/points-settings');
-    const result = await res.json();
-    
-    if (result.success && result.data && Array.isArray(result.data)) {
-      const settingsArray = result.data;
-      console.log('📊 從API獲取的設定數據:', settingsArray);
-      
-      // 預設加成數值（如果API沒有返回對應數值）
-      const defaultBonuses = [15, 12, 10, 8, 5]; // 對應設定頁面的預設值
-      
-      // 更新每個位置標籤
-      for (let i = 1; i <= 5; i++) {
-        const label = document.getElementById(`position-label-${i}`);
-        if (label) {
-          let bonus = defaultBonuses[i-1]; // 預設值
-          
-          // 從API設定中獲取對應位置的回饋比例
-          const setting = settingsArray.find(s => s.position_index === (i-1));
-          if (setting && setting.reward_percentage !== undefined) {
-            bonus = parseFloat(setting.reward_percentage) || 0;
-          }
-          
-          label.textContent = `位置${i}(+${bonus}%)`;
-          console.log(`📍 位置${i}標籤更新為: +${bonus}% (position_index: ${i-1})`);
-        }
-      }
-    } else {
-      console.log('⚠️ 點數設定API返回無效數據，使用預設值');
-      // 使用預設值
-      const defaultBonuses = [15, 12, 10, 8, 5];
-      for (let i = 1; i <= 5; i++) {
-        const label = document.getElementById(`position-label-${i}`);
-        if (label) {
-          label.textContent = `位置${i}(+${defaultBonuses[i-1]}%)`;
-        }
-      }
-    }
-  } catch (error) {
-    console.error('❌ 更新位置標籤失敗:', error);
-    console.log('📍 使用預設加成數值');
-    // 出錯時使用預設值
-    const defaultBonuses = [15, 12, 10, 8, 5];
-    for (let i = 1; i <= 5; i++) {
-      const label = document.getElementById(`position-label-${i}`);
-      if (label) {
-        label.textContent = `位置${i}(+${defaultBonuses[i-1]}%)`;
-      }
-    }
-  }
-  
-  // 🆕 初始化同步滑動功能
-  initSyncScrolling();
-}
-
-// 🆕 今日新增：同步滑動功能 - 位置標籤與排序區卡片左對齊同步
-function initSyncScrolling() {
-  const positionLabels = document.querySelector('.position-labels');
-  const promoCards = document.querySelector('#promo-cards');
-  
-  if (!positionLabels || !promoCards) {
-    console.log('⚠️ 未找到滑動同步目標元素');
-    console.log('位置標籤:', !!positionLabels, '排序區:', !!promoCards);
-    return;
-  }
-  
-  let isScrolling = false;
-  const CARD_WIDTH = 120 + 8; // 卡片寬度120px + gap 8px
-  const LABEL_WIDTH = 120 + 8; // 標籤寬度120px + gap 8px
-  
-  // 位置標籤滑動時，同步排序區卡片（左對齊）
-  positionLabels.addEventListener('scroll', function() {
-    if (isScrolling) return;
-    isScrolling = true;
-    
-    // 🔧 修正：使用左對齊同步，位置1對應第1張卡片
-    const labelScrollLeft = this.scrollLeft;
-    
-    // 計算對應的卡片滑動位置（1:1對應）
-    const targetCardScroll = labelScrollLeft;
-    
-    // 限制在卡片容器的最大滑動範圍內
-    const maxCardScroll = Math.max(0, promoCards.scrollWidth - promoCards.clientWidth);
-    const finalCardScroll = Math.min(targetCardScroll, maxCardScroll);
-    
-    promoCards.scrollLeft = finalCardScroll;
-    
-    console.log(`📍 位置標籤滑動: ${labelScrollLeft}px → 卡片滑動: ${finalCardScroll}px`);
-    
-    setTimeout(() => {
-      isScrolling = false;
-    }, 50);
-  });
-  
-  // 排序區卡片滑動時，同步位置標籤（左對齊）
-  promoCards.addEventListener('scroll', function() {
-    if (isScrolling) return;
-    isScrolling = true;
-    
-    // 🔧 修正：使用左對齊同步，第1張卡片對應位置1
-    const cardScrollLeft = this.scrollLeft;
-    
-    // 計算對應的標籤滑動位置（1:1對應）
-    const targetLabelScroll = cardScrollLeft;
-    
-    // 限制在標籤容器的最大滑動範圍內
-    const maxLabelScroll = Math.max(0, positionLabels.scrollWidth - positionLabels.clientWidth);
-    const finalLabelScroll = Math.min(targetLabelScroll, maxLabelScroll);
-    
-    positionLabels.scrollLeft = finalLabelScroll;
-    
-    console.log(`🎯 卡片滑動: ${cardScrollLeft}px → 位置標籤滑動: ${finalLabelScroll}px`);
-    
-    setTimeout(() => {
-      isScrolling = false;
-    }, 50);
-  });
-  
-  console.log('✅ 同步滑動功能已初始化 - 左對齊同步，位置1對應第1張卡片');
 }
  
