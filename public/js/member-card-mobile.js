@@ -702,7 +702,7 @@ const defaultCard = {
   main_image_link: 'https://secure.smore.com/n/td1qc',
   calendar_image_url: 'https://barv3.vercel.app/uploads/vip/icon_calendar.png',
   calendar_image_link: 'https://lihi3.cc/ZWV2u',
-  amember_id: 'TSAMC',
+      amember_id: '呈璽',
   love_icon_url: 'https://barv3.vercel.app/uploads/vip/loveicon.png',
   love_icon_link: 'https://lihi.cc/jl7Pw',
   pageview: '0000',
