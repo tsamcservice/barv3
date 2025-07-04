@@ -2205,7 +2205,7 @@ function initAllCardsSortable() {
   const mainCard = {
     type: 'main',
     id: 'main',
-    flex_json: getMainBubble({ ...getFormData(), page_id: 'M01001' }),
+            flex_json: getMainBubble({ ...getFormData(), page_id: 'M01001' }),
     img: getFormData().main_image_url || defaultCard.main_image_url
   };
 
@@ -2871,11 +2871,11 @@ window.addEventListener('DOMContentLoaded', function() {
         let flexJson;
         if (allCardsSortable && allCardsSortable.length > 1) {
           // 多卡片模式：生成carousel
-          const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
-          if (mainCardIndex !== -1) {
-            allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...formData, page_id: 'M01001' });
-            allCardsSortable[mainCardIndex].img = formData.main_image_url || defaultCard.main_image_url;
-          }
+                      const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
+            if (mainCardIndex !== -1) {
+              allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...formData, page_id: 'M01001' });
+              allCardsSortable[mainCardIndex].img = formData.main_image_url || defaultCard.main_image_url;
+            }
           
           const flexArr = allCardsSortable.map(c => c.flex_json);
           flexJson = {
@@ -2888,19 +2888,19 @@ window.addEventListener('DOMContentLoaded', function() {
           };
         } else {
           // 單卡片模式
-          flexJson = {
-            type: 'flex',
-            altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
-            contents: getMainBubble({ ...formData, page_id: 'M01001' })
-          };
+                        flexJson = {
+                type: 'flex',
+                altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
+                contents: getMainBubble({ ...formData, page_id: 'M01001' })
+              };
         }
         
         // 清理FLEX JSON用於儲存
         const cleanFlexJsonForSave = cleanFlexJsonForShare(flexJson);
         
-        // 準備儲存資料
-        const saveData = {
-          page_id: 'M01001',
+                  // 準備儲存資料
+          const saveData = {
+            page_id: 'M01001',
           line_user_id: liffProfile.userId,
           ...formData,
           flex_json: cleanFlexJsonForSave,
