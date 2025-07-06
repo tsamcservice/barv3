@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📧 EMAIL分享 - 會員卡片</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #EA4335, #FF6B6B);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .share-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #EA4335, #FF6B6B);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-section h3 {
+            color: #EA4335;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #EA4335;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .preview-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .preview-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        
+        .card-preview {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: #EA4335;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #d93025;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .share-container {
+                margin: 10px;
+            }
+            
+            .header, .content {
+                padding: 20px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="share-container">
+        <div class="header">
+            <h1>📧 EMAIL分享</h1>
+            <p>將您的會員卡片分享給朋友</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-message" id="successMessage">
+                ✅ 郵件發送成功！
+            </div>
+            
+            <div class="error-message" id="errorMessage">
+                ❌ 發送失敗，請重試
+            </div>
+            
+            <div class="form-section">
+                <h3>📬 收件人資訊</h3>
+                <div class="form-group">
+                    <label for="recipient">收件人信箱 *</label>
+                    <input type="email" id="recipient" placeholder="請輸入收件人信箱" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="subject">郵件主題</label>
+                    <input type="text" id="subject" placeholder="分享會員卡片給您">
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">郵件內容</label>
+                    <textarea id="message" placeholder="嗨！我想分享這張會員卡片給您..."></textarea>
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <h3>🔍 卡片預覽</h3>
+                <div class="card-preview" id="cardPreview">
+                    <!-- 卡片預覽將在此渲染 -->
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="sendEmail()">
+                    📧 發送郵件
+                </button>
+                <button class="btn btn-secondary" onclick="generateEmailUrl()">
+                    🔗 生成郵件連結
+                </button>
+                <a href="/editor-standalone.html" class="btn btn-secondary">
+                    ← 返回編輯器
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/flex2html.min.js"></script>
+    <script>
+        class EmailShare {
+            constructor() {
+                this.cardData = null;
+                this.init();
+            }
+            
+            init() {
+                // 從URL參數獲取卡片資料
+                this.loadCardData();
+                
+                // 預設郵件內容
+                this.setupDefaultContent();
+                
+                // 渲染卡片預覽
+                this.renderCardPreview();
+            }
+            
+            loadCardData() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const shareData = urlParams.get('shareData');
+                
+                if (shareData) {
+                    try {
+                        this.cardData = JSON.parse(atob(shareData));
+                        console.log('✅ 載入卡片資料:', this.cardData);
+                    } catch (e) {
+                        console.error('❌ 卡片資料解析失敗:', e);
+                        this.showError('卡片資料載入失敗');
+                    }
+                } else {
+                    console.error('❌ 未提供卡片資料');
+                    this.showError('未提供卡片資料');
+                }
+            }
+            
+            setupDefaultContent() {
+                if (!this.cardData) return;
+                
+                const subject = `分享${this.cardData.display_name}的會員卡片`;
+                const message = `嗨！
+
+我想分享這張會員卡片給您：
+
+📍 ${this.cardData.main_title_1}
+📝 ${this.cardData.main_title_2}
+👤 ${this.cardData.display_name}
+
+點擊下方按鈕查看完整資訊！
+
+祝好！`;
+                
+                document.getElementById('subject').value = subject;
+                document.getElementById('message').value = message;
+            }
+            
+            renderCardPreview() {
+                if (!this.cardData) return;
+                
+                const flexMessage = {
+                    type: 'flex',
+                    altText: '會員卡片',
+                    contents: this.createBubble(this.cardData)
+                };
+                
+                flex2html('cardPreview', flexMessage);
+            }
+            
+            createBubble(cardData) {
+                return {
+                    type: 'bubble',
+                    hero: cardData.main_image_url ? {
+                        type: 'image',
+                        url: cardData.main_image_url,
+                        size: 'full',
+                        aspectRatio: '20:13',
+                        aspectMode: 'cover'
+                    } : undefined,
+                    body: {
+                        type: 'box',
+                        layout: 'vertical',
+                        contents: [
+                            {
+                                type: 'text',
+                                text: cardData.main_title_1,
+                                weight: 'bold',
+                                size: 'xl',
+                                color: '#333333'
+                            },
+                            {
+                                type: 'text',
+                                text: cardData.main_title_2,
+                                size: 'sm',
+                                color: '#666666',
+                                wrap: true,
+                                margin: 'md'
+                            },
+                            {
+                                type: 'box',
+                                layout: 'horizontal',
+                                contents: [
+                                    cardData.member_image_url ? {
+                                        type: 'image',
+                                        url: cardData.member_image_url,
+                                        size: 'sm',
+                                        flex: 0
+                                    } : undefined,
+                                    {
+                                        type: 'text',
+                                        text: cardData.display_name,
+                                        weight: 'bold',
+                                        size: 'md',
+                                        gravity: 'center',
+                                        margin: 'md'
+                                    }
+                                ].filter(Boolean),
+                                margin: 'lg'
+                            }
+                        ]
+                    },
+                    footer: cardData.button_1_text ? {
+                        type: 'box',
+                        layout: 'vertical',
+                        contents: [
+                            {
+                                type: 'button',
+                                style: 'primary',
+                                action: {
+                                    type: 'uri',
+                                    label: cardData.button_1_text,
+                                    uri: cardData.button_1_url || 'https://example.com'
+                                }
+                            }
+                        ]
+                    } : undefined
+                };
+            }
+            
+            showSuccess(message) {
+                const successDiv = document.getElementById('successMessage');
+                successDiv.textContent = `✅ ${message}`;
+                successDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    successDiv.style.display = 'none';
+                }, 5000);
+            }
+            
+            showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = `❌ ${message}`;
+                errorDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // 全域函數
+        function sendEmail() {
+            const recipient = document.getElementById('recipient').value;
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+            
+            if (!recipient) {
+                window.emailShare.showError('請輸入收件人信箱');
+                return;
+            }
+            
+            if (!isValidEmail(recipient)) {
+                window.emailShare.showError('請輸入有效的信箱地址');
+                return;
+            }
+            
+            // 這裡可以整合真正的郵件發送API
+            // 目前使用mailto方式
+            const mailtoUrl = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+            window.location.href = mailtoUrl;
+            
+            window.emailShare.showSuccess('已開啟郵件客戶端，請完成發送');
+        }
+        
+        function generateEmailUrl() {
+            const recipient = document.getElementById('recipient').value;
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+            
+            const mailtoUrl = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+            
+            navigator.clipboard.writeText(mailtoUrl).then(() => {
+                window.emailShare.showSuccess('郵件連結已複製到剪貼簿');
+            }).catch(() => {
+                window.emailShare.showError('複製失敗，請手動複製');
+            });
+        }
+        
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            window.emailShare = new EmailShare();
+        });
+    </script>
+</body>
+</html> 

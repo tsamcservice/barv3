@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 LINE 授權中...</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #00B900, #00D91A);
+            color: white;
+        }
+        
+        .auth-container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .loading {
+            font-size: 48px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        
+        .error {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .success {
+            color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .retry-btn {
+            background: white;
+            color: #00B900;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        
+        .retry-btn:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="loading">🔐</div>
+        <div class="status" id="status">正在獲取您的LINE個人資料...</div>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        class LineAuthBridge {
+            constructor() {
+                this.liffId = '2007327814-OoJBbnwP'; // MTEST LIFF ID
+                this.init();
+            }
+            
+            async init() {
+                try {
+                    await this.authenticate();
+                } catch (error) {
+                    console.error('認證失敗:', error);
+                    this.showError('認證失敗，請重試');
+                }
+            }
+            
+            async authenticate() {
+                this.updateStatus('初始化LINE認證...');
+                
+                // 1. 初始化LIFF
+                await liff.init({ liffId: this.liffId });
+                
+                // 2. 檢查登入狀態
+                if (!liff.isLoggedIn()) {
+                    this.updateStatus('請登入您的LINE帳號...');
+                    liff.login();
+                    return;
+                }
+                
+                // 3. 獲取用戶資料
+                this.updateStatus('正在獲取您的個人資料...');
+                const profile = await liff.getProfile();
+                
+                // 4. 儲存資料到localStorage
+                const userData = {
+                    userId: profile.userId,
+                    displayName: profile.displayName,
+                    pictureUrl: profile.pictureUrl,
+                    timestamp: Date.now()
+                };
+                
+                localStorage.setItem('lineUserProfile', JSON.stringify(userData));
+                localStorage.setItem('lineAuthCompleted', 'true');
+                
+                // 5. 顯示成功訊息
+                this.showSuccess(profile);
+                
+                // 6. 跳轉到獨立編輯器
+                setTimeout(() => {
+                    const targetUrl = this.getTargetUrl();
+                    window.location.href = targetUrl;
+                }, 2000);
+            }
+            
+            getTargetUrl() {
+                // 檢查是否有指定的返回URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const returnUrl = urlParams.get('returnUrl') || '/editor-standalone.html';
+                
+                // 添加認證成功標記
+                const separator = returnUrl.includes('?') ? '&' : '?';
+                return `${returnUrl}${separator}authSuccess=true`;
+            }
+            
+            updateStatus(message) {
+                document.getElementById('status').textContent = message;
+            }
+            
+            showError(message) {
+                const messageDiv = document.getElementById('message');
+                messageDiv.innerHTML = `
+                    <div class="error">
+                        ❌ ${message}
+                        <br>
+                        <button class="retry-btn" onclick="window.location.reload()">
+                            🔄 重新嘗試
+                        </button>
+                    </div>
+                `;
+            }
+            
+            showSuccess(profile) {
+                const messageDiv = document.getElementById('message');
+                messageDiv.innerHTML = `
+                    <div class="success">
+                        ✅ 認證成功！
+                        <br>
+                        <img src="${profile.pictureUrl}" style="width: 50px; height: 50px; border-radius: 50%; margin: 10px;">
+                        <br>
+                        歡迎，${profile.displayName}！
+                        <br>
+                        <small>正在跳轉到編輯器...</small>
+                    </div>
+                `;
+                this.updateStatus('認證完成，正在跳轉...');
+            }
+        }
+        
+        // 自動啟動認證
+        document.addEventListener('DOMContentLoaded', () => {
+            new LineAuthBridge();
+        });
+    </script>
+</body>
+</html> 

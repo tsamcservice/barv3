@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌐 通用分享 - 會員卡片</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #6C757D, #495057);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .share-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6C757D, #495057);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .platform-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .platform-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        
+        .platform-card.whatsapp {
+            border-color: #25D366;
+        }
+        
+        .platform-card.telegram {
+            border-color: #0088cc;
+        }
+        
+        .platform-card.twitter {
+            border-color: #1DA1F2;
+        }
+        
+        .platform-card.generic {
+            border-color: #6C757D;
+        }
+        
+        .platform-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .platform-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+        }
+        
+        .platform-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .platform-button {
+            width: 100%;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .platform-button.whatsapp {
+            background: #25D366;
+            color: white;
+        }
+        
+        .platform-button.telegram {
+            background: #0088cc;
+            color: white;
+        }
+        
+        .platform-button.twitter {
+            background: #1DA1F2;
+            color: white;
+        }
+        
+        .platform-button.generic {
+            background: #6C757D;
+            color: white;
+        }
+        
+        .platform-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .share-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .tool-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .tool-card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .url-section {
+            margin-bottom: 20px;
+        }
+        
+        .url-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .url-input input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .url-input button {
+            padding: 10px 16px;
+            background: #495057;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .url-input button:hover {
+            background: #343a40;
+        }
+        
+        .qr-code-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .qr-code {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .preview-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        
+        .card-preview {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: #495057;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #343a40;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .share-container {
+                margin: 10px;
+            }
+            
+            .header, .content {
+                padding: 20px;
+            }
+            
+            .platform-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-tools {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="share-container">
+        <div class="header">
+            <h1>🌐 通用分享</h1>
+            <p>選擇您偏好的社群平台分享會員卡片</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-message" id="successMessage">
+                ✅ 操作成功！
+            </div>
+            
+            <div class="error-message" id="errorMessage">
+                ❌ 操作失敗，請重試
+            </div>
+            
+            <!-- 社群平台選擇 -->
+            <div class="platform-grid">
+                <div class="platform-card whatsapp">
+                    <div class="platform-icon">📱</div>
+                    <h3>WhatsApp</h3>
+                    <p>分享到WhatsApp聊天室或群組</p>
+                    <button class="platform-button whatsapp" onclick="shareToWhatsApp()">
+                        分享到WhatsApp
+                    </button>
+                </div>
+                
+                <div class="platform-card telegram">
+                    <div class="platform-icon">✈️</div>
+                    <h3>Telegram</h3>
+                    <p>分享到Telegram聊天室</p>
+                    <button class="platform-button telegram" onclick="shareToTelegram()">
+                        分享到Telegram
+                    </button>
+                </div>
+                
+                <div class="platform-card twitter">
+                    <div class="platform-icon">🐦</div>
+                    <h3>Twitter</h3>
+                    <p>分享到Twitter推文</p>
+                    <button class="platform-button twitter" onclick="shareToTwitter()">
+                        分享到Twitter
+                    </button>
+                </div>
+                
+                <div class="platform-card generic">
+                    <div class="platform-icon">🔗</div>
+                    <h3>複製連結</h3>
+                    <p>複製連結到任何地方</p>
+                    <button class="platform-button generic" onclick="copyLink()">
+                        複製連結
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 分享工具 -->
+            <div class="share-tools">
+                <div class="tool-card">
+                    <h3>🔗 分享連結</h3>
+                    <div class="url-section">
+                        <div class="url-input">
+                            <input type="text" id="shareUrl" readonly>
+                            <button onclick="copyUrl()">複製</button>
+                        </div>
+                        <p style="font-size: 12px; color: #666;">將此連結分享給朋友，他們可以直接查看您的會員卡片</p>
+                    </div>
+                </div>
+                
+                <div class="tool-card">
+                    <h3>📱 QR Code</h3>
+                    <div class="qr-code-section">
+                        <div class="qr-code" id="qrCode">
+                            <!-- QR Code 會在此生成 -->
+                        </div>
+                        <p style="font-size: 12px; color: #666;">掃描QR Code直接查看卡片</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 分享內容預覽 -->
+            <div class="preview-section">
+                <h3>🔍 卡片預覽</h3>
+                <div class="card-preview" id="cardPreview">
+                    <!-- 卡片預覽將在此渲染 -->
+                </div>
+            </div>
+            
+            <!-- 操作按鈕 -->
+            <div class="action-buttons">
+                <a href="/editor-standalone.html" class="btn btn-secondary">
+                    ← 返回編輯器
+                </a>
+                <button class="btn btn-primary" onclick="showShareOptions()">
+                    📤 更多分享選項
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/flex2html.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        class UniversalShare {
+            constructor() {
+                this.cardData = null;
+                this.shareUrl = '';
+                this.shareText = '';
+                this.init();
+            }
+            
+            init() {
+                // 從URL參數獲取卡片資料
+                this.loadCardData();
+                
+                // 生成分享連結和文字
+                this.generateShareContent();
+                
+                // 渲染卡片預覽
+                this.renderCardPreview();
+                
+                // 生成QR Code
+                this.generateQRCode();
+            }
+            
+            loadCardData() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const shareData = urlParams.get('shareData');
+                
+                if (shareData) {
+                    try {
+                        this.cardData = JSON.parse(atob(shareData));
+                        console.log('✅ 載入卡片資料:', this.cardData);
+                    } catch (e) {
+                        console.error('❌ 卡片資料解析失敗:', e);
+                        this.showError('卡片資料載入失敗');
+                    }
+                } else {
+                    console.error('❌ 未提供卡片資料');
+                    this.showError('未提供卡片資料');
+                }
+            }
+            
+            generateShareContent() {
+                if (!this.cardData) return;
+                
+                // 生成分享連結
+                const currentUrl = window.location.origin;
+                const cardData = btoa(JSON.stringify(this.cardData));
+                this.shareUrl = `${currentUrl}/card-view.html?data=${cardData}`;
+                
+                // 生成分享文字
+                this.shareText = `📍 ${this.cardData.main_title_1}\n📝 ${this.cardData.main_title_2}\n👤 ${this.cardData.display_name}\n\n查看完整資訊：${this.shareUrl}`;
+                
+                // 顯示在輸入框中
+                document.getElementById('shareUrl').value = this.shareUrl;
+            }
+            
+            generateQRCode() {
+                if (!this.shareUrl) return;
+                
+                QRCode.toCanvas(document.getElementById('qrCode'), this.shareUrl, {
+                    width: 200,
+                    height: 200,
+                    colorDark: '#495057',
+                    colorLight: '#FFFFFF'
+                }, (error) => {
+                    if (error) {
+                        console.error('QR Code生成失敗:', error);
+                        document.getElementById('qrCode').innerHTML = '<p>QR Code生成失敗</p>';
+                    } else {
+                        console.log('✅ QR Code生成成功');
+                    }
+                });
+            }
+            
+            renderCardPreview() {
+                if (!this.cardData) return;
+                
+                const flexMessage = {
+                    type: 'flex',
+                    altText: '會員卡片',
+                    contents: this.createBubble(this.cardData)
+                };
+                
+                flex2html('cardPreview', flexMessage);
+            }
+            
+            createBubble(cardData) {
+                return {
+                    type: 'bubble',
+                    hero: cardData.main_image_url ? {
+                        type: 'image',
+                        url: cardData.main_image_url,
+                        size: 'full',
+                        aspectRatio: '20:13',
+                        aspectMode: 'cover'
+                    } : undefined,
+                    body: {
+                        type: 'box',
+                        layout: 'vertical',
+                        contents: [
+                            {
+                                type: 'text',
+                                text: cardData.main_title_1,
+                                weight: 'bold',
+                                size: 'xl',
+                                color: '#333333'
+                            },
+                            {
+                                type: 'text',
+                                text: cardData.main_title_2,
+                                size: 'sm',
+                                color: '#666666',
+                                wrap: true,
+                                margin: 'md'
+                            },
+                            {
+                                type: 'box',
+                                layout: 'horizontal',
+                                contents: [
+                                    cardData.member_image_url ? {
+                                        type: 'image',
+                                        url: cardData.member_image_url,
+                                        size: 'sm',
+                                        flex: 0
+                                    } : undefined,
+                                    {
+                                        type: 'text',
+                                        text: cardData.display_name,
+                                        weight: 'bold',
+                                        size: 'md',
+                                        gravity: 'center',
+                                        margin: 'md'
+                                    }
+                                ].filter(Boolean),
+                                margin: 'lg'
+                            }
+                        ]
+                    },
+                    footer: cardData.button_1_text ? {
+                        type: 'box',
+                        layout: 'vertical',
+                        contents: [
+                            {
+                                type: 'button',
+                                style: 'primary',
+                                action: {
+                                    type: 'uri',
+                                    label: cardData.button_1_text,
+                                    uri: cardData.button_1_url || 'https://example.com'
+                                }
+                            }
+                        ]
+                    } : undefined
+                };
+            }
+            
+            showSuccess(message) {
+                const successDiv = document.getElementById('successMessage');
+                successDiv.textContent = `✅ ${message}`;
+                successDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    successDiv.style.display = 'none';
+                }, 5000);
+            }
+            
+            showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = `❌ ${message}`;
+                errorDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // 全域分享函數
+        function shareToWhatsApp() {
+            const text = encodeURIComponent(window.universalShare.shareText);
+            const whatsappUrl = `https://wa.me/?text=${text}`;
+            window.open(whatsappUrl, '_blank');
+            window.universalShare.showSuccess('已開啟WhatsApp分享');
+        }
+        
+        function shareToTelegram() {
+            const text = encodeURIComponent(window.universalShare.shareText);
+            const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(window.universalShare.shareUrl)}&text=${text}`;
+            window.open(telegramUrl, '_blank');
+            window.universalShare.showSuccess('已開啟Telegram分享');
+        }
+        
+        function shareToTwitter() {
+            const text = encodeURIComponent(`${window.universalShare.cardData.main_title_1} - ${window.universalShare.cardData.display_name}`);
+            const url = encodeURIComponent(window.universalShare.shareUrl);
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+            window.open(twitterUrl, '_blank');
+            window.universalShare.showSuccess('已開啟Twitter分享');
+        }
+        
+        function copyLink() {
+            const shareUrl = window.universalShare.shareUrl;
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                window.universalShare.showSuccess('連結已複製到剪貼簿');
+            }).catch(() => {
+                window.universalShare.showError('複製失敗，請手動複製');
+            });
+        }
+        
+        function copyUrl() {
+            copyLink();
+        }
+        
+        function showShareOptions() {
+            if (navigator.share) {
+                navigator.share({
+                    title: window.universalShare.cardData.main_title_1,
+                    text: window.universalShare.cardData.main_title_2,
+                    url: window.universalShare.shareUrl
+                }).then(() => {
+                    window.universalShare.showSuccess('分享完成');
+                }).catch((error) => {
+                    console.log('分享取消:', error);
+                });
+            } else {
+                // 備用方案：顯示複製連結提示
+                copyLink();
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            window.universalShare = new UniversalShare();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 快速卡片編輯器</title>
+    <link rel="stylesheet" href="css/style.css?v=20250703">
+    <script src="js/flex2html.min.js"></script>
+    <!-- 不載入LIFF SDK，實現快速啟動 -->
+    <style>
+        /* 快速編輯器專用樣式 */
+        .fast-editor {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .editor-panel {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .preview-panel {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .speed-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .share-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .share-button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .share-button.line {
+            background: #00C300;
+            color: white;
+        }
+        
+        .share-button.email {
+            background: #EA4335;
+            color: white;
+        }
+        
+        .share-button.facebook {
+            background: #1877F2;
+            color: white;
+        }
+        
+        .share-button.others {
+            background: #6C757D;
+            color: white;
+        }
+        
+        .share-button.secondary {
+            background: #F8F9FA;
+            color: #495057;
+            border: 1px solid #DEE2E6;
+            flex: 1;
+        }
+        
+        .share-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .share-button:active {
+            transform: translateY(0);
+        }
+        
+        .performance-stats {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
+        @media (max-width: 768px) {
+            .fast-editor {
+                flex-direction: column;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 速度指示器 -->
+    <div class="speed-indicator">
+        ⚡ 快速模式 | 載入時間: <span id="loadTime">計算中...</span>
+    </div>
+    
+    <!-- 主要編輯介面 -->
+    <div class="fast-editor">
+        <!-- 編輯面板 -->
+        <div class="editor-panel">
+            <h2>🎨 卡片編輯器</h2>
+            
+            <div class="form-group">
+                <label for="main_title_1">主標題</label>
+                <input type="text" id="main_title_1" placeholder="請輸入主標題">
+            </div>
+            
+            <div class="form-group">
+                <label for="main_title_2">副標題</label>
+                <input type="text" id="main_title_2" placeholder="請輸入副標題">
+            </div>
+            
+            <div class="form-group">
+                <label for="display_name">顯示名稱</label>
+                <input type="text" id="display_name" placeholder="請輸入顯示名稱">
+            </div>
+            
+            <div class="form-group">
+                <label for="main_image_url">主圖片URL</label>
+                <input type="url" id="main_image_url" placeholder="請輸入圖片URL">
+            </div>
+            
+            <div class="form-group">
+                <label for="member_image_url">會員圖片URL</label>
+                <input type="url" id="member_image_url" placeholder="請輸入會員圖片URL">
+            </div>
+            
+            <div class="form-group">
+                <label for="button_1_text">按鈕文字</label>
+                <input type="text" id="button_1_text" placeholder="請輸入按鈕文字">
+            </div>
+            
+            <div class="form-group">
+                <label for="button_1_url">按鈕連結</label>
+                <input type="url" id="button_1_url" placeholder="請輸入按鈕連結">
+            </div>
+            
+            <!-- 多平台分享按鈕區域 -->
+            <div class="share-buttons">
+                <button class="share-button line" onclick="shareToLine()">
+                    📱 分享到LINE
+                </button>
+                <button class="share-button email" onclick="shareToEmail()">
+                    📧 分享EMAIL
+                </button>
+                <button class="share-button facebook" onclick="shareToFacebook()">
+                    📘 Facebook
+                </button>
+                <button class="share-button others" onclick="shareToOthers()">
+                    🌐 其他平台
+                </button>
+            </div>
+            
+            <!-- 快速操作 -->
+            <div class="quick-actions" style="margin-top: 15px;">
+                <button class="share-button secondary" onclick="saveCard()">
+                    💾 儲存卡片
+                </button>
+                <button class="share-button secondary" onclick="copyCardData()">
+                    📋 複製資料
+                </button>
+            </div>
+            
+            <!-- 進階功能 -->
+            <details style="margin-top: 20px;">
+                <summary>⚙️ 進階設定</summary>
+                <div style="margin-top: 10px;">
+                    <button onclick="importFromLine()" style="margin-right: 10px;">
+                        👤 使用LINE個資
+                    </button>
+                    <button onclick="exportCard()" style="margin-right: 10px;">
+                        📤 匯出卡片
+                    </button>
+                    <button onclick="clearCache()">
+                        🗑️ 清除快取
+                    </button>
+                </div>
+            </details>
+        </div>
+        
+        <!-- 預覽面板 -->
+        <div class="preview-panel">
+            <h2>👁️ 即時預覽</h2>
+            <div id="preview-container">
+                <div id="main-card-preview" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                    <div class="chatbox" id="preview-chatbox"></div>
+                </div>
+            </div>
+            
+            <!-- 預覽控制 -->
+            <div style="margin-top: 15px;">
+                <button onclick="refreshPreview()" style="margin-right: 10px;">
+                    🔄 重新整理預覽
+                </button>
+                <button onclick="fullScreenPreview()">
+                    🖥️ 全螢幕預覽
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 效能統計 -->
+    <div class="performance-stats">
+        <div>載入時間: <span id="totalLoadTime">-</span>ms</div>
+        <div>預覽更新: <span id="previewUpdateTime">-</span>ms</div>
+        <div>快取命中: <span id="cacheHits">-</span></div>
+    </div>
+    
+    <script>
+        // 🚀 快速編輯器主程式
+        class FastEditor {
+            constructor() {
+                this.startTime = performance.now();
+                this.previewUpdateCount = 0;
+                this.cacheHits = 0;
+                this.lineProfile = null;
+                this.userCardData = null; // 🆕 用戶資料庫資料
+                this.defaultCard = {
+                    main_title_1: '我在呈璽',
+                    main_title_2: '我在呈璽，欣賞美好幸福！',
+                    display_name: '呈璽',
+                    main_image_url: 'https://barv3.vercel.app/uploads/vip/TS-B1.png',
+                    member_image_url: 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png',
+                    button_1_text: '加呈璽好友',
+                    button_1_url: 'https://lin.ee/JLLIBlP'
+                };
+                
+                this.init();
+            }
+            
+            async init() {
+                console.log('🚀 初始化快速編輯器...');
+                
+                // 1. 檢查LINE個資並載入用戶資料
+                await this.checkLineProfile();
+                
+                // 2. 載入預設資料（會自動處理資料庫資料）
+                this.loadDefaultData();
+                
+                // 3. 綁定事件
+                this.bindEvents();
+                
+                // 4. 立即預覽
+                this.updatePreview();
+                
+                // 5. 載入完成
+                const loadTime = performance.now() - this.startTime;
+                document.getElementById('loadTime').textContent = `${loadTime.toFixed(1)}ms`;
+                document.getElementById('totalLoadTime').textContent = loadTime.toFixed(1);
+                
+                console.log(`✅ 快速編輯器載入完成: ${loadTime.toFixed(1)}ms`);
+                
+                // 6. 顯示載入的資料類型
+                if (this.userCardData) {
+                    console.log('📊 已載入用戶個人化資料庫資料');
+                } else if (this.lineProfile) {
+                    console.log('👤 已載入LINE基本個資');
+                } else {
+                    console.log('📋 使用預設卡片資料');
+                }
+            }
+            
+            // 🔧 檢查用戶資料（LINE個資 + 資料庫資料）
+            async checkLineProfile() {
+                // 檢查URL參數是否有認證成功標記
+                const urlParams = new URLSearchParams(window.location.search);
+                const authSuccess = urlParams.get('authSuccess');
+                
+                if (authSuccess) {
+                    console.log('✅ 從LINE授權返回');
+                    // 清除URL參數
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+                
+                // 檢查localStorage中的LINE個資
+                const savedProfile = localStorage.getItem('lineUserProfile');
+                if (savedProfile) {
+                    try {
+                        const profileData = JSON.parse(savedProfile);
+                        
+                        // 檢查資料是否過期（24小時）
+                        const isExpired = Date.now() - profileData.timestamp > 24 * 60 * 60 * 1000;
+                        
+                        if (!isExpired) {
+                            this.lineProfile = profileData;
+                            console.log('✅ 載入快取的LINE個資:', profileData.displayName);
+                            
+                            // 🆕 嘗試從資料庫載入用戶的個人化卡片
+                            await this.loadUserCardFromDatabase(profileData.userId);
+                            
+                            this.showProfileStatus(profileData);
+                            return;
+                        } else {
+                            console.log('⚠️ LINE個資已過期，清除快取');
+                            localStorage.removeItem('lineUserProfile');
+                        }
+                    } catch (e) {
+                        console.error('LINE個資解析失敗:', e);
+                        localStorage.removeItem('lineUserProfile');
+                    }
+                }
+                
+                // 沒有有效的LINE個資，顯示授權按鈕
+                this.showAuthButton();
+            }
+            
+            // 🆕 從資料庫載入用戶卡片資料
+            async loadUserCardFromDatabase(userId) {
+                try {
+                    console.log('🔍 查詢用戶資料庫資料...', userId);
+                    
+                    const response = await fetch(`/api/cards?pageId=M01001&userId=${userId}`);
+                    const result = await response.json();
+                    
+                    if (result.success && result.data && result.data.length > 0) {
+                        const userCard = result.data[0];
+                        console.log('✅ 找到用戶資料庫資料:', userCard);
+                        
+                        // 設置用戶的個人化卡片資料
+                        this.userCardData = userCard;
+                        
+                        // 顯示載入狀態
+                        this.showDatabaseLoadStatus();
+                        
+                        return true;
+                    } else {
+                        console.log('⚠️ 資料庫中未找到用戶卡片資料，使用LINE基本個資');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('❌ 資料庫查詢失敗:', error);
+                    return false;
+                }
+            }
+            
+            // 🆕 顯示資料庫載入狀態
+            showDatabaseLoadStatus() {
+                const speedIndicator = document.querySelector('.speed-indicator');
+                if (this.lineProfile && this.userCardData) {
+                    speedIndicator.innerHTML = `
+                        <img src="${this.lineProfile.pictureUrl}" style="width: 20px; height: 20px; border-radius: 50%; margin-right: 5px;">
+                        ${this.lineProfile.displayName} | 📊 個人化資料 | 載入時間: <span id="loadTime">計算中...</span>
+                    `;
+                } else if (this.lineProfile) {
+                    speedIndicator.innerHTML = `
+                        <img src="${this.lineProfile.pictureUrl}" style="width: 20px; height: 20px; border-radius: 50%; margin-right: 5px;">
+                        ${this.lineProfile.displayName} | 📋 基本資料 | 載入時間: <span id="loadTime">計算中...</span>
+                    `;
+                }
+            }
+            
+            // 🔧 顯示個資狀態
+            showProfileStatus(profile) {
+                // 使用新的資料庫載入狀態顯示
+                this.showDatabaseLoadStatus();
+                
+                // 在編輯器中添加重新授權按鈕
+                this.addReauthButton();
+            }
+            
+            // 🔧 顯示授權按鈕
+            showAuthButton() {
+                const speedIndicator = document.querySelector('.speed-indicator');
+                speedIndicator.innerHTML = `
+                    ⚡ 快速模式 | 
+                    <button onclick="authorizeWithLine()" style="
+                        background: white; 
+                        color: #00B900; 
+                        border: none; 
+                        padding: 4px 8px; 
+                        border-radius: 4px; 
+                        cursor: pointer;
+                        font-size: 10px;
+                        margin-left: 5px;
+                    ">🔐 LINE授權</button>
+                    | 載入時間: <span id="loadTime">計算中...</span>
+                `;
+            }
+            
+            // 🔧 添加重新授權按鈕
+            addReauthButton() {
+                const editorPanel = document.querySelector('.editor-panel');
+                const existingBtn = document.getElementById('reauth-btn');
+                
+                if (!existingBtn) {
+                    const reauthBtn = document.createElement('button');
+                    reauthBtn.id = 'reauth-btn';
+                    reauthBtn.innerHTML = '🔄 重新授權LINE';
+                    reauthBtn.style.cssText = `
+                        background: #00B900;
+                        color: white;
+                        border: none;
+                        padding: 8px 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        margin-top: 10px;
+                        font-size: 12px;
+                    `;
+                    reauthBtn.onclick = () => authorizeWithLine();
+                    
+                    editorPanel.appendChild(reauthBtn);
+                }
+            }
+            
+            loadDefaultData() {
+                // 資料優先順序：用戶資料庫資料 > 本地快取 > LINE個資 > 預設資料
+                let cardData = this.defaultCard;
+                
+                // 1. 檢查本地快取
+                const cachedData = localStorage.getItem('fastEditor_cardData');
+                if (cachedData) {
+                    try {
+                        cardData = { ...cardData, ...JSON.parse(cachedData) };
+                        this.cacheHits++;
+                        console.log('✅ 載入本地快取資料');
+                    } catch (e) {
+                        console.warn('本地快取解析失敗，使用預設資料');
+                    }
+                }
+                
+                // 2. 如果有LINE個資但無資料庫資料，使用LINE基本個資
+                if (this.lineProfile && !this.userCardData) {
+                    cardData = {
+                        ...cardData,
+                        display_name: this.lineProfile.displayName,
+                        member_image_url: this.lineProfile.pictureUrl
+                    };
+                    console.log('✅ 使用LINE基本個資個人化卡片');
+                }
+                
+                // 3. 🆕 如果有用戶資料庫資料，優先使用（最高優先級）
+                if (this.userCardData) {
+                    // 將資料庫資料映射到表單欄位
+                    const dbCardData = this.mapDatabaseToForm(this.userCardData);
+                    cardData = { ...cardData, ...dbCardData };
+                    console.log('✅ 使用用戶資料庫個人化資料');
+                }
+                
+                // 填入表單
+                Object.keys(cardData).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = cardData[key];
+                    }
+                });
+                
+                this.updateStats();
+            }
+            
+            // 🆕 將資料庫資料映射到表單欄位
+            mapDatabaseToForm(dbData) {
+                const formData = {};
+                
+                // 基本映射
+                const fieldMappings = {
+                    'main_title_1': dbData.main_title_1,
+                    'main_title_2': dbData.main_title_2,
+                    'display_name': dbData.display_name,
+                    'main_image_url': dbData.main_image_url,
+                    'member_image_url': dbData.member_image_url,
+                    'button_1_text': dbData.button_1_text,
+                    'button_1_url': dbData.button_1_url,
+                    'snow_image_url': dbData.snow_image_url,
+                    'calendar_image_url': dbData.calendar_image_url,
+                    'love_icon_url': dbData.love_icon_url,
+                    'main_title_1_color': dbData.main_title_1_color,
+                    'main_title_2_color': dbData.main_title_2_color,
+                    'name_color1': dbData.name_color1,
+                    'button_1_color': dbData.button_1_color,
+                    's_button_text': dbData.s_button_text,
+                    's_button_color': dbData.s_button_color,
+                    'card_alt_title': dbData.card_alt_title
+                };
+                
+                // 只添加有值的欄位
+                Object.keys(fieldMappings).forEach(key => {
+                    if (fieldMappings[key] !== undefined && fieldMappings[key] !== null && fieldMappings[key] !== '') {
+                        formData[key] = fieldMappings[key];
+                    }
+                });
+                
+                console.log('🔄 資料庫資料映射完成:', Object.keys(formData).length, '個欄位');
+                return formData;
+            }
+            
+            bindEvents() {
+                // 綁定所有輸入欄位的即時更新
+                const inputs = document.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.addEventListener('input', () => {
+                        this.updatePreview();
+                        this.saveToCache();
+                    });
+                });
+                
+                // 鍵盤快捷鍵
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch (e.key) {
+                            case 's':
+                                e.preventDefault();
+                                this.saveCard();
+                                break;
+                            case 'Enter':
+                                e.preventDefault();
+                                this.shareToLine();
+                                break;
+                        }
+                    }
+                });
+            }
+            
+            updatePreview() {
+                const startTime = performance.now();
+                
+                const cardData = this.getFormData();
+                const bubble = this.createBubble(cardData);
+                
+                const flexJson = {
+                    type: 'flex',
+                    altText: cardData.main_title_1 || '我的會員卡',
+                    contents: bubble
+                };
+                
+                const chatbox = document.getElementById('preview-chatbox');
+                chatbox.innerHTML = '';
+                
+                if (window.flex2html) {
+                    flex2html('preview-chatbox', flexJson);
+                }
+                
+                const updateTime = performance.now() - startTime;
+                document.getElementById('previewUpdateTime').textContent = updateTime.toFixed(1);
+                
+                this.previewUpdateCount++;
+                console.log(`🔄 預覽更新 #${this.previewUpdateCount}: ${updateTime.toFixed(1)}ms`);
+            }
+            
+            getFormData() {
+                const formData = {};
+                Object.keys(this.defaultCard).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        formData[key] = element.value || this.defaultCard[key];
+                    } else {
+                        formData[key] = this.defaultCard[key];
+                    }
+                });
+                return formData;
+            }
+            
+            createBubble(cardData) {
+                return {
+                    type: 'bubble',
+                    hero: cardData.main_image_url ? {
+                        type: 'image',
+                        url: cardData.main_image_url,
+                        size: 'full',
+                        aspectRatio: '20:13',
+                        aspectMode: 'cover'
+                    } : undefined,
+                    body: {
+                        type: 'box',
+                        layout: 'vertical',
+                        contents: [
+                            {
+                                type: 'text',
+                                text: cardData.main_title_1,
+                                weight: 'bold',
+                                size: 'xl',
+                                color: '#333333'
+                            },
+                            {
+                                type: 'text',
+                                text: cardData.main_title_2,
+                                size: 'sm',
+                                color: '#666666',
+                                wrap: true,
+                                margin: 'md'
+                            },
+                            {
+                                type: 'box',
+                                layout: 'horizontal',
+                                contents: [
+                                    cardData.member_image_url ? {
+                                        type: 'image',
+                                        url: cardData.member_image_url,
+                                        size: 'sm',
+                                        flex: 0
+                                    } : undefined,
+                                    {
+                                        type: 'text',
+                                        text: cardData.display_name,
+                                        weight: 'bold',
+                                        size: 'md',
+                                        gravity: 'center',
+                                        margin: 'md'
+                                    }
+                                ].filter(Boolean),
+                                margin: 'lg'
+                            }
+                        ]
+                    },
+                    footer: cardData.button_1_text ? {
+                        type: 'box',
+                        layout: 'vertical',
+                        contents: [
+                            {
+                                type: 'button',
+                                style: 'primary',
+                                action: {
+                                    type: 'uri',
+                                    label: cardData.button_1_text,
+                                    uri: cardData.button_1_url || 'https://example.com'
+                                }
+                            }
+                        ]
+                    } : undefined
+                };
+            }
+            
+            saveToCache() {
+                const formData = this.getFormData();
+                localStorage.setItem('fastEditor_cardData', JSON.stringify(formData));
+            }
+            
+            updateStats() {
+                document.getElementById('cacheHits').textContent = this.cacheHits;
+            }
+        }
+        
+        // 🔧 全域函數
+        function shareToLine() {
+            const formData = window.fastEditor.getFormData();
+            
+            // 生成包含卡片資料的LIFF URL
+            const shareData = btoa(JSON.stringify(formData));
+            const liffUrl = `https://barv3.vercel.app/mcard-mtest.html?shareData=${shareData}`;
+            
+            // 開啟新視窗進行分享
+            window.open(liffUrl, '_blank');
+            
+            alert('🚀 已開啟LINE分享視窗！');
+        }
+        
+        function saveCard() {
+            const formData = window.fastEditor.getFormData();
+            
+            // 儲存到localStorage
+            localStorage.setItem('savedCard_' + Date.now(), JSON.stringify(formData));
+            
+            alert('💾 卡片已儲存！');
+        }
+        
+        // 🌍 多平台分享函數
+        function shareToEmail() {
+            const formData = window.fastEditor.getFormData();
+            const shareData = btoa(JSON.stringify(formData));
+            const emailUrl = `/share-email.html?shareData=${shareData}`;
+            
+            window.open(emailUrl, '_blank');
+            console.log('📧 開啟EMAIL分享頁面');
+        }
+        
+        function shareToFacebook() {
+            const formData = window.fastEditor.getFormData();
+            const shareData = btoa(JSON.stringify(formData));
+            const fbUrl = `/share-facebook.html?shareData=${shareData}`;
+            
+            window.open(fbUrl, '_blank');
+            console.log('📘 開啟Facebook分享頁面');
+        }
+        
+        function shareToOthers() {
+            const formData = window.fastEditor.getFormData();
+            const shareData = btoa(JSON.stringify(formData));
+            const otherUrl = `/share-universal.html?shareData=${shareData}`;
+            
+            window.open(otherUrl, '_blank');
+            console.log('🌐 開啟通用分享頁面');
+        }
+        
+        function copyCardData() {
+            const formData = window.fastEditor.getFormData();
+            const cardJson = JSON.stringify(formData, null, 2);
+            
+            navigator.clipboard.writeText(cardJson).then(() => {
+                alert('📋 卡片資料已複製到剪貼簿！');
+            }).catch(err => {
+                console.error('複製失敗:', err);
+                // 備用方案：創建臨時文本域
+                const textarea = document.createElement('textarea');
+                textarea.value = cardJson;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('📋 卡片資料已複製到剪貼簿！');
+            });
+        }
+        
+        function authorizeWithLine() {
+            // 跳轉到LINE授權橋接頁面
+            const currentUrl = encodeURIComponent(window.location.href);
+            const authUrl = `/line-auth-bridge.html?returnUrl=${currentUrl}`;
+            window.location.href = authUrl;
+        }
+        
+        function importFromLine() {
+            // 如果已經有LINE個資，直接更新
+            if (window.fastEditor.lineProfile) {
+                const formData = window.fastEditor.getFormData();
+                formData.display_name = window.fastEditor.lineProfile.displayName;
+                formData.member_image_url = window.fastEditor.lineProfile.pictureUrl;
+                
+                // 更新表單
+                document.getElementById('display_name').value = formData.display_name;
+                document.getElementById('member_image_url').value = formData.member_image_url;
+                
+                // 更新預覽
+                window.fastEditor.updatePreview();
+                window.fastEditor.saveToCache();
+                
+                alert('✅ 已使用您的LINE個資更新卡片！');
+            } else {
+                // 沒有LINE個資，進行授權
+                authorizeWithLine();
+            }
+        }
+        
+        function exportCard() {
+            const formData = window.fastEditor.getFormData();
+            
+            // 創建下載連結
+            const dataStr = JSON.stringify(formData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `card_${Date.now()}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+        
+        function refreshPreview() {
+            window.fastEditor.updatePreview();
+        }
+        
+        function fullScreenPreview() {
+            const preview = document.getElementById('preview-container');
+            if (preview.requestFullscreen) {
+                preview.requestFullscreen();
+            }
+        }
+        
+        function clearCache() {
+            if (confirm('確定要清除所有快取資料嗎？這將移除LINE個資和卡片資料。')) {
+                // 清除LINE個資
+                localStorage.removeItem('lineUserProfile');
+                localStorage.removeItem('lineAuthCompleted');
+                
+                // 清除卡片快取
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('fastEditor_') || key.startsWith('savedCard_')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+                
+                alert('✅ 快取已清除！頁面將重新載入。');
+                window.location.reload();
+            }
+        }
+        
+        // 🚀 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            window.fastEditor = new FastEditor();
+        });
+    </script>
+</body>
+</html> 

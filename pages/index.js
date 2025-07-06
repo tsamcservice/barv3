@@ -154,6 +154,178 @@ export default function Home() {
           </div>
         </div>
         
+        {/* 🚀 全新快速編輯器系統 */}
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          color: 'white',
+          padding: '2rem',
+          borderRadius: '16px',
+          marginTop: '1.5rem',
+          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
+        }}>
+          <h3 style={{
+            margin: '0 0 1rem 0',
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            textAlign: 'center'
+          }}>
+            🚀 全新快速編輯器系統
+          </h3>
+          <p style={{
+            textAlign: 'center',
+            margin: '0 0 1.5rem 0',
+            fontSize: '14px',
+            opacity: 0.9
+          }}>
+            ⚡ 0.5秒載入 | 🎨 離線編輯 | 📱 多平台分享 | 🔐 安全授權
+          </p>
+          
+          {/* 主要入口按鈕 */}
+          <div style={{
+            display: 'flex',
+            gap: '16px',
+            justifyContent: 'center',
+            marginBottom: '1.5rem',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <a
+                href="/mtest-index.html"
+                style={{
+                  background: 'rgba(255,255,255,0.95)',
+                  color: '#667eea',
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  textDecoration: 'none',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                  transform: 'scale(1.05)',
+                  border: '2px solid rgba(255,255,255,0.3)'
+                }}
+              >
+                🏠 快速編輯器首頁
+              </a>
+              <div style={{ fontSize: '11px', opacity: 0.8, textAlign: 'center' }}>
+                整合入口 | 一鍵登入
+              </div>
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <a
+                href="/editor-standalone.html"
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  color: 'white',
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  textDecoration: 'none',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  border: '2px solid rgba(255,255,255,0.3)'
+                }}
+              >
+                ⚡ 直接編輯器
+              </a>
+              <div style={{ fontSize: '11px', opacity: 0.8, textAlign: 'center' }}>
+                獨立環境 | 瞬間載入
+              </div>
+            </div>
+          </div>
+          
+          {/* 分享平台按鈕群 */}
+          <div style={{
+            background: 'rgba(255,255,255,0.1)',
+            padding: '1rem',
+            borderRadius: '12px'
+          }}>
+            <h4 style={{
+              margin: '0 0 1rem 0',
+              fontSize: '14px',
+              textAlign: 'center',
+              opacity: 0.9
+            }}>
+              📱 多平台分享系統
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: '8px'
+            }}>
+              <a
+                href="/line-auth-bridge.html"
+                style={{
+                  background: '#00C300',
+                  color: 'white',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}
+              >
+                📱 LINE授權
+              </a>
+              <a
+                href="/share-email.html"
+                style={{
+                  background: '#EA4335',
+                  color: 'white',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}
+              >
+                📧 EMAIL分享
+              </a>
+              <a
+                href="/share-facebook.html"
+                style={{
+                  background: '#1877F2',
+                  color: 'white',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}
+              >
+                📘 Facebook
+              </a>
+              <a
+                href="/share-universal.html"
+                style={{
+                  background: '#6C757D',
+                  color: 'white',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}
+              >
+                🌐 其他平台
+              </a>
+            </div>
+          </div>
+        </div>
+
         {/* A/B測試和開發版本 */}
         <div style={{
           background: 'rgba(255,255,255,0.1)',
@@ -192,10 +364,10 @@ export default function Home() {
                   fontWeight: 'bold'
                 }}
               >
-                🧪 MTEST版
+                🧪 MTEST版-測試
               </a>
               <div style={{ fontSize: '10px', opacity: 0.8 }}>
-                LIFF: OoJBbnwP<br/>A/B測試平台
+                LIFF: OoJBbnwP<br/>支援快速編輯器
               </div>
             </div>
             

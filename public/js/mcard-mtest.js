@@ -146,8 +146,16 @@ async function handleAutoShareMode() {
   const pageId = getQueryParam('pageId');
   const userId = getQueryParam('userId');
   const bridgeShare = getQueryParam('bridgeShare');
+  const shareData = getQueryParam('shareData'); // 🆕 支援從其他編輯器接收資料
   
-  console.log('🔍 檢查自動分享模式:', { pageId, userId, bridgeShare: !!bridgeShare });
+  console.log('🔍 檢查自動分享模式:', { pageId, userId, bridgeShare: !!bridgeShare, shareData: !!shareData });
+  
+  // 🆕 支援從獨立編輯器接收shareData
+  if (shareData) {
+    console.log('📥 從獨立編輯器接收卡片資料');
+    await handleShareDataFromEditor(shareData);
+    return true;
+  }
   
   // 🆕 橋接分享模式檢測
   if (bridgeShare && MOBILE_FEATURES.bridgeShare) {
@@ -163,6 +171,192 @@ async function handleAutoShareMode() {
   }
   
   return false;
+}
+
+// 🆕 處理來自獨立編輯器的分享資料
+async function handleShareDataFromEditor(shareDataParam) {
+  try {
+    console.log('📥 解析獨立編輯器分享資料...');
+    
+    // 解碼base64資料
+    let cardData;
+    try {
+      const decodedData = atob(shareDataParam);
+      cardData = JSON.parse(decodedData);
+      console.log('✅ 成功解析卡片資料:', cardData);
+    } catch (e) {
+      throw new Error('卡片資料解析失敗');
+    }
+    
+    // 顯示載入狀態
+    showShareDataLoading();
+    
+    // 填入表單資料
+    fillFormWithEditorData(cardData);
+    
+    // 立即更新預覽
+    renderPreview();
+    
+    // 切換到預覽頁面
+    switchTab('preview');
+    
+    // 隱藏載入狀態
+    hideShareDataLoading();
+    
+    // 顯示來源提示
+    showShareDataSuccess();
+    
+    // 🆕 3秒後自動執行分享
+    setTimeout(async () => {
+      console.log('🚀 自動執行LINE分享...');
+      await shareToLine();
+    }, 3000);
+    
+  } catch (error) {
+    console.error('❌ 處理獨立編輯器資料失敗:', error);
+    hideShareDataLoading();
+    showShareDataError(error.message);
+  }
+}
+
+// 填入來自獨立編輯器的表單資料
+function fillFormWithEditorData(cardData) {
+  console.log('📝 填入獨立編輯器資料到表單...');
+  
+  // 基本資料映射
+  const fieldMapping = {
+    'main_title_1': 'main_title_1',
+    'main_title_2': 'main_title_2', 
+    'display_name': 'display_name',
+    'main_image_url': 'main_image_url',
+    'member_image_url': 'member_image_url',
+    'button_1_text': 'button_1_text',
+    'button_1_url': 'button_1_url'
+  };
+  
+  // 填入對應欄位
+  Object.keys(fieldMapping).forEach(editorField => {
+    const formField = fieldMapping[editorField];
+    const value = cardData[editorField];
+    
+    if (value) {
+      const element = document.getElementById(formField);
+      if (element) {
+        element.value = value;
+        console.log(`✅ 設定 ${formField}:`, value);
+      }
+    }
+  });
+  
+  // 預設值設定
+  document.getElementById('s_button_text').value = '分享卡片';
+  
+  console.log('✅ 表單資料填入完成');
+}
+
+// 顯示shareData載入狀態
+function showShareDataLoading() {
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'shareDataLoading';
+  loadingDiv.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(76, 175, 80, 0.95);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+  
+  loadingDiv.innerHTML = `
+    <div style="margin-bottom: 16px;">
+      <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    </div>
+    <h3 style="margin: 0 0 10px 0;">📥 載入編輯器資料</h3>
+    <p style="margin: 0;">正在處理您的卡片資料...</p>
+  `;
+  
+  document.body.appendChild(loadingDiv);
+}
+
+// 隱藏shareData載入狀態
+function hideShareDataLoading() {
+  const loadingDiv = document.getElementById('shareDataLoading');
+  if (loadingDiv) {
+    loadingDiv.remove();
+  }
+}
+
+// 顯示shareData成功提示
+function showShareDataSuccess() {
+  const successDiv = document.createElement('div');
+  successDiv.id = 'shareDataSuccess';
+  successDiv.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(76, 175, 80, 0.95);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+  
+  successDiv.innerHTML = `
+    ✅ 已載入快速編輯器資料，3秒後自動分享到LINE
+  `;
+  
+  document.body.appendChild(successDiv);
+  
+  // 6秒後自動隱藏
+  setTimeout(() => {
+    if (successDiv.parentElement) {
+      successDiv.remove();
+    }
+  }, 6000);
+}
+
+// 顯示shareData錯誤提示
+function showShareDataError(errorMessage) {
+  const errorDiv = document.createElement('div');
+  errorDiv.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(244, 67, 54, 0.95);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+  
+  errorDiv.innerHTML = `
+    <h3 style="margin: 0 0 10px 0;">❌ 載入失敗</h3>
+    <p style="margin: 0 0 15px 0;">${errorMessage}</p>
+    <button onclick="this.parentElement.remove()" style="
+      background: white;
+      color: #f44336;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    ">確定</button>
+  `;
+  
+  document.body.appendChild(errorDiv);
 }
 
 // 🆕 橋接分享處理
