@@ -142,7 +142,10 @@
                 
                 // 添加認證成功標記
                 const separator = returnUrl.includes('?') ? '&' : '?';
-                return `${returnUrl}${separator}authSuccess=true`;
+                const finalUrl = `${returnUrl}${separator}authSuccess=true&liffAuth=true`;
+                
+                console.log('🔄 準備跳轉到:', finalUrl);
+                return finalUrl;
             }
             
             updateStatus(message) {

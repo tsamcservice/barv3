@@ -4336,20 +4336,103 @@ async function initUnifiedLiff() {
       return false;
     }
     
+    // 檢查是否從 mtest-index.html 跳轉過來
+    const urlParams = new URLSearchParams(window.location.search);
+    const sourceParam = urlParams.get('source');
+    const forceLogin = urlParams.get('forceLogin');
+    const authSuccess = urlParams.get('authSuccess');
+    const liffAuth = urlParams.get('liffAuth');
+    
+    console.log('🔍 檢查跳轉來源:', sourceParam);
+    console.log('🔍 是否強制登入:', forceLogin);
+    console.log('🔍 認證成功標記:', authSuccess);
+    console.log('🔍 LIFF認證標記:', liffAuth);
+    
     // 初始化LIFF
     await liff.init({ liffId: '2007327814-OoJBbnwP' });
     console.log('✅ LIFF初始化成功');
     
     // 檢查登入狀態
     if (!liff.isLoggedIn()) {
-      console.log('🔑 用戶未登入，跳轉至登入頁面');
-      liff.login();
-      return false;
+      // 檢查 localStorage 中是否有有效的認證資料
+      const storedProfile = localStorage.getItem('lineUserProfile');
+      const storedAuth = localStorage.getItem('lineAuthCompleted');
+      
+      if (storedProfile && storedAuth) {
+        try {
+          const userData = JSON.parse(storedProfile);
+          if (userData.userId && userData.displayName && userData.timestamp) {
+            const now = Date.now();
+            const loginTime = userData.timestamp;
+            const hoursPassed = (now - loginTime) / (1000 * 60 * 60);
+            
+            if (hoursPassed < 24) {
+              console.log('✅ 發現有效的本地認證資料，使用本地資料');
+              
+              // 使用本地資料
+              UNIFIED_LIFF.isLoggedIn = true;
+              UNIFIED_LIFF.profile = {
+                userId: userData.userId,
+                displayName: userData.displayName,
+                pictureUrl: userData.pictureUrl
+              };
+              
+              // 更新全域變數（相容性）
+              window.liffProfile = userData;
+              
+              // 更新設備指示器
+              updateDeviceIndicator();
+              
+              return true;
+            } else {
+              console.log('⚠️ 本地認證資料已過期，需要重新認證');
+              localStorage.removeItem('lineUserProfile');
+              localStorage.removeItem('lineAuthCompleted');
+            }
+          }
+        } catch (e) {
+          console.error('❌ 本地認證資料解析失敗:', e);
+          localStorage.removeItem('lineUserProfile');
+          localStorage.removeItem('lineAuthCompleted');
+        }
+      }
+      console.log('🔑 用戶未登入');
+      
+      // 如果是從 line-auth-bridge.html 返回但仍未登入，表示認證失敗
+      if (liffAuth === 'true' || authSuccess === 'true') {
+        console.log('❌ 從授權橋接返回但仍未登入，顯示錯誤');
+        alert('❌ LINE 登入失敗\n\n請嘗試：\n1. 重新整理頁面\n2. 清除瀏覽器快取\n3. 重新登入');
+        return false;
+      }
+      
+      // 如果是從 mtest-index.html 跳轉過來，使用 line-auth-bridge 進行認證
+      if (sourceParam === 'smartEdit' || forceLogin === 'true') {
+        console.log('🔄 從智能編輯跳轉過來，使用授權橋接頁面');
+        const authUrl = `/line-auth-bridge.html?returnUrl=${encodeURIComponent('/mcard-mtest.html?mode=edit&source=bridge')}`;
+        window.location.href = authUrl;
+        return false;
+      } else {
+        // 直接從 LIFF 進入，正常登入流程
+        console.log('🔑 直接LIFF進入，執行正常登入');
+        liff.login();
+        return false;
+      }
     }
     
     // 獲取用戶資料
     const profile = await liff.getProfile();
     console.log('👤 獲取用戶資料成功:', profile.displayName);
+    
+    // 儲存到localStorage（與 line-auth-bridge.html 保持一致）
+    const userData = {
+      userId: profile.userId,
+      displayName: profile.displayName,
+      pictureUrl: profile.pictureUrl,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem('lineUserProfile', JSON.stringify(userData));
+    localStorage.setItem('lineAuthCompleted', 'true');
     
     // 更新UNIFIED_LIFF物件
     UNIFIED_LIFF.isLoggedIn = true;

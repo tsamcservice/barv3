@@ -623,12 +623,22 @@
         }
         
         function forceLogin() {
+            console.log('🔄 強制重新登入');
+            // 清除舊的認證資料
+            localStorage.removeItem('lineUserProfile');
+            localStorage.removeItem('lineAuthCompleted');
+            
+            // 重新檢查登入狀態
+            checkLoginStatus();
+            
+            // 執行登入
             loginLine();
         }
         
         function loginLine() {
-            const authUrl = '/line-auth-bridge.html?returnUrl=' + encodeURIComponent('/mcard-mtest.html');
-            window.open(authUrl, '_blank');
+            const authUrl = '/line-auth-bridge.html?returnUrl=' + encodeURIComponent('/mcard-mtest.html?mode=edit&source=relogin');
+            console.log('🔗 跳轉到LINE授權頁面:', authUrl);
+            window.location.href = authUrl;
         }
 
 
