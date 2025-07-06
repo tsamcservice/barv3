@@ -422,6 +422,81 @@ export default function Home() {
         </div>
       </div>
       
+      {/* 🔧 Flex Message 開發工具區塊 */}
+      <div style={{
+        background: '#2196F3',
+        color: 'white',
+        padding: '1.5rem',
+        borderRadius: '12px',
+        marginTop: '2rem',
+        boxShadow: '0 4px 16px rgba(33,150,243,0.3)',
+        maxWidth: '600px',
+        width: '100%'
+      }}>
+        <h3 style={{
+          margin: '0 0 1rem 0',
+          fontSize: '1.3rem',
+          fontWeight: 'bold',
+          textAlign: 'center'
+        }}>
+          🔧 Flex Message 開發工具
+        </h3>
+        <p style={{
+          margin: '0 0 1.5rem 0',
+          fontSize: '14px',
+          textAlign: 'center',
+          opacity: 0.9
+        }}>
+          專業開發者工具：Flex JSON 編輯、預覽、測試
+        </p>
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          marginBottom: '15px'
+        }}>
+          <a
+            href="/member-card-simtest.html"
+            style={{
+              background: 'rgba(255,255,255,0.95)',
+              color: '#2196F3',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            📋 Flex碼測試預覽頁
+          </a>
+          <a
+            href="/member-card-simple.html"
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🎨 簡化編輯器
+          </a>
+        </div>
+        <div style={{
+          background: 'rgba(255,255,255,0.1)',
+          padding: '10px',
+          borderRadius: '8px',
+          fontSize: '12px',
+          textAlign: 'center'
+        }}>
+          💡 開發者功能：用於 Flex Message JSON 結構開發和測試
+        </div>
+      </div>
+
       {/* 🔴 管理後台區塊 */}
       <div style={{
         background: '#dc3545',
