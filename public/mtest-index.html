@@ -512,52 +512,112 @@
              }
          };
         
-        // 智能編輯系統
+        // 智能編輯系統 - 加強登入狀態檢查
         function checkLoginStatus() {
             const lineProfile = localStorage.getItem('lineUserProfile');
             const authCompleted = localStorage.getItem('lineAuthCompleted');
             const statusContent = document.getElementById('statusContent');
             const editBtn = document.getElementById('editBtn');
             
+            // 更嚴格的登入狀態檢查
+            let isValidLogin = false;
+            let userData = null;
+            
             if (lineProfile && authCompleted) {
+                try {
+                    userData = JSON.parse(lineProfile);
+                    // 檢查必要欄位和時效性（24小時內）
+                    if (userData.userId && userData.displayName && userData.timestamp) {
+                        const now = Date.now();
+                        const loginTime = userData.timestamp;
+                        const hoursPassed = (now - loginTime) / (1000 * 60 * 60);
+                        
+                        if (hoursPassed < 24) {
+                            isValidLogin = true;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Invalid lineProfile data:', e);
+                    // 清理損壞的資料
+                    localStorage.removeItem('lineUserProfile');
+                    localStorage.removeItem('lineAuthCompleted');
+                }
+            }
+            
+            if (isValidLogin && userData) {
                 // 已登入狀態
-                const userData = JSON.parse(lineProfile);
                 statusContent.innerHTML = `
                     <p style="margin: 5px 0;">✅ <strong>已登入</strong> - 歡迎，${userData.displayName}！</p>
                     <p style="margin: 5px 0;">🎯 點擊「智能編輯」直接進入編輯器</p>
                     <p style="margin: 5px 0;">🔄 如需更新個資，請點擊「重新登入」</p>
+                    <p style="margin: 3px 0; font-size: 12px; opacity: 0.8;">👤 LINE ID: ${userData.userId.substring(0, 8)}...</p>
                 `;
-                editBtn.innerHTML = '⚡ 直接編輯';
+                editBtn.innerHTML = '⚡ 智能編輯';
                 editBtn.style.background = 'rgba(0,255,0,0.9)';
                 editBtn.style.color = 'white';
             } else {
-                // 未登入狀態
+                // 未登入或登入已過期
                 statusContent.innerHTML = `
                     <p style="margin: 5px 0;">❌ <strong>未登入</strong> - 尚未獲取LINE個人資料</p>
                     <p style="margin: 5px 0;">🎯 點擊「智能編輯」將引導您登入</p>
                     <p style="margin: 5px 0;">💡 登入後可享受個人化編輯體驗</p>
+                    <p style="margin: 3px 0; font-size: 12px; opacity: 0.8;">🔧 <a href="#" onclick="clearLoginData(); checkLoginStatus(); return false;" style="color: #ffd700;">清除登入快取</a></p>
                 `;
-                editBtn.innerHTML = '🔐 登入並編輯';
+                editBtn.innerHTML = '⚡ 智能編輯';
                 editBtn.style.background = 'rgba(255,193,7,0.9)';
                 editBtn.style.color = '#000';
             }
+        }
+        
+        // 清除登入資料的函數
+        function clearLoginData() {
+            localStorage.removeItem('lineUserProfile');
+            localStorage.removeItem('lineAuthCompleted');
+            alert('🧹 登入快取已清除！');
         }
         
         function smartEdit() {
             const lineProfile = localStorage.getItem('lineUserProfile');
             const authCompleted = localStorage.getItem('lineAuthCompleted');
             
+            // 檢查登入狀態的有效性
+            let isValidLogin = false;
             if (lineProfile && authCompleted) {
-                // 已登入：直接跳轉到編輯器
-                window.open('/mcard-mtest.html', '_blank');
+                try {
+                    const userData = JSON.parse(lineProfile);
+                    if (userData.userId && userData.displayName && userData.timestamp) {
+                        const now = Date.now();
+                        const loginTime = userData.timestamp;
+                        const hoursPassed = (now - loginTime) / (1000 * 60 * 60);
+                        
+                        if (hoursPassed < 24) {
+                            isValidLogin = true;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Invalid login data:', e);
+                }
+            }
+            
+            if (isValidLogin) {
+                // 已登入且有效：直接跳轉到MTEST編輯器
+                console.log('✅ 已登入，跳轉到MTEST編輯器');
+                window.location.href = '/mcard-mtest.html?mode=edit&source=smartEdit';
             } else {
-                // 未登入：先引導登入
-                const shouldLogin = confirm('🔐 您尚未登入LINE帳號\n\n點擊「確定」進行LINE登入後開始編輯\n點擊「取消」直接進入編輯器（無個人化功能）');
+                // 未登入或登入已過期：顯示選擇對話框
+                const choice = confirm('🔐 系統偵測到您尚未登入LINE帳號\n\n' +
+                                     '✅ 點擊「確定」：登入LINE獲取個人資料\n' +
+                                     '❌ 點擊「取消」：直接使用範例資料編輯\n\n' +
+                                     '建議登入以享受個人化編輯體驗！');
                 
-                if (shouldLogin) {
-                    loginLine();
+                if (choice) {
+                    // 跳轉到MTEST（會自動觸發LIFF登入）
+                    console.log('🔐 用戶選擇登入，跳轉到MTEST');
+                    window.location.href = '/mcard-mtest.html?mode=edit&source=smartEdit&forceLogin=true';
                 } else {
-                    window.open('/mcard-mtest.html', '_blank');
+                    // 跳轉到獨立編輯器
+                    console.log('⚡ 用戶選擇直接編輯，跳轉到獨立編輯器');
+                    window.location.href = '/editor-standalone.html?source=smartEdit';
                 }
             }
         }
