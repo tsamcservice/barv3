@@ -339,8 +339,14 @@
                             this.lineProfile = profileData;
                             console.log('✅ 載入快取的LINE個資:', profileData.displayName);
                             
-                            // 🆕 嘗試從資料庫載入用戶的個人化卡片
-                            await this.loadUserCardFromDatabase(profileData.userId);
+                                                    // 🆕 嘗試從資料庫載入用戶的個人化卡片
+                        const dbLoaded = await this.loadUserCardFromDatabase(profileData.userId);
+                        
+                        if (dbLoaded) {
+                            console.log('📊 已載入用戶個人化資料庫資料');
+                        } else {
+                            console.log('📋 使用LINE基本個資');
+                        }
                             
                             this.showProfileStatus(profileData);
                             return;
@@ -401,6 +407,11 @@
                         ${this.lineProfile.displayName} | 📋 基本資料 | 載入時間: <span id="loadTime">計算中...</span>
                     `;
                 }
+                
+                // 🔄 資料載入後立即更新預覽
+                setTimeout(() => {
+                    this.updatePreview();
+                }, 100);
             }
             
             // 🔧 顯示個資狀態
@@ -497,6 +508,9 @@
                         element.value = cardData[key];
                     }
                 });
+                
+                // 🔄 立即更新預覽
+                this.updatePreview();
                 
                 this.updateStats();
             }

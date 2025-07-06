@@ -84,7 +84,7 @@
     <script>
         class LineAuthBridge {
             constructor() {
-                this.liffId = '2007327814-OoJBbnwP'; // MTEST LIFF ID
+                this.liffId = '2007327814-OoJBbnwP'; // MTEST LIFF ID - 已設定Endpoint為line-auth-bridge.html
                 this.init();
             }
             
@@ -138,7 +138,7 @@
             getTargetUrl() {
                 // 檢查是否有指定的返回URL
                 const urlParams = new URLSearchParams(window.location.search);
-                const returnUrl = urlParams.get('returnUrl') || '/editor-standalone.html';
+                const returnUrl = urlParams.get('returnUrl') || '/mcard-mtest.html';
                 
                 // 添加認證成功標記
                 const separator = returnUrl.includes('?') ? '&' : '?';

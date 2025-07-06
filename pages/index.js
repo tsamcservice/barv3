@@ -222,21 +222,21 @@ export default function Home() {
               alignItems: 'center',
               gap: '8px'
             }}>
-              <a
-                href="/editor-standalone.html"
-                style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  padding: '12px 24px',
-                  borderRadius: '12px',
-                  textDecoration: 'none',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  border: '2px solid rgba(255,255,255,0.3)'
-                }}
-              >
-                ⚡ 直接編輯器
-              </a>
+                             <a
+                 href="/mcard-mtest.html"
+                 style={{
+                   background: 'rgba(255,255,255,0.2)',
+                   color: 'white',
+                   padding: '12px 24px',
+                   borderRadius: '12px',
+                   textDecoration: 'none',
+                   fontSize: '16px',
+                   fontWeight: 'bold',
+                   border: '2px solid rgba(255,255,255,0.3)'
+                 }}
+               >
+                 ⚡ 直接編輯器
+               </a>
               <div style={{ fontSize: '11px', opacity: 0.8, textAlign: 'center' }}>
                 獨立環境 | 瞬間載入
               </div>
@@ -476,7 +476,7 @@ export default function Home() {
             📊 交易記錄查詢
           </a>
           <a
-            href="/member-card-simple.html"
+            href="/mcard-mtest.html"
             style={{
               background: 'rgba(255,255,255,0.2)',
               color: 'white',
