@@ -577,68 +577,38 @@
         }
         
         function smartEdit() {
-            const lineProfile = localStorage.getItem('lineUserProfile');
-            const authCompleted = localStorage.getItem('lineAuthCompleted');
+            console.log('🚀 簡化智能編輯系統 - 直接跳轉到MTEST');
             
-            // 檢查登入狀態的有效性
-            let isValidLogin = false;
-            if (lineProfile && authCompleted) {
-                try {
-                    const userData = JSON.parse(lineProfile);
-                    if (userData.userId && userData.displayName && userData.timestamp) {
-                        const now = Date.now();
-                        const loginTime = userData.timestamp;
-                        const hoursPassed = (now - loginTime) / (1000 * 60 * 60);
-                        
-                        if (hoursPassed < 24) {
-                            isValidLogin = true;
-                        }
-                    }
-                } catch (e) {
-                    console.error('Invalid login data:', e);
-                }
+            // 更新按鈕狀態
+            const editBtn = document.getElementById('editBtn');
+            if (editBtn) {
+                editBtn.innerHTML = '🔄 載入中...';
+                editBtn.style.background = 'rgba(108,117,125,0.8)';
+                editBtn.disabled = true;
             }
             
-            if (isValidLogin) {
-                // 已登入且有效：直接跳轉到MTEST編輯器
-                console.log('✅ 已登入，跳轉到MTEST編輯器');
-                window.location.href = '/mcard-mtest.html?mode=edit&source=smartEdit';
-            } else {
-                // 未登入或登入已過期：顯示選擇對話框
-                const choice = confirm('🔐 系統偵測到您尚未登入LINE帳號\n\n' +
-                                     '✅ 點擊「確定」：登入LINE獲取個人資料\n' +
-                                     '❌ 點擊「取消」：直接使用範例資料編輯\n\n' +
-                                     '建議登入以享受個人化編輯體驗！');
-                
-                if (choice) {
-                    // 跳轉到MTEST（會自動觸發LIFF登入）
-                    console.log('🔐 用戶選擇登入，跳轉到MTEST');
-                    window.location.href = '/mcard-mtest.html?mode=edit&source=smartEdit&forceLogin=true';
-                } else {
-                    // 跳轉到獨立編輯器
-                    console.log('⚡ 用戶選擇直接編輯，跳轉到獨立編輯器');
-                    window.location.href = '/editor-standalone.html?source=smartEdit';
-                }
-            }
+            // 直接跳轉到 mcard-mtest.html，讓它自己處理所有認證邏輯
+            // 不再需要複雜的認證檢查和多重跳轉
+            setTimeout(() => {
+                window.location.href = '/mcard-mtest.html?source=mtest-index';
+            }, 300);
         }
         
         function forceLogin() {
-            console.log('🔄 強制重新登入');
+            console.log('🔄 簡化重新登入流程');
+            
             // 清除舊的認證資料
             localStorage.removeItem('lineUserProfile');
             localStorage.removeItem('lineAuthCompleted');
+            localStorage.removeItem('authTimestamp');
             
-            // 重新檢查登入狀態
+            // 更新登入狀態顯示
             checkLoginStatus();
             
-            // 執行登入
-            loginLine();
-        }
-        
-        function loginLine() {
-            const authUrl = '/line-auth-bridge.html?returnUrl=' + encodeURIComponent('/mcard-mtest.html?mode=edit&source=relogin');
-            console.log('🔗 跳轉到LINE授權頁面:', authUrl);
-            window.location.href = authUrl;
+            // 直接跳轉到MTEST，讓它處理重新登入
+            setTimeout(() => {
+                window.location.href = '/mcard-mtest.html?source=mtest-index&forceLogin=true';
+            }, 500);
         }
 
 

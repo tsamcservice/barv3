@@ -4349,6 +4349,304 @@ function fillFormWithData(cardData) {
 
 // 🔄 統一LIFF初始化函數
 async function initUnifiedLiff() {
+  console.log('🔥 開始統一LIFF認證流程...');
+  showAuthLoading('正在初始化認證系統...');
+  
+  try {
+    const liffId = '2007327814-OoJBbnwP';
+    
+    // 1. 直接初始化LIFF，不檢查環境
+    console.log('📱 初始化LIFF...');
+    showAuthLoading('正在連接LINE服務...');
+    
+    await liff.init({ liffId });
+    console.log('✅ LIFF初始化成功');
+    
+    // 2. 檢查登入狀態
+    console.log('🔍 檢查LIFF登入狀態...');
+    showAuthLoading('正在檢查登入狀態...');
+    
+    if (!liff.isLoggedIn()) {
+      console.log('❌ 用戶未登入，啟動登入流程');
+      showAuthLoading('需要登入，正在跳轉...');
+      
+      // 直接在當前頁面進行LIFF登入，不跳轉到其他頁面
+      liff.login({
+        redirectUri: window.location.href // 登入後回到當前頁面
+      });
+      return; // 登入流程會重新載入頁面
+    }
+    
+    // 3. 已登入，取得用戶資料
+    console.log('✅ 用戶已登入，取得個人資料...');
+    showAuthLoading('正在載入您的個人資料...');
+    
+    const profile = await liff.getProfile();
+    console.log('👤 LIFF個人資料:', profile);
+    
+    // 4. 儲存認證資料（統一格式）
+    const userData = {
+      userId: profile.userId,
+      displayName: profile.displayName,
+      pictureUrl: profile.pictureUrl,
+      statusMessage: profile.statusMessage || '',
+      timestamp: Date.now(),
+      liffAuthenticated: true,
+      source: 'unified_liff'
+    };
+    
+    localStorage.setItem('lineUserProfile', JSON.stringify(userData));
+    localStorage.setItem('lineAuthCompleted', 'true');
+    localStorage.setItem('authTimestamp', Date.now().toString());
+    
+    console.log('💾 認證資料已儲存');
+    
+    // 5. 設定全域變數
+    window.liffProfile = userData;
+    
+    // 6. 載入個人卡片資料
+    showAuthLoading('正在載入您的專屬卡片...');
+    const personalCard = await loadPersonalCard('M01001', userData.userId);
+    
+    if (personalCard) {
+      console.log('✅ 找到個人卡片，填充表單');
+      fillFormWithData(personalCard);
+    } else {
+      console.log('⚠️ 未找到個人卡片，使用預設資料');
+      const defaultData = await loadDefaultCard('M01001');
+      if (defaultData) {
+        fillFormWithData(defaultData);
+      }
+    }
+    
+    // 7. 隱藏認證載入畫面，顯示編輯介面
+    hideAuthLoading();
+    showEditingInterface();
+    
+    console.log('🎉 統一LIFF認證完成！');
+    
+  } catch (error) {
+    console.error('❌ LIFF認證失敗:', error);
+    
+    // 錯誤處理：嘗試使用localStorage快取
+    const cachedProfile = getCachedProfile();
+    if (cachedProfile && isProfileValid(cachedProfile)) {
+      console.log('🔄 使用快取認證資料');
+      showAuthLoading('使用快取資料載入中...');
+      
+      window.liffProfile = cachedProfile;
+      renderLiffUserInfo(cachedProfile);
+      const personalCard = await loadPersonalCard('M01001', cachedProfile.userId);
+      if (personalCard) {
+        fillFormWithData(personalCard);
+      }
+      hideAuthLoading();
+      showEditingInterface();
+    } else {
+      // 最終失敗處理
+      hideAuthLoading();
+      showAuthError(`認證失敗：${error.message}`);
+    }
+  }
+}
+
+// 🆕 取得快取的認證資料
+function getCachedProfile() {
+  try {
+    const cached = localStorage.getItem('lineUserProfile');
+    return cached ? JSON.parse(cached) : null;
+  } catch (error) {
+    console.error('讀取快取認證資料失敗:', error);
+    return null;
+  }
+}
+
+// 🆕 檢查認證資料是否有效（24小時內）
+function isProfileValid(profile) {
+  if (!profile || !profile.timestamp) return false;
+  
+  const now = Date.now();
+  const profileAge = now - profile.timestamp;
+  const maxAge = 24 * 60 * 60 * 1000; // 24小時
+  
+  return profileAge < maxAge;
+}
+
+// 🆕 顯示認證載入畫面
+function showAuthLoading(message = '正在認證中...') {
+  // 如果已有載入畫面，只更新訊息
+  let authOverlay = document.getElementById('authLoadingOverlay');
+  
+  if (!authOverlay) {
+    authOverlay = document.createElement('div');
+    authOverlay.id = 'authLoadingOverlay';
+    authOverlay.innerHTML = `
+      <div style="
+        position: fixed; 
+        top: 0; left: 0; 
+        width: 100%; height: 100%; 
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        display: flex; 
+        flex-direction: column;
+        justify-content: center; 
+        align-items: center; 
+        z-index: 10000;
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      ">
+        <div style="text-align: center;">
+          <div style="font-size: 4rem; margin-bottom: 2rem; animation: pulse 2s infinite;">🔐</div>
+          <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">MTEST 智能編輯器</h2>
+          <div id="authLoadingMessage" style="font-size: 1.1rem; opacity: 0.9;">${message}</div>
+          <div style="margin-top: 2rem;">
+            <div style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+          </div>
+        </div>
+      </div>
+      <style>
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      </style>
+    `;
+    document.body.appendChild(authOverlay);
+  } else {
+    // 更新訊息
+    const messageEl = authOverlay.querySelector('#authLoadingMessage');
+    if (messageEl) messageEl.textContent = message;
+  }
+}
+
+// 🆕 隱藏認證載入畫面
+function hideAuthLoading() {
+  const authOverlay = document.getElementById('authLoadingOverlay');
+  if (authOverlay) {
+    authOverlay.remove();
+  }
+}
+
+// 🆕 顯示認證錯誤
+function showAuthError(message) {
+  hideAuthLoading();
+  
+  const errorOverlay = document.createElement('div');
+  errorOverlay.innerHTML = `
+    <div style="
+      position: fixed; 
+      top: 0; left: 0; 
+      width: 100%; height: 100%; 
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); 
+      display: flex; 
+      flex-direction: column;
+      justify-content: center; 
+      align-items: center; 
+      z-index: 10001;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      text-align: center;
+      padding: 2rem;
+    ">
+      <div style="font-size: 4rem; margin-bottom: 2rem;">❌</div>
+      <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">認證失敗</h2>
+      <div style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2rem;">${message}</div>
+      <button onclick="window.location.reload()" style="
+        background: white; 
+        color: #ff6b6b; 
+        border: none; 
+        padding: 1rem 2rem; 
+        border-radius: 50px; 
+        font-size: 1.1rem; 
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s;
+      " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        🔄 重新嘗試
+      </button>
+    </div>
+  `;
+  document.body.appendChild(errorOverlay);
+}
+
+// 🚀 極簡版本：直接載入個人卡片 (同CHANNEL ID，相同USER ID)
+async function loadPersonalCard(pageId, userId) {
+  try {
+    console.log('👤 載入個人卡片:', { pageId, userId });
+    
+    const response = await fetch(`/api/cards?pageId=${pageId}&userId=${userId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('👤 個人卡片API回應:', result);
+    
+    if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+      console.log('✅ 找到個人卡片資料:', result.data[0]);
+      return result.data[0];
+    }
+    
+    console.log('⚠️ 沒有找到個人卡片資料');
+    return null;
+  } catch (error) {
+    console.log('👤 個人卡片載入失敗:', error);
+    return null;
+  }
+}
+
+// 載入預設卡片
+async function loadDefaultCard(pageId) {
+  try {
+    console.log('📋 載入預設卡片:', pageId);
+    
+    // 如果是M01001，使用內建預設資料
+    if (pageId === 'M01001') {
+      return { ...defaultCard, pageId: pageId };
+    }
+    
+    // 其他pageId可以從API載入
+    const response = await fetch(`/api/cards?pageId=${pageId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('📋 預設卡片API回應:', result);
+    
+    if (result.success && result.data) {
+      return result.data;
+    }
+    
+    return null;
+  } catch (error) {
+    console.log('📋 預設卡片載入失敗:', error);
+    return null;
+  }
+}
+
+// 填充表單資料
+function fillFormWithData(cardData) {
+  console.log('📝 填充表單資料:', cardData);
+  
+  Object.keys(cardData).forEach(key => {
+    const input = document.getElementById(key);
+    if (input && cardData[key] !== undefined) {
+      input.value = cardData[key];
+      
+      // 觸發圖片預覽更新
+      if (key.includes('_url') && key.includes('image')) {
+        const previewId = key.replace('_url', '_preview');
+        const preview = document.getElementById(previewId);
+        if (preview && cardData[key]) {
+          setImageUserStyle(preview, cardData[key]);
+        }
+      }
+    }
+  });
+  
+  console.log('✅ 表單資料填充完成');
+}
+
+// 🔄 統一LIFF初始化函數
+async function initUnifiedLiff() {
   try {
     console.log('🚀 開始LIFF初始化...');
     
