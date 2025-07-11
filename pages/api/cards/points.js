@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    let currentPoints = 100.0; // 預設點數
+    let currentPoints = 168.0; // 預設點數（統一為168）
     
     // 1. 取得現有會員卡點數
     if (cardId !== 'temp-card-id') {
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       if (getError) {
         console.log('查詢會員卡失敗，使用預設點數:', getError.message);
       } else {
-        currentPoints = memberCard?.user_points || 100.0;
+        currentPoints = memberCard?.user_points || 168.0;
       }
     } else {
       console.log('使用臨時cardId，採用預設點數:', currentPoints);

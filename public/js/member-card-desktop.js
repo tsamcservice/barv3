@@ -1762,7 +1762,7 @@ async function shareToLine() {
     
     // **步驟1：準備分享資料並檢查點數**
     let mainCardId = null;
-    let currentPoints = 100; // 預設點數
+    let currentPoints = 168; // 預設點數（統一為168）
     let mainCardExists = false;
     
     try {

@@ -69,18 +69,26 @@ export default async function handler(req, res) {
       } else {
         user_id = userRes.data.id;
       }
+      // 🔧 確保新卡片使用168作為初始點數
+      const cardPayload = {
+        page_id,
+        line_user_id,
+        user_id,
+        card_alt_title,
+        flex_json,
+        ...cardData,
+        updated_at: new Date().toISOString()
+      };
+      
+      // 如果是新卡片且沒有設定user_points，使用168作為初始點數
+      if (!cardPayload.user_points) {
+        cardPayload.user_points = 168.0;
+      }
+      
       // upsert member_cards
       const { data, error } = await supabase
         .from('member_cards')
-        .upsert({
-          page_id,
-          line_user_id,
-          user_id,
-          card_alt_title,
-          flex_json,
-          ...cardData,
-          updated_at: new Date().toISOString()
-        }, {
+        .upsert(cardPayload, {
           onConflict: 'page_id,line_user_id'
         });
       if (error) throw error;

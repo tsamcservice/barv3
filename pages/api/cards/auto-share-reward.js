@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       .eq('position_index', 4) // 自動分享使用位置4的回饋比例（位置5最右邊）
       .single();
     
-    let actualRewardPercentage = 10.0; // 預設10%
+    let actualRewardPercentage = 10.0; // 預設10%回饋
     if (!settingsError && settingsData) {
       actualRewardPercentage = settingsData.reward_percentage;
       console.log(`從設定讀取回饋比例: ${actualRewardPercentage}%`);

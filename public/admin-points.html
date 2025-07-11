@@ -186,7 +186,7 @@
                 </div>
                 <div class="setting-item">
                     <div class="position-label">初始點數</div>
-                    <input type="number" id="initialPoints" value="100" min="0" max="10000" step="10"
+                    <input type="number" id="initialPoints" value="168" min="0" max="10000" step="10"
                            style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px; font-size: 18px; font-weight: bold;">
                     <div class="percentage-label">點數</div>
                 </div>
@@ -371,7 +371,7 @@
             }
         }
         
-        // 🆕 儲存初始點數設定
+        // 🆕 儲存初始點數設定 - 🔧 真正的資料庫整合
         async function saveInitialPointsSetting() {
             const pageId = document.getElementById('pageId').value.trim();
             const initialPoints = parseInt(document.getElementById('initialPoints').value);
@@ -388,20 +388,24 @@
             }
             
             try {
-                showInitialPointsStatus('💾 儲存中...', 'info');
+                showInitialPointsStatus('💾 儲存到資料庫中...', 'info');
                 
-                // 這裡可以擴展為API調用，目前先存到localStorage作為示範
-                const settingKey = `initialPoints_${pageId}`;
-                localStorage.setItem(settingKey, initialPoints.toString());
+                // 🔧 真正的後端API調用
+                const response = await fetch('/api/initial-points-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pageId, initialPoints })
+                });
                 
-                // 未來可以擴展為後端API調用
-                // const response = await fetch('/api/initial-points-settings', {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json' },
-                //     body: JSON.stringify({ pageId, initialPoints })
-                // });
+                const result = await response.json();
                 
-                showInitialPointsStatus(`✅ 已設定 ${pageId} 的初始點數為 ${initialPoints} 點`, 'success');
+                if (result.success) {
+                    showInitialPointsStatus(`✅ ${result.message}`, 'success');
+                    // 重新載入設定以確保同步
+                    loadInitialPointsSettings();
+                } else {
+                    showInitialPointsStatus(`❌ 儲存失敗: ${result.error}`, 'error');
+                }
                 
             } catch (error) {
                 showInitialPointsStatus('❌ 儲存失敗: ' + error.message, 'error');
@@ -422,21 +426,14 @@
             }
         }
         
-        // 🆕 測試初始點數API
+        // 🆕 測試初始點數API - 🔧 真正的資料庫測試
         async function testInitialPointsAPI() {
             const pageId = document.getElementById('pageId').value.trim() || 'M01001';
             
             try {
-                // 測試讀取設定
-                const settingKey = `initialPoints_${pageId}`;
-                const storedPoints = localStorage.getItem(settingKey);
-                
-                const result = {
-                    pageId: pageId,
-                    storedInitialPoints: storedPoints ? parseInt(storedPoints) : null,
-                    defaultPoints: 100,
-                    note: '目前使用localStorage儲存，未來可擴展為後端API'
-                };
+                // 🔧 測試真正的API
+                const response = await fetch(`/api/initial-points-settings?pageId=${pageId}`);
+                const result = await response.json();
                 
                 document.getElementById('testResults').innerHTML = 
                     '<strong>初始點數API測試結果:</strong><br>' + 
@@ -448,15 +445,27 @@
             }
         }
         
-        // 🆕 載入初始點數設定
-        function loadInitialPointsSettings() {
+        // 🆕 載入初始點數設定 - 🔧 從資料庫讀取
+        async function loadInitialPointsSettings() {
             const pageId = document.getElementById('pageId').value.trim() || 'M01001';
-            const settingKey = `initialPoints_${pageId}`;
-            const storedPoints = localStorage.getItem(settingKey);
             
-            if (storedPoints) {
-                document.getElementById('initialPoints').value = storedPoints;
-                showInitialPointsStatus(`✅ 已載入 ${pageId} 的設定: ${storedPoints} 點`, 'success');
+            try {
+                const response = await fetch(`/api/initial-points-settings?pageId=${pageId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const initialPoints = result.data.initialPoints;
+                    document.getElementById('initialPoints').value = initialPoints;
+                    showInitialPointsStatus(`✅ 已從資料庫載入 ${pageId} 的設定: ${initialPoints} 點`, 'success');
+                } else {
+                    showInitialPointsStatus(`⚠️ 載入失敗: ${result.error}`, 'error');
+                    // 設定預設值
+                    document.getElementById('initialPoints').value = 168;
+                }
+            } catch (error) {
+                showInitialPointsStatus(`⚠️ 載入失敗: ${error.message}`, 'error');
+                // 設定預設值
+                document.getElementById('initialPoints').value = 168;
             }
         }
         

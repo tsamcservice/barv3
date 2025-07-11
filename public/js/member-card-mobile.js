@@ -2415,7 +2415,7 @@ async function generateShareContent(formData) {
   return flexJson;
 }
 
-// 🚀 並行點數查詢 (不阻塞分享) - 🔧 修正：使用正確的初始點數
+// 🚀 並行點數查詢 (不阻塞分享) - 🔧 修正：使用資料庫M01001的實際初始點數
 async function checkUserPointsAsync(userId) {
   try {
     const response = await fetch(`/api/cards?pageId=M01001&userId=${userId}`);
@@ -2424,27 +2424,48 @@ async function checkUserPointsAsync(userId) {
     if (result.success && result.data && result.data.length > 0) {
       return {
         mainCardId: result.data[0].id,
-        currentPoints: result.data[0].user_points || 168, // 🔧 修正：使用設定頁面的初始點數
+        currentPoints: result.data[0].user_points || 168, // 從資料庫讀取，如果為空則使用168
         cardExists: true,
         cardData: result.data[0]
       };
     }
     
-    // 🔧 修正：新用戶使用正確的初始點數和卡片ID格式
+    // 🔧 修正：新用戶從資料庫M01001預設卡片讀取初始點數
+    const defaultPoints = await getDefaultInitialPoints();
     return {
       mainCardId: null, // 讓後端自動生成正確的ID
-      currentPoints: 168, // 🔧 修正：使用設定頁面的初始點數168點
+      currentPoints: defaultPoints, // 🔧 修正：使用資料庫M01001的初始點數
       cardExists: false,
       cardData: null
     };
   } catch (error) {
     console.log('⚠️ 點數查詢失敗，使用預設值:', error);
+    const defaultPoints = await getDefaultInitialPoints();
     return {
       mainCardId: null, // 讓後端自動生成
-      currentPoints: 168, // 🔧 修正：使用正確的初始點數
+      currentPoints: defaultPoints, // 🔧 修正：使用資料庫的初始點數
       cardExists: false,
       cardData: null
     };
+  }
+}
+
+// 🆕 從資料庫M01001讀取預設初始點數
+async function getDefaultInitialPoints() {
+  try {
+    const response = await fetch('/api/cards?pageId=M01001');
+    const result = await response.json();
+    
+    if (result.success && result.data && result.data.length > 0) {
+      // 找到M01001的預設卡片資料
+      const defaultCard = result.data[0];
+      return defaultCard.user_points || 168;
+    }
+    
+    return 168; // 最終fallback
+  } catch (error) {
+    console.log('⚠️ 讀取預設點數失敗，使用168:', error);
+    return 168;
   }
 }
 

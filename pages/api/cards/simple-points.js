@@ -73,9 +73,9 @@ export default async function handler(req, res) {
       
       // 🔧 臨時主卡特殊處理
       if (isTempMainCard && type === 'main') {
-        console.log(`使用臨時主卡ID，採用預設點數: 100`);
+        console.log(`使用臨時主卡ID，採用預設點數: 168`);
         
-        const tempCurrentPoints = 100;
+        const tempCurrentPoints = 168;
         const afterDeduct = tempCurrentPoints - 10;
         
         // 記錄臨時主卡扣點交易
