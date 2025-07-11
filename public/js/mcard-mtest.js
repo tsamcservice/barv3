@@ -4347,6 +4347,88 @@ function fillFormWithData(cardData) {
   console.log('✅ 表單資料填充完成');
 }
 
+// 🚀 統一的用戶卡片資料載入邏輯
+async function loadUserCardData(userData) {
+  console.log('🔍 載入用戶卡片資料，用戶ID:', userData.userId);
+  
+  try {
+    // 1. 先檢查資料庫是否已有該用戶的資料
+    const response = await fetch(`/api/cards?pageId=M01001&userId=${userData.userId}`);
+    const result = await response.json();
+    
+    if (result.success && result.data && result.data.length > 0) {
+      // 2-1-B: 已有資料的用戶 - 載入個人化資料
+      console.log('✅ 找到用戶資料，載入個人化卡片');
+      showAuthLoading('載入您的個人化卡片...');
+      
+      const userCard = result.data[0];
+      fillFormWithData(userCard);
+      
+      // 更新點數顯示
+      updatePointsDisplay(userCard.user_points || 168);
+      
+      console.log('✅ 已載入用戶的個人化卡片資料');
+      
+    } else {
+      // 2-1-A: 首次登入用戶 - 使用M01001初始資料+LINE個人資料
+      console.log('⚠️ 首次登入用戶，創建個人化卡片');
+      showAuthLoading('為您創建專屬卡片...');
+      
+      // 讀取M01001的初始卡片資料（不帶userId，取得預設範本）
+      const defaultResponse = await fetch(`/api/cards?pageId=M01001`);
+      const defaultResult = await defaultResponse.json();
+      
+      if (defaultResult.success && defaultResult.data && defaultResult.data.length > 0) {
+        // 找到沒有user_id的預設卡片
+        const defaultCard = defaultResult.data.find(card => !card.line_user_id) || defaultResult.data[0];
+        
+        // 融合LINE個人資料到初始卡片
+        const personalizedCard = {
+          ...defaultCard,
+          // 🔧 重要：加入LINE個人資料
+          line_user_id: userData.userId,
+          user_id: userData.userId,
+          display_name: userData.displayName,
+          picture_url: userData.pictureUrl,
+          // 確保點數為168
+          user_points: 168
+        };
+        
+        console.log('🎨 融合LINE個人資料到初始卡片');
+        fillFormWithData(personalizedCard);
+        
+        // 更新點數顯示
+        updatePointsDisplay(168);
+        
+        console.log('✅ 已創建首次登入的個人化卡片');
+      } else {
+        console.error('❌ 無法讀取M01001初始卡片資料');
+        showAuthError('無法載入卡片資料，請聯絡管理員');
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ 載入用戶卡片資料失敗:', error);
+    showAuthError('載入卡片資料失敗，請重試');
+  }
+}
+
+// 🆕 更新點數顯示
+function updatePointsDisplay(points) {
+  // 更新所有可能的點數顯示元素
+  const pointsElements = document.querySelectorAll('[data-points-display]');
+  pointsElements.forEach(el => {
+    el.textContent = points;
+  });
+  
+  // 更新特定的點數顯示區域
+  if (window.liffProfile) {
+    window.liffProfile.currentPoints = points;
+  }
+  
+  console.log(`💰 點數顯示已更新：${points}`);
+}
+
 // 🔄 統一LIFF初始化函數
 async function initUnifiedLiff() {
   console.log('🔥 開始統一LIFF認證流程...');
@@ -4404,20 +4486,9 @@ async function initUnifiedLiff() {
     // 5. 設定全域變數
     window.liffProfile = userData;
     
-    // 6. 載入個人卡片資料
+    // 6. 載入個人卡片資料 - 🔧 新邏輯：首次登入vs已有資料
     showAuthLoading('正在載入您的專屬卡片...');
-    const personalCard = await loadPersonalCard('M01001', userData.userId);
-    
-    if (personalCard) {
-      console.log('✅ 找到個人卡片，填充表單');
-      fillFormWithData(personalCard);
-    } else {
-      console.log('⚠️ 未找到個人卡片，使用預設資料');
-      const defaultData = await loadDefaultCard('M01001');
-      if (defaultData) {
-        fillFormWithData(defaultData);
-      }
-    }
+    await loadUserCardData(userData);
     
     // 7. 隱藏認證載入畫面，顯示編輯介面
     hideAuthLoading();
