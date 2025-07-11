@@ -4435,7 +4435,7 @@ async function initUnifiedLiff() {
   showAuthLoading('正在初始化認證系統...');
   
   try {
-    const liffId = '2007327814-OoJBbnwP';
+    const liffId = '2007327814-OoJBbnwP'; // ENDPOINT URL應設定為: https://barv3.vercel.app/mcard-mtest.html
     
     // 1. 直接初始化LIFF，不檢查環境
     console.log('📱 初始化LIFF...');

@@ -48,40 +48,72 @@ export default async function handler(req, res) {
         });
       }
       
-      // 使用upsert確保記錄存在
-      const { data, error } = await supabase
+      // 先檢查記錄是否存在，然後決定更新或插入
+      const { data: existingData, error: checkError } = await supabase
         .from('member_cards')
-        .upsert({ 
-          page_id: pageId,
-          user_points: initialPoints,
-          updated_at: new Date().toISOString(),
-          // 如果是新記錄，添加基本欄位
-          card_alt_title: `${pageId}初始卡片`,
-          flex_json: JSON.stringify({
-            "type": "bubble",
-            "hero": {
-              "type": "image",
-              "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png",
-              "size": "full"
-            },
-            "body": {
-              "type": "box",
-              "layout": "vertical",
-              "contents": [
-                {
-                  "type": "text",
-                  "text": "預設卡片",
-                  "weight": "bold",
-                  "size": "xl"
-                }
-              ]
-            }
+        .select('id, page_id')
+        .eq('page_id', pageId)
+        .limit(1);
+      
+      if (checkError) {
+        console.error('檢查記錄失敗:', checkError);
+        throw checkError;
+      }
+      
+      let data, error;
+      
+      if (existingData && existingData.length > 0) {
+        // 記錄存在，執行更新
+        console.log(`更新現有記錄 ${pageId}`);
+        const result = await supabase
+          .from('member_cards')
+          .update({ 
+            user_points: initialPoints,
+            updated_at: new Date().toISOString()
           })
-        }, { 
-          onConflict: 'page_id',
-          ignoreDuplicates: false 
-        })
-        .select();
+          .eq('page_id', pageId)
+          .select();
+        
+        data = result.data;
+        error = result.error;
+      } else {
+        // 記錄不存在，執行插入
+        console.log(`創建新記錄 ${pageId}`);
+        const result = await supabase
+          .from('member_cards')
+          .insert({ 
+            page_id: pageId,
+            user_points: initialPoints,
+            updated_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            // 添加基本欄位
+            card_alt_title: `${pageId}初始卡片`,
+            flex_json: JSON.stringify({
+              "type": "bubble",
+              "hero": {
+                "type": "image",
+                "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png",
+                "size": "full"
+              },
+              "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "預設卡片",
+                    "weight": "bold",
+                    "size": "xl"
+                  }
+                ]
+              }
+            })
+          })
+          .select();
+        
+        data = result.data;
+        error = result.error;
+      }
       
       if (error) {
         console.error('更新初始點數失敗:', error);

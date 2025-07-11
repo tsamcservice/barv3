@@ -770,7 +770,7 @@
         function authorizeWithLine() {
             // 跳轉到LINE授權橋接頁面
             const currentUrl = encodeURIComponent(window.location.href);
-            const authUrl = `/line-auth-bridge.html?returnUrl=${currentUrl}`;
+            const authUrl = `/mcard-mtest.html?source=editor-standalone`;
             window.location.href = authUrl;
         }
         
