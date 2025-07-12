@@ -2408,6 +2408,11 @@ function initAllCardsSortable() {
     // 按照 promoCardList 的順序來排列選中的卡片
     const sortedSelectedCards = [];
     
+    // 🔧 深度修正：先打印當前的promoCardList和selectedPromoCards狀態用於調試
+    console.log('🔍 初始化卡片排序調試資訊:');
+    console.log('promoCardList (資料庫順序):', promoCardList.map(c => ({ id: c.id, title: c.main_title_1 })));
+    console.log('selectedPromoCards (選中的卡片ID):', selectedPromoCards);
+    
     // 遍歷 promoCardList（資料庫順序），找出被選中的卡片
     for (const card of promoCardList) {
       if (selectedPromoCards.includes(card.id)) {
@@ -2415,7 +2420,7 @@ function initAllCardsSortable() {
         const promoFlexJson = JSON.parse(JSON.stringify(card.flex_json)); // 深度複製
         promoFlexJson._cardId = card.id; // 加入宣傳卡片ID
         promoFlexJson._cardType = 'promo'; // 標示為宣傳卡片
-        console.log('🏷️ 按資料庫順序為宣傳卡片加入標識:', card.id);
+        console.log('🏷️ 按資料庫順序為宣傳卡片加入標識:', card.id, card.main_title_1);
         
         sortedSelectedCards.push({ 
           type: 'promo', 
@@ -2427,7 +2432,7 @@ function initAllCardsSortable() {
     }
     
     allCardsSortable = [mainCard, ...sortedSelectedCards];
-    console.log('✅ 按資料庫順序初始化卡片:', allCardsSortable.map(c => c.id));
+    console.log('✅ 按資料庫順序初始化卡片:', allCardsSortable.map(c => ({ id: c.id, type: c.type })));
   } else {
     // 如果沒有宣傳卡片，只加入主卡片
     allCardsSortable = [mainCard];
@@ -2585,7 +2590,8 @@ async function shareToLine() {
 function shareToEmail() {
   try {
     const formData = getFormData();
-    const shareData = btoa(JSON.stringify(formData));
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
     const emailUrl = `/share-email.html?shareData=${shareData}`;
     
     window.open(emailUrl, '_blank');
@@ -2599,7 +2605,8 @@ function shareToEmail() {
 function shareToFacebook() {
   try {
     const formData = getFormData();
-    const shareData = btoa(JSON.stringify(formData));
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
     const fbUrl = `/share-facebook.html?shareData=${shareData}`;
     
     window.open(fbUrl, '_blank');
@@ -2613,7 +2620,8 @@ function shareToFacebook() {
 function shareToOtherPlatforms() {
   try {
     const formData = getFormData();
-    const shareData = btoa(JSON.stringify(formData));
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
     const otherUrl = `/share-universal.html?shareData=${shareData}`;
     
     window.open(otherUrl, '_blank');
@@ -2627,7 +2635,8 @@ function shareToOtherPlatforms() {
 function copyShareLink() {
   try {
     const formData = getFormData();
-    const shareData = btoa(JSON.stringify(formData));
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
     const currentUrl = window.location.origin;
     // 修正：使用現有的mcard-mtest.html，並添加特殊參數
     const shareUrl = `${currentUrl}/mcard-mtest.html?shareData=${shareData}&view=true`;
