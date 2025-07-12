@@ -2501,9 +2501,18 @@ function renderPromoCardSelector() {
     thumb.onclick = () => {
       const idx = selectedPromoCards.indexOf(card.id);
       if (idx === -1) {
+        // 🔧 深度修正：加入卡片時保持資料庫順序
         selectedPromoCards.push(card.id);
+        // 重新按資料庫順序排序selectedPromoCards
+        selectedPromoCards.sort((a, b) => {
+          const aIndex = promoCardList.findIndex(c => c.id === a);
+          const bIndex = promoCardList.findIndex(c => c.id === b);
+          return aIndex - bIndex;
+        });
+        console.log('✅ 加入卡片後重新排序:', selectedPromoCards);
       } else {
         selectedPromoCards.splice(idx, 1);
+        console.log('✅ 移除卡片後的順序:', selectedPromoCards);
       }
       initAllCardsSortable();
       renderPromoCardSelector();
@@ -2617,18 +2626,58 @@ function shareToFacebook() {
   }
 }
 
-function shareToOtherPlatforms() {
+function shareToWhatsApp() {
+  try {
+    const formData = getFormData();
+    const cardTitle = formData.main_title_1 || formData.display_name || '我的會員卡';
+    const shareText = `📱 ${cardTitle}\n\n🎯 查看我的專屬會員卡！`;
+    
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
+    const currentUrl = window.location.origin;
+    const shareUrl = `${currentUrl}/mcard-mtest.html?shareData=${shareData}&view=true`;
+    
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`;
+    window.open(whatsappUrl, '_blank');
+    console.log('💬 開啟WhatsApp分享');
+  } catch (error) {
+    console.error('WhatsApp分享失敗:', error);
+    alert('WhatsApp分享失敗: ' + error.message);
+  }
+}
+
+function shareToTelegram() {
+  try {
+    const formData = getFormData();
+    const cardTitle = formData.main_title_1 || formData.display_name || '我的會員卡';
+    const shareText = `📱 ${cardTitle}\n\n🎯 查看我的專屬會員卡！`;
+    
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
+    const currentUrl = window.location.origin;
+    const shareUrl = `${currentUrl}/mcard-mtest.html?shareData=${shareData}&view=true`;
+    
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+    window.open(telegramUrl, '_blank');
+    console.log('✈️ 開啟Telegram分享');
+  } catch (error) {
+    console.error('Telegram分享失敗:', error);
+    alert('Telegram分享失敗: ' + error.message);
+  }
+}
+
+function shareToInstagram() {
   try {
     const formData = getFormData();
     // 🔧 修正：使用支援中文的編碼方式
     const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
-    const otherUrl = `/share-universal.html?shareData=${shareData}`;
+    const igUrl = `/share-instagram.html?shareData=${shareData}`;
     
-    window.open(otherUrl, '_blank');
-    console.log('🌐 開啟通用分享頁面');
+    window.open(igUrl, '_blank');
+    console.log('📸 開啟Instagram分享頁面');
   } catch (error) {
-    console.error('通用分享失敗:', error);
-    alert('通用分享失敗: ' + error.message);
+    console.error('Instagram分享失敗:', error);
+    alert('Instagram分享失敗: ' + error.message);
   }
 }
 
