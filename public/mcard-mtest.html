@@ -1264,26 +1264,40 @@
                     </button>
                 </div>
                 
-                <!-- 🆕 多平台分享按鈕區域 -->
+                <!-- 🆕 多平台分享圖示區域 -->
                 <div class="multi-platform-share" style="margin-top: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
-                    <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #555; text-align: center;">
+                    <h4 style="margin: 0 0 16px 0; font-size: 14px; color: #555; text-align: center;">
                         📤 多平台分享
                     </h4>
-                    <div class="platform-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <button type="button" onclick="shareToEmail()" class="platform-btn email-btn" style="background: #EA4335; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
-                            📧 EMAIL分享
+                    <div class="platform-icons" style="display: flex; justify-content: space-around; align-items: center; gap: 12px;">
+                        <button type="button" onclick="shareToEmail()" class="platform-icon-btn email-btn" style="width: 50px; height: 50px; border-radius: 50%; border: none; background: #EA4335; color: white; font-size: 20px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(234, 67, 53, 0.3);" title="EMAIL分享">
+                            ✉️
                         </button>
-                        <button type="button" onclick="shareToFacebook()" class="platform-btn facebook-btn" style="background: #1877F2; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
-                            📘 Facebook
+                        <button type="button" onclick="shareToFacebook()" class="platform-icon-btn facebook-btn" style="width: 50px; height: 50px; border-radius: 50%; border: none; background: #1877F2; color: white; font-size: 20px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3);" title="Facebook分享">
+                            📘
                         </button>
-                        <button type="button" onclick="shareToOtherPlatforms()" class="platform-btn others-btn" style="background: #6C757D; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
-                            🌐 其他平台
+                        <button type="button" onclick="shareToOtherPlatforms()" class="platform-icon-btn others-btn" style="width: 50px; height: 50px; border-radius: 50%; border: none; background: #6C757D; color: white; font-size: 20px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);" title="其他平台">
+                            🌐
                         </button>
-                        <button type="button" onclick="copyShareLink()" class="platform-btn copy-btn" style="background: #28A745; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
-                            📋 複製連結
+                        <button type="button" onclick="copyShareLink()" class="platform-icon-btn copy-btn" style="width: 50px; height: 50px; border-radius: 50%; border: none; background: #28A745; color: white; font-size: 20px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);" title="複製連結">
+                            🔗
                         </button>
                     </div>
+                    <div style="margin-top: 8px; text-align: center; font-size: 11px; color: #888;">
+                        點擊圖示即可分享到各平台
+                    </div>
                 </div>
+                
+                <!-- 🎨 CSS動畫效果 -->
+                <style>
+                .platform-icon-btn:hover {
+                    transform: scale(1.1);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+                }
+                .platform-icon-btn:active {
+                    transform: scale(0.95);
+                }
+                </style>
                 
                 <div class="preview-container">
                     <!-- 🔄 載入提示區域 -->

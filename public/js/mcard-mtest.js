@@ -2399,33 +2399,35 @@ function initAllCardsSortable() {
   const mainCard = {
     type: 'main',
     id: 'main',
-            flex_json: getMainBubble({ ...getFormData(), page_id: 'M01001' }),
+    flex_json: getMainBubble({ ...getFormData(), page_id: 'M01001' }),
     img: getFormData().main_image_url || defaultCard.main_image_url
   };
 
-  // 如果有宣傳卡片，則加入主卡片和宣傳卡片
+  // 🔧 修正：按照資料庫順序（promoCardList順序）來初始化，而不是selectedPromoCards順序
   if (selectedPromoCards.length > 0) {
-    allCardsSortable = [
-      mainCard,
-      ...selectedPromoCards.map(id => {
-        const card = promoCardList.find(c => c.id === id);
-        if (card) {
-          // **關鍵修復：為宣傳卡片的flex_json加入_cardId標識**
-          const promoFlexJson = JSON.parse(JSON.stringify(card.flex_json)); // 深度複製
-          promoFlexJson._cardId = card.id; // 加入宣傳卡片ID
-          promoFlexJson._cardType = 'promo'; // 標示為宣傳卡片
-          console.log('🏷️ 為宣傳卡片加入標識:', card.id);
-          
-          return { 
-            type: 'promo', 
-            id: card.id, 
-            flex_json: promoFlexJson, 
-            img: card.flex_json.body.contents[0].url 
-          };
-        }
-        return null;
-      }).filter(Boolean)
-    ];
+    // 按照 promoCardList 的順序來排列選中的卡片
+    const sortedSelectedCards = [];
+    
+    // 遍歷 promoCardList（資料庫順序），找出被選中的卡片
+    for (const card of promoCardList) {
+      if (selectedPromoCards.includes(card.id)) {
+        // **關鍵修復：為宣傳卡片的flex_json加入_cardId標識**
+        const promoFlexJson = JSON.parse(JSON.stringify(card.flex_json)); // 深度複製
+        promoFlexJson._cardId = card.id; // 加入宣傳卡片ID
+        promoFlexJson._cardType = 'promo'; // 標示為宣傳卡片
+        console.log('🏷️ 按資料庫順序為宣傳卡片加入標識:', card.id);
+        
+        sortedSelectedCards.push({ 
+          type: 'promo', 
+          id: card.id, 
+          flex_json: promoFlexJson, 
+          img: card.flex_json.body.contents[0].url 
+        });
+      }
+    }
+    
+    allCardsSortable = [mainCard, ...sortedSelectedCards];
+    console.log('✅ 按資料庫順序初始化卡片:', allCardsSortable.map(c => c.id));
   } else {
     // 如果沒有宣傳卡片，只加入主卡片
     allCardsSortable = [mainCard];
@@ -2627,7 +2629,8 @@ function copyShareLink() {
     const formData = getFormData();
     const shareData = btoa(JSON.stringify(formData));
     const currentUrl = window.location.origin;
-    const shareUrl = `${currentUrl}/card-view.html?data=${shareData}`;
+    // 修正：使用現有的mcard-mtest.html，並添加特殊參數
+    const shareUrl = `${currentUrl}/mcard-mtest.html?shareData=${shareData}&view=true`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
       alert('📋 分享連結已複製到剪貼簿！');
