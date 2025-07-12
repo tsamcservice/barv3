@@ -192,24 +192,16 @@
                  </a>
              </div>
             
-            <!-- 分享平台按鈕群 -->
-            <div class="share-platforms">
+            <!-- 🔧 移除分享平台按鈕群 - 根據需求2-2，MTEST-INDEX只有預覽和說明，不要分享按鈕 -->
+            <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 12px; margin-top: 1rem;">
                 <h4 style="margin: 0 0 1rem 0; font-size: 14px; text-align: center; opacity: 0.9;">
-                    📱 多平台分享系統
+                    📋 功能說明
                 </h4>
-                <div class="platform-grid">
-                    <a href="/mcard-mtest.html" class="platform-btn" style="background: #00C300; color: white;">
-                        📱 LINE授權
-                    </a>
-                    <a href="/share-email.html" class="platform-btn" style="background: #EA4335; color: white;">
-                        📧 EMAIL分享
-                    </a>
-                    <a href="/share-facebook.html" class="platform-btn" style="background: #1877F2; color: white;">
-                        📘 Facebook
-                    </a>
-                    <a href="/share-universal.html" class="platform-btn" style="background: #6C757D; color: white;">
-                        🌐 其他平台
-                    </a>
+                <div style="text-align: center; color: rgba(255,255,255,0.9); font-size: 13px; line-height: 1.6;">
+                    <p style="margin: 8px 0;">✅ 動態載入資料庫資料</p>
+                    <p style="margin: 8px 0;">👤 自動應用LINE個人資料</p>
+                    <p style="margin: 8px 0;">🎨 個人化卡片預覽</p>
+                    <p style="margin: 8px 0;">📱 分享功能請使用智能編輯器</p>
                 </div>
             </div>
         </div>
@@ -217,300 +209,318 @@
         <!-- 即時預覽區 - 單一區塊 -->
         <div class="preview-container">
             <h2 style="margin: 0 0 20px 0; color: #333; text-align: center;">👀 即時預覽 - M01001會員卡</h2>
-            <div id="flex2html" style="max-width: 400px; margin: 0 auto;"></div>
+            <div id="flex2html" style="max-width: 400px; margin: 0 auto;">
+                <!-- 載入中顯示 -->
+                <div id="loading-indicator" style="text-align: center; padding: 40px; color: #666;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">🔄</div>
+                    <div>正在載入卡片資料...</div>
+                </div>
+            </div>
             <div style="text-align: center; margin-top: 15px; font-size: 14px; color: #666;">
-                <p>📋 這是資料庫中的 M01001 會員卡範例</p>
-                <p>🎨 點擊「立即編輯」或「LINE登入」開始個人化編輯</p>
+                <p id="preview-description">📋 正在從資料庫載入 M01001 會員卡資料</p>
+                <p>🎨 點擊「智能編輯」或「重新登入」開始個人化編輯</p>
             </div>
         </div>
     </div>
 
     <script src="js/editor.js"></script>
     <script>
-        // M01001 會員卡 JSON 資料
-        const m01001CardData = {
-            "type": "flex",
-            "altText": "我在呈璽/呈璽",
-            "contents": {
-                "type": "bubble",
-                "size": "mega",
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "image",
-                            "size": "full",
-                            "aspectRatio": "1:1",
-                            "aspectMode": "cover",
-                            "url": "https://barv3.vercel.app/uploads/vip/TS-B1.png"
-                        },
-                        {
-                            "type": "image",
-                            "url": "https://barv3.vercel.app/uploads/vip/APNG1.png",
-                            "size": "full",
-                            "aspectRatio": "1:1",
-                            "animated": true,
-                            "aspectMode": "cover",
-                            "position": "absolute",
-                            "action": {
-                                "type": "uri",
-                                "label": "action",
-                                "uri": "https://secure.smore.com/n/td1qc"
-                            }
-                        },
-                        {
-                            "type": "box",
-                            "width": "90px",
-                            "layout": "horizontal",
-                            "spacing": "none",
-                            "contents": [
-                                {
-                                    "type": "box",
-                                    "action": {
-                                        "uri": "https://lihi3.cc/ZWV2u",
-                                        "type": "uri",
-                                        "label": "VIP會員號碼"
-                                    },
-                                    "layout": "vertical",
-                                    "contents": [
-                                        {
-                                            "url": "https://barv3.vercel.app/uploads/vip/icon_calendar.png",
-                                            "type": "image",
-                                            "action": {
-                                                "uri": "https://lihi3.cc/ZWV2u",
-                                                "type": "uri",
-                                                "label": "action"
-                                            },
-                                            "size": "35px"
-                                        },
-                                        {
-                                            "type": "text",
-                                            "text": "TSAMC",
-                                            "size": "10px",
-                                            "align": "center",
-                                            "gravity": "center",
-                                            "offsetTop": "30px",
-                                            "position": "absolute",
-                                            "offsetStart": "12px",
-                                            "color": "#FFFFFF"
-                                        }
-                                    ],
-                                    "cornerRadius": "30px",
-                                    "backgroundColor": "#A4924A"
-                                },
-                                {
-                                    "type": "box",
-                                    "action": {
-                                        "uri": "https://lihi.cc/jl7Pw",
-                                        "type": "uri",
-                                        "label": "愛心會員號碼"
-                                    },
-                                    "layout": "vertical",
-                                    "contents": [
-                                        {
-                                            "url": "https://barv3.vercel.app/uploads/vip/loveicon.png",
-                                            "type": "image",
-                                            "action": {
-                                                "uri": "https://lihi.cc/jl7Pw",
-                                                "type": "uri",
-                                                "label": "action"
-                                            },
-                                            "size": "32px"
-                                        },
-                                        {
-                                            "type": "text",
-                                            "size": "10px",
-                                            "align": "center",
-                                            "gravity": "center",
-                                            "position": "absolute",
-                                            "offsetTop": "30px",
-                                            "offsetStart": "12px",
-                                            "text": "0000",
-                                            "color": "#FFFFFF"
-                                        }
-                                    ],
-                                    "cornerRadius": "30px",
-                                    "backgroundColor": "#d00308"
-                                }
-                            ],
-                            "offsetTop": "250px",
-                            "offsetStart": "10px",
-                            "height": "45px",
-                            "position": "absolute"
-                        },
-                        {
-                            "size": "20px",
-                            "text": "我在呈璽",
-                            "type": "text",
-                            "align": "center",
-                            "color": "#000000",
-                            "weight": "bold",
-                            "margin": "md"
-                        },
-                        {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "我在呈璽，欣賞美好幸福！我在呈璽，喝茶喝咖啡很悠閒！！我不在呈璽，就是在前往呈璽的路上！！！",
-                                    "wrap": true,
-                                    "size": "16px",
-                                    "margin": "sm",
-                                    "color": "#000000"
-                                }
-                            ],
-                            "paddingEnd": "65px",
-                            "paddingStart": "5px",
-                            "height": "95px"
-                        },
-                        {
-                            "type": "box",
-                            "width": "65px",
-                            "layout": "vertical",
-                            "spacing": "none",
-                            "contents": [
-                                {
-                                    "type": "box",
-                                    "action": {
-                                        "uri": "https://secure.smore.com/n/td1qc",
-                                        "type": "uri",
-                                        "label": "action"
-                                    },
-                                    "layout": "vertical",
-                                    "contents": [
-                                        {
-                                            "url": "https://barv3.vercel.app/uploads/vip/TS-LOGO.png",
-                                            "type": "image",
-                                            "action": {
-                                                "uri": "https://secure.smore.com/n/td1qc",
-                                                "type": "uri",
-                                                "label": "官網"
-                                            },
-                                            "aspectRatio": "1:1",
-                                            "aspectMode": "cover",
-                                            "backgroundColor": "#E1E6E0"
-                                        }
-                                    ],
-                                    "cornerRadius": "35px",
-                                    "borderWidth": "semi-bold",
-                                    "borderColor": "#a4924c"
-                                },
-                                {
-                                    "type": "box",
-                                    "layout": "horizontal",
-                                    "contents": [
-                                        {
-                                            "type": "text",
-                                            "size": "14px",
-                                            "text": "呈璽",
-                                            "style": "italic",
-                                            "color": "#a4924c",
-                                            "align": "center",
-                                            "weight": "bold",
-                                            "wrap": true,
-                                            "margin": "none"
-                                        }
-                                    ],
-                                    "paddingAll": "none",
-                                    "cornerRadius": "none",
-                                    "margin": "none",
-                                    "spacing": "none"
-                                }
-                            ],
-                            "position": "absolute",
-                            "offsetEnd": "5px",
-                            "margin": "md",
-                            "offsetTop": "315px"
-                        },
-                        {
-                            "type": "box",
-                            "layout": "horizontal",
-                            "contents": [
-                                {
-                                    "type": "button",
-                                    "action": {
-                                        "type": "uri",
-                                        "label": "加呈璽好友",
-                                        "uri": "https://lin.ee/JLLIBlP"
-                                    },
-                                    "color": "#a4924a",
-                                    "style": "primary",
-                                    "height": "sm",
-                                    "offsetEnd": "1px"
-                                },
-                                {
-                                    "type": "button",
-                                    "action": {
-                                        "type": "uri",
-                                        "label": "分享給好友",
-                                        "uri": "https://liff.line.me/2007327814-BdWpj70m?pageId=M01001"
-                                    },
-                                    "color": "#a4924b",
-                                    "style": "primary",
-                                    "height": "sm",
-                                    "offsetStart": "1px"
-                                }
-                            ],
-                            "margin": "md"
+        // 🔧 修正：移除硬編碼，改為動態載入
+        let m01001CardData = null;
+        let isDataLoaded = false;
+        
+        // 🚀 從資料庫載入M01001卡片資料
+        async function loadM01001CardData() {
+            try {
+                console.log('🔄 開始載入M01001卡片資料...');
+                
+                // 檢查是否有有效的LINE個人資料
+                const lineProfile = getValidLineProfile();
+                
+                let apiUrl = '/api/cards?pageId=M01001';
+                
+                // 如果有LINE個人資料，優先載入個人化資料
+                if (lineProfile && lineProfile.userId) {
+                    console.log('👤 發現LINE個人資料，嘗試載入個人化卡片');
+                    apiUrl += `&userId=${lineProfile.userId}`;
+                }
+                
+                const response = await fetch(apiUrl);
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const cardData = result.data[0];
+                    console.log('✅ 成功載入卡片資料:', cardData);
+                    
+                    // 如果有LINE個人資料，且卡片資料中沒有個人化資料，進行個人化處理
+                    if (lineProfile && lineProfile.userId && !cardData.line_user_id) {
+                        console.log('🎨 應用LINE個人資料到預設卡片');
+                        return personalizeCardData(cardData, lineProfile);
+                    }
+                    
+                    // 轉換資料庫格式為flex_json格式
+                    return convertToFlexJson(cardData);
+                } else {
+                    console.error('❌ 無法載入卡片資料:', result);
+                    return null;
+                }
+                
+            } catch (error) {
+                console.error('❌ 載入卡片資料失敗:', error);
+                return null;
+            }
+        }
+        
+        // 🎨 個人化卡片資料
+        function personalizeCardData(cardData, lineProfile) {
+            console.log('🎨 個人化卡片資料:', lineProfile);
+            
+            // 創建個人化的卡片資料
+            const personalizedCard = {
+                ...cardData,
+                display_name: lineProfile.displayName || cardData.display_name,
+                member_image_url: lineProfile.pictureUrl || cardData.member_image_url,
+                line_user_id: lineProfile.userId
+            };
+            
+            // 更新預覽說明
+            const descriptionEl = document.getElementById('preview-description');
+            if (descriptionEl) {
+                descriptionEl.innerHTML = `👤 已載入您的個人化卡片 - 歡迎 ${lineProfile.displayName}！`;
+            }
+            
+            return convertToFlexJson(personalizedCard);
+        }
+        
+        // 🔄 轉換資料庫格式為flex_json格式
+        function convertToFlexJson(cardData) {
+            try {
+                // 如果已經有flex_json，直接使用
+                if (cardData.flex_json) {
+                    return cardData.flex_json;
+                }
+                
+                // 如果沒有flex_json，使用getMainBubble函數生成
+                if (typeof getMainBubble === 'function') {
+                    const bubbleData = getMainBubble({ ...cardData, page_id: 'M01001' });
+                    return {
+                        type: 'flex',
+                        altText: cardData.card_alt_title || cardData.main_title_1 || '我在呈璽/呈璽',
+                        contents: bubbleData
+                    };
+                }
+                
+                // 使用預設的卡片結構
+                return getDefaultFlexJson(cardData);
+                
+            } catch (error) {
+                console.error('❌ 轉換flex_json失敗:', error);
+                return getDefaultFlexJson(cardData);
+            }
+        }
+        
+        // 🔧 取得有效的LINE個人資料
+        function getValidLineProfile() {
+            try {
+                const storedProfile = localStorage.getItem('lineUserProfile');
+                const authCompleted = localStorage.getItem('lineAuthCompleted');
+                
+                if (storedProfile && authCompleted) {
+                    const profile = JSON.parse(storedProfile);
+                    
+                    // 檢查資料完整性和時效性（24小時內）
+                    if (profile.userId && profile.displayName && profile.timestamp) {
+                        const hoursPassed = (Date.now() - profile.timestamp) / (1000 * 60 * 60);
+                        
+                        if (hoursPassed < 24) {
+                            return profile;
                         }
-                    ],
-                    "backgroundColor": "#E1E6E0",
-                    "paddingAll": "10px"
-                },
-                "footer": {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "spacing": "none",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "呈璽元宇宙3D展覽館",
-                            "wrap": true,
-                            "color": "#00000050",
-                            "align": "center",
-                            "action": {
-                                "type": "uri",
-                                "label": "action",
-                                "uri": "https://lihi3.cc/LY5qf"
-                            },
-                            "size": "sm",
-                            "margin": "none"
-                        }
-                    ],
-                    "backgroundColor": "#E1E6E0",
-                    "height": "30px",
-                    "margin": "none",
-                    "paddingAll": "2px"
-                },
-                "styles": {
-                    "footer": {
-                        "separatorColor": "#000000",
-                        "separator": true
                     }
                 }
+                
+                return null;
+            } catch (error) {
+                console.error('❌ 解析LINE個人資料失敗:', error);
+                return null;
+            }
+        }
+        
+        // 🔧 預設的flex_json結構
+        function getDefaultFlexJson(cardData) {
+            return {
+                "type": "flex",
+                "altText": cardData.card_alt_title || cardData.main_title_1 || "我在呈璽/呈璽",
+                "contents": {
+                    "type": "bubble",
+                    "size": "mega",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "image",
+                                "size": "full",
+                                "aspectRatio": "1:1",
+                                "aspectMode": "cover",
+                                "url": cardData.main_image_url || "https://barv3.vercel.app/uploads/vip/TS-B1.png"
+                            },
+                            {
+                                "type": "image",
+                                "url": cardData.snow_image_url || "https://barv3.vercel.app/uploads/vip/APNG1.png",
+                                "size": "full",
+                                "aspectRatio": "1:1",
+                                "animated": true,
+                                "aspectMode": "cover",
+                                "position": "absolute",
+                                "action": {
+                                    "type": "uri",
+                                    "label": "action",
+                                    "uri": cardData.main_image_link || "https://secure.smore.com/n/td1qc"
+                                }
+                            },
+                            {
+                                "size": "20px",
+                                "text": cardData.display_name || "我在呈璽",
+                                "type": "text",
+                                "align": "center",
+                                "color": cardData.name_color1 || "#000000",
+                                "weight": "bold",
+                                "margin": "md"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": cardData.main_title_2 || "我在呈璽，欣賞美好幸福！",
+                                        "wrap": true,
+                                        "size": "16px",
+                                        "margin": "sm",
+                                        "color": cardData.main_title_2_color || "#000000"
+                                    }
+                                ],
+                                "paddingEnd": "65px",
+                                "paddingStart": "5px",
+                                "height": "95px"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "uri",
+                                            "label": cardData.button_1_text || "加呈璽好友",
+                                            "uri": cardData.button_1_url || "https://lin.ee/JLLIBlP"
+                                        },
+                                        "color": cardData.button_1_color || "#a4924a",
+                                        "style": "primary",
+                                        "height": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "uri",
+                                            "label": cardData.s_button_text || "分享給好友",
+                                            "uri": cardData.s_button_url || "https://liff.line.me/2007327814-OoJBbnwP?pageId=M01001"
+                                        },
+                                        "color": cardData.s_button_color || "#a4924b",
+                                        "style": "primary",
+                                        "height": "sm"
+                                    }
+                                ],
+                                "margin": "md"
+                            }
+                        ],
+                        "backgroundColor": "#E1E6E0",
+                        "paddingAll": "10px"
+                    }
+                }
+            };
+        }
+        
+        // 🔄 渲染卡片預覽
+        async function renderCardPreview() {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const flex2htmlDiv = document.getElementById('flex2html');
+            
+            try {
+                // 載入卡片資料
+                m01001CardData = await loadM01001CardData();
+                
+                if (m01001CardData) {
+                    // 隱藏載入指示器
+                    if (loadingIndicator) {
+                        loadingIndicator.style.display = 'none';
+                    }
+                    
+                    // 渲染卡片
+                    if (typeof flex2html === 'function') {
+                        flex2html('flex2html', m01001CardData);
+                        console.log('✅ 卡片預覽渲染完成');
+                    } else {
+                        console.error('❌ flex2html函數未載入');
+                        showError('渲染函數未載入');
+                    }
+                    
+                    isDataLoaded = true;
+                } else {
+                    showError('載入卡片資料失敗');
+                }
+            } catch (error) {
+                console.error('❌ 渲染卡片預覽失敗:', error);
+                showError('渲染卡片預覽失敗');
+            }
+        }
+        
+        // 🔧 顯示錯誤訊息
+        function showError(message) {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.innerHTML = `
+                    <div style="color: #c62828; font-size: 16px;">❌ ${message}</div>
+                    <button onclick="renderCardPreview()" style="
+                        margin-top: 10px;
+                        padding: 8px 16px;
+                        background: #4caf50;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">🔄 重新載入</button>
+                `;
+            }
+        }
+
+        // 頁面載入時渲染卡片並檢查登入狀態
+        window.onload = function() {
+            // 🔧 修正：改為動態載入
+            renderCardPreview();
+            checkLoginStatus();
+            
+            // 監聽localStorage變化（當用戶從其他分頁登入時）
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'lineUserProfile' || e.key === 'lineAuthCompleted') {
+                    checkLoginStatus();
+                    // 重新渲染卡片以應用個人化資料
+                    if (isDataLoaded) {
+                        renderCardPreview();
+                    }
+                }
+            });
+            
+            // 檢查URL參數（從LINE授權回來）
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('authSuccess')) {
+                setTimeout(() => {
+                    checkLoginStatus();
+                    // 重新渲染卡片以應用個人化資料
+                    renderCardPreview();
+                }, 500);
             }
         };
-
-                 // 頁面載入時顯示 M01001 會員卡並檢查登入狀態
-         window.onload = function() {
-             flex2html('flex2html', m01001CardData);
-             checkLoginStatus();
-             
-             // 監聽localStorage變化（當用戶從其他分頁登入時）
-             window.addEventListener('storage', function(e) {
-                 if (e.key === 'lineUserProfile' || e.key === 'lineAuthCompleted') {
-                     checkLoginStatus();
-                 }
-             });
-             
-             // 檢查URL參數（從LINE授權回來）
-             const urlParams = new URLSearchParams(window.location.search);
-             if (urlParams.get('authSuccess')) {
-                 setTimeout(checkLoginStatus, 500); // 延遲檢查以確保localStorage已更新
-             }
-         };
         
         // 智能編輯系統 - 加強登入狀態檢查
         function checkLoginStatus() {

@@ -412,7 +412,7 @@
             background: #45a049;
         }
         
-        /* 確保chatbox內的內容正常顯示 */
+        /* 確保chatbox內的內容正常顯示 - 📱 手機版預覽優化 */
         #main-card-preview .chatbox {
             background-color: #849ebf;
             /* 🔧 關鍵修改：固定寬度550px，不再使用min-width */
@@ -427,23 +427,50 @@
             box-sizing: border-box;
         }
         
-        /* 🔧 手機版特別優化 - 確保550px寬度 */
+        /* 🔧 手機版特別優化 - 確保550px寬度不被壓縮 */
         @media (max-width: 768px) {
             #main-card-preview {
                 max-width: 100%; /* 容器可以是手機全寬 */
                 min-height: 320px;
                 /* 🔧 確保水平滑動 */
                 overflow-x: scroll; /* 強制顯示滑動條 */
+                /* 🆕 新增：滑動提示 */
+                position: relative;
             }
             
             #main-card-preview .chatbox {
                 /* 🔧 手機版維持550px固定寬度 */
-                width: 550px; /* 超出手機寬度，可滑動查看 */
+                width: 550px !important; /* 超出手機寬度，可滑動查看 */
                 min-height: 320px;
                 padding: 25px 12px;
                 /* 🔧 關鍵：防止任何壓縮 */
                 flex-shrink: 0;
                 transform: none; /* 防止任何變形 */
+                /* 🆕 新增：確保內容不被壓縮 */
+                overflow: visible;
+                /* 🔧 修正：移除white-space: nowrap，避免影響卡片內容換行 */
+            }
+            
+            /* 🆕 新增：滑動提示 */
+            #main-card-preview::before {
+                content: "← 滑動查看完整卡片 →";
+                position: absolute;
+                top: -30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(76, 175, 80, 0.9);
+                color: white;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 12px;
+                z-index: 10;
+                opacity: 0.8;
+                animation: slideHint 3s ease-in-out infinite;
+            }
+            
+            @keyframes slideHint {
+                0%, 100% { opacity: 0.8; }
+                50% { opacity: 0.4; }
             }
         }
         
