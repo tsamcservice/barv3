@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const { data, error } = await supabase
     .from('promo_cards')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('id', { ascending: true });
   if (error) {
     return res.status(500).json({ success: false, error: error.message });
   }

@@ -1255,12 +1255,34 @@
         <div class="tab-content active" id="tab-preview">
             <div class="preview-section">
                 <div class="preview-actions">
+                    <!-- 🔧 主要分享按鈕 -->
                     <button type="button" onclick="shareToLine()" class="action-btn share-btn">
                         📱 分享到LINE
                     </button>
                     <button type="button" onclick="document.getElementById('cardForm').dispatchEvent(new Event('submit'))" class="action-btn save-btn">
                         💾 儲存卡片
                     </button>
+                </div>
+                
+                <!-- 🆕 多平台分享按鈕區域 -->
+                <div class="multi-platform-share" style="margin-top: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #555; text-align: center;">
+                        📤 多平台分享
+                    </h4>
+                    <div class="platform-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button type="button" onclick="shareToEmail()" class="platform-btn email-btn" style="background: #EA4335; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
+                            📧 EMAIL分享
+                        </button>
+                        <button type="button" onclick="shareToFacebook()" class="platform-btn facebook-btn" style="background: #1877F2; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
+                            📘 Facebook
+                        </button>
+                        <button type="button" onclick="shareToOtherPlatforms()" class="platform-btn others-btn" style="background: #6C757D; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
+                            🌐 其他平台
+                        </button>
+                        <button type="button" onclick="copyShareLink()" class="platform-btn copy-btn" style="background: #28A745; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
+                            📋 複製連結
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="preview-container">

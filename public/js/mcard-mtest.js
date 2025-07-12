@@ -2579,6 +2579,73 @@ async function shareToLine() {
   }
 }
 
+// 🆕 多平台分享函數
+function shareToEmail() {
+  try {
+    const formData = getFormData();
+    const shareData = btoa(JSON.stringify(formData));
+    const emailUrl = `/share-email.html?shareData=${shareData}`;
+    
+    window.open(emailUrl, '_blank');
+    console.log('📧 開啟EMAIL分享頁面');
+  } catch (error) {
+    console.error('EMAIL分享失敗:', error);
+    alert('EMAIL分享失敗: ' + error.message);
+  }
+}
+
+function shareToFacebook() {
+  try {
+    const formData = getFormData();
+    const shareData = btoa(JSON.stringify(formData));
+    const fbUrl = `/share-facebook.html?shareData=${shareData}`;
+    
+    window.open(fbUrl, '_blank');
+    console.log('📘 開啟Facebook分享頁面');
+  } catch (error) {
+    console.error('Facebook分享失敗:', error);
+    alert('Facebook分享失敗: ' + error.message);
+  }
+}
+
+function shareToOtherPlatforms() {
+  try {
+    const formData = getFormData();
+    const shareData = btoa(JSON.stringify(formData));
+    const otherUrl = `/share-universal.html?shareData=${shareData}`;
+    
+    window.open(otherUrl, '_blank');
+    console.log('🌐 開啟通用分享頁面');
+  } catch (error) {
+    console.error('通用分享失敗:', error);
+    alert('通用分享失敗: ' + error.message);
+  }
+}
+
+function copyShareLink() {
+  try {
+    const formData = getFormData();
+    const shareData = btoa(JSON.stringify(formData));
+    const currentUrl = window.location.origin;
+    const shareUrl = `${currentUrl}/card-view.html?data=${shareData}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('📋 分享連結已複製到剪貼簿！');
+      console.log('✅ 分享連結複製成功');
+    }).catch(err => {
+      console.error('複製失敗:', err);
+      // 備用方案：顯示連結讓用戶手動複製
+      const result = prompt('請複製以下連結：', shareUrl);
+      if (result !== null) {
+        console.log('✅ 用戶手動複製連結');
+      }
+    });
+  } catch (error) {
+    console.error('複製連結失敗:', error);
+    alert('複製連結失敗: ' + error.message);
+  }
+}
+
 // 🚀 快速生成分享內容 (非阻塞)
 async function generateShareContent(formData) {
   let flexJson;
