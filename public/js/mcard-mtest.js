@@ -2471,6 +2471,7 @@ let allCardsSortable = [];
 // 🔧 修正：優化初始化排序區卡片陣列
 function initAllCardsSortable() {
   debugCardSorting('初始化卡片陣列');
+  console.log('🔄 [排序調試] initAllCardsSortable被調用，當前allCardsSortable:', allCardsSortable?.map(c => c.id));
   
   // 先建立主卡片
   const mainCard = {
@@ -2531,7 +2532,7 @@ function renderPromoCardListSortable() {
     console.log('⚠️ allCardsSortable為空，執行初始化');
     initAllCardsSortable();
   } else {
-    console.log('✅ allCardsSortable已有資料，跳過初始化以保持排序:', allCardsSortable.map(c => c.id));
+    console.log('✅ allCardsSortable已有資料，跳過初始化以保持排序:', allCardsSortable.map(c => ({ id: c.id, type: c.type })));
   }
   
   container.innerHTML = '';
@@ -3710,14 +3711,22 @@ async function loadPromoCards() {
       sortingManager.promoCardsLoaded = true;
       debugCardSorting('宣傳卡片載入完成');
       
-      // 嘗試處理排序（如果用戶資料已經載入）
+      // 🔧 關鍵修正：只在有用戶資料時處理排序，否則保持現有排序
       if (sortingManager.userDataLoaded && sortingManager.pendingCardData) {
         console.log('🔄 宣傳卡片載入完成，開始處理排序');
         await sortingManager.processCardOrder();
       } else {
-        console.log('📋 沒有用戶排序資料，執行預設初始化');
-        initAllCardsSortable();
-        renderPromoCardListSortable();
+        console.log('📋 保持現有排序，不執行重新初始化');
+        // 🔧 修正：只在完全沒有卡片時才初始化
+        if (!allCardsSortable || allCardsSortable.length === 0) {
+          console.log('⚠️ 沒有現有卡片，執行預設初始化');
+          initAllCardsSortable();
+          renderPromoCardListSortable();
+        } else {
+          console.log('✅ 保持現有卡片排序:', allCardsSortable.map(c => c.id));
+          // 只更新界面，不改變排序
+          renderPromoCardListSortable();
+        }
       }
     }
   } catch (e) {
