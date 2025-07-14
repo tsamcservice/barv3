@@ -1228,7 +1228,13 @@ async function fillAllFieldsWithProfile() {
             
             // 嘗試立即處理排序（如果宣傳卡片已經載入）
             if (sortingManager.promoCardsLoaded) {
-              sortingManager.processCardOrder();
+              // 非同步處理，避免阻塞載入流程
+              sortingManager.processCardOrder().catch(error => {
+                console.error('❌ 排序處理失敗:', error);
+                // 失敗時使用預設初始化
+                initAllCardsSortable();
+                renderPromoCardListSortable();
+              });
             }
           } else {
             console.log('⚠️ card_order格式不正確，跳過暫存');
@@ -2332,27 +2338,96 @@ window.onload = async function() {
             console.log('卡片排序處理完成');
           }
         } else if (loadedFlexJson && loadedFlexJson.contents && loadedFlexJson.contents.type === 'carousel') {
-          // 若沒有card_order但有carousel，還原排序（舊邏輯保留）
+          // 🔧 修正：使用正確的主卡片識別邏輯重建排序
+          console.log('⚠️ 沒有card_order，嘗試從carousel重建排序');
           const flexArr = loadedFlexJson.contents.contents;
           let newAllCards = [];
           let newSelectedPromo = [];
-          flexArr.forEach(flex => {
-            // 判斷是主卡還是宣傳卡
-            if (flex.body && flex.body.contents && flex.body.contents.some && flex.body.contents.some(c => c.type === 'box' && c.contents && c.contents.some && c.contents.some(cc => cc.text === '主卡片'))) {
-              // 主卡
-              newAllCards.push({ type: 'main', id: 'main', flex_json: flex, img: getFormData().main_image_url || defaultCard.main_image_url });
+          
+          flexArr.forEach((flex, index) => {
+            console.log(`🔍 檢查第${index}個卡片:`, {
+              hasFooter: !!flex.footer,
+              footerText: flex.footer?.contents?.[0]?.text,
+              _cardType: flex._cardType,
+              _cardId: flex._cardId
+            });
+            
+            // 🔧 修正：使用增強的主卡片識別函數
+            if (isMainCard(flex)) {
+              console.log(`✅ 第${index}個卡片被識別為主卡片`);
+              newAllCards.push({ 
+                type: 'main', 
+                id: 'main', 
+                flex_json: flex, 
+                img: getFormData().main_image_url || defaultCard.main_image_url 
+              });
             } else {
-              // 宣傳卡
-              const found = promoCardList.find(c => JSON.stringify(c.flex_json) === JSON.stringify(flex));
+              console.log(`🔍 第${index}個卡片被識別為宣傳卡片，嘗試匹配...`);
+              // 🔧 修正：使用更穩定的宣傳卡片匹配邏輯
+              let found = null;
+              
+              // 方法1: 使用_cardId匹配
+              if (flex._cardId) {
+                found = promoCardList.find(c => c.id === flex._cardId);
+                if (found) {
+                  console.log(`✅ 通過_cardId匹配到宣傳卡片: ${found.id}`);
+                }
+              }
+              
+              // 方法2: 使用圖片URL匹配（更穩定）
+              if (!found && flex.body?.contents?.[0]?.url) {
+                const flexImageUrl = flex.body.contents[0].url;
+                found = promoCardList.find(c => {
+                  const promoImageUrl = c.flex_json?.body?.contents?.[0]?.url;
+                  return promoImageUrl && promoImageUrl === flexImageUrl;
+                });
+                if (found) {
+                  console.log(`✅ 通過圖片URL匹配到宣傳卡片: ${found.id}`);
+                }
+              }
+              
+                             // 方法3: 使用標題匹配（後備方案）
+               if (!found && flex.body?.contents) {
+                 const flexTitle = extractTitleFromFlex(flex);
+                 if (flexTitle) {
+                   found = promoCardList.find(c => 
+                     c.main_title_1 === flexTitle || 
+                     c.main_title_2 === flexTitle
+                   );
+                   if (found) {
+                     console.log(`✅ 通過標題匹配到宣傳卡片: ${found.id}`);
+                   }
+                 }
+               }
+              
               if (found) {
-                newAllCards.push({ type: 'promo', id: found.id, flex_json: found.flex_json, img: found.flex_json.body.contents[0].url });
+                // 🔧 為宣傳卡片加入標識
+                const promoFlexJson = JSON.parse(JSON.stringify(found.flex_json));
+                promoFlexJson._cardId = found.id;
+                promoFlexJson._cardType = 'promo';
+                
+                newAllCards.push({ 
+                  type: 'promo', 
+                  id: found.id, 
+                  flex_json: promoFlexJson, 
+                  img: found.flex_json.body.contents[0].url 
+                });
                 newSelectedPromo.push(found.id);
+                console.log(`✅ 成功加入宣傳卡片: ${found.id} - ${found.main_title_1}`);
+              } else {
+                console.log(`❌ 無法匹配第${index}個卡片，跳過`);
               }
             }
           });
+          
           if (newAllCards.length > 0) {
+            console.log('📋 從carousel重建的排序:', newAllCards.map(c => `${c.type}:${c.id}`));
             allCardsSortable = newAllCards;
             selectedPromoCards = newSelectedPromo;
+            renderPromoCardSelector();
+            console.log('✅ carousel排序重建完成');
+          } else {
+            console.log('⚠️ carousel重建失敗，使用預設初始化');
           }
         }
         delete window.pendingCardData; // 處理完成後清除暫存資料
@@ -3638,7 +3713,7 @@ async function loadPromoCards() {
       // 嘗試處理排序（如果用戶資料已經載入）
       if (sortingManager.userDataLoaded && sortingManager.pendingCardData) {
         console.log('🔄 宣傳卡片載入完成，開始處理排序');
-        sortingManager.processCardOrder();
+        await sortingManager.processCardOrder();
       } else {
         console.log('📋 沒有用戶排序資料，執行預設初始化');
         initAllCardsSortable();
@@ -5158,7 +5233,22 @@ class SortingSequenceManager {
     await this.waitForBothLoaded();
     if (this.pendingCardData && this.pendingCardData.card_order) {
       console.log('🔄 [排序調試] 開始處理排序，兩個資料都已載入');
-      this.rebuildCardOrder(this.pendingCardData.card_order);
+      const result = this.rebuildCardOrder(this.pendingCardData.card_order);
+      if (result) {
+        console.log('✅ [排序調試] 排序處理成功');
+        // 清除暫存資料
+        this.pendingCardData = null;
+      } else {
+        console.log('❌ [排序調試] 排序處理失敗，將使用預設初始化');
+        // 使用預設初始化
+        initAllCardsSortable();
+        renderPromoCardListSortable();
+      }
+    } else {
+      console.log('⚠️ [排序調試] 沒有可處理的排序資料');
+      // 使用預設初始化
+      initAllCardsSortable();
+      renderPromoCardListSortable();
     }
   }
   
@@ -5234,6 +5324,38 @@ function debugCardSorting(step, data) {
     userDataLoaded: sortingManager.userDataLoaded,
     pendingCardData: data ? { hasCardOrder: !!data.card_order } : null
   });
+}
+
+// 🔧 增加：從Flex JSON中提取標題的輔助函數
+function extractTitleFromFlex(flex) {
+  try {
+    if (!flex.body?.contents) return null;
+    
+    // 遞迴搜尋文字內容
+    function findText(contents) {
+      if (!Array.isArray(contents)) return null;
+      
+      for (const item of contents) {
+        if (item.type === 'text' && item.text) {
+          // 過濾掉pageview數字和特殊字符
+          const text = item.text.replace('\u200B', '').trim();
+          if (text && !/^\d{1,4}$/.test(text) && text !== '呈璽元宇宙3D展覽館') {
+            return text;
+          }
+        }
+        if (item.contents && Array.isArray(item.contents)) {
+          const found = findText(item.contents);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+    
+    return findText(flex.body.contents);
+  } catch (error) {
+    console.error('標題提取失敗:', error);
+    return null;
+  }
 }
 
 // 🔧 增加：MTEST排序功能效能測試
