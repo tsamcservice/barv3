@@ -2244,6 +2244,26 @@ window.onload = async function() {
       console.log('🎯 載入現有卡片資料，開始初始化圖片預覽...');
       initImagePreviews();
       
+      // 🔧 關鍵修正：cardLoaded=true時也要設定sortingManager狀態
+      const cardData = result.data[0];
+      console.log('🔄 載入現有卡片資料，設定sorting manager狀態');
+      
+      // 處理card_order排序邏輯
+      if (cardData && cardData.card_order) {
+        const cardOrder = parseCardOrder(cardData.card_order);
+        if (cardOrder) {
+          sortingManager.pendingCardData = { ...cardData, card_order: cardOrder };
+          sortingManager.userDataLoaded = true;
+          console.log('✅ 從現有卡片資料暫存card_order:', cardOrder);
+        } else {
+          console.log('⚠️ 無法解析現有卡片的card_order，使用預設狀態');
+          sortingManager.userDataLoaded = true;
+        }
+      } else {
+        console.log('⚠️ 現有卡片沒有card_order資料，使用預設狀態');
+        sortingManager.userDataLoaded = true;
+      }
+      
       // 🔧 強制觸發所有現有圖片的預覽顯示
       setTimeout(() => {
         const imageFields = [
@@ -3711,12 +3731,16 @@ async function loadPromoCards() {
       sortingManager.promoCardsLoaded = true;
       debugCardSorting('宣傳卡片載入完成');
       
-      // 🔧 關鍵修正：只在有用戶資料時處理排序，否則保持現有排序
+      // 🔧 關鍵修正：優化排序處理邏輯
       if (sortingManager.userDataLoaded && sortingManager.pendingCardData) {
-        console.log('🔄 宣傳卡片載入完成，開始處理排序');
+        console.log('🔄 宣傳卡片載入完成，處理用戶自定義排序');
         await sortingManager.processCardOrder();
+      } else if (sortingManager.userDataLoaded && !sortingManager.pendingCardData) {
+        console.log('📋 用戶已登入但沒有自定義排序，執行預設初始化');
+        initAllCardsSortable();
+        renderPromoCardListSortable();
       } else {
-        console.log('📋 保持現有排序，不執行重新初始化');
+        console.log('📋 用戶資料尚未載入，保持現有排序');
         // 🔧 修正：只在完全沒有卡片時才初始化
         if (!allCardsSortable || allCardsSortable.length === 0) {
           console.log('⚠️ 沒有現有卡片，執行預設初始化');
