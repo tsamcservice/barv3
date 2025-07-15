@@ -370,11 +370,20 @@
                 console.log('📥 從shareData載入卡片資料');
                 
                 try {
-                    const decodedData = atob(this.shareData);
+                    // 🔧 修復編碼問題：使用正確的解碼方式
+                    const decodedData = decodeURIComponent(escape(atob(this.shareData)));
                     this.cardData = JSON.parse(decodedData);
                     console.log('✅ 成功解析shareData:', this.cardData);
                 } catch (error) {
-                    throw new Error('shareData解析失敗: ' + error.message);
+                    console.error('❌ shareData解析失敗:', error);
+                    // 🔧 嘗試備用解碼方式
+                    try {
+                        const decodedData = atob(this.shareData);
+                        this.cardData = JSON.parse(decodedData);
+                        console.log('✅ 備用解碼成功:', this.cardData);
+                    } catch (backupError) {
+                        throw new Error('shareData解析失敗: ' + error.message + ' | 備用解碼也失敗: ' + backupError.message);
+                    }
                 }
             }
             
@@ -453,7 +462,57 @@
                 const memberId = document.getElementById('member-id');
                 memberId.textContent = '會員編號: ' + (this.cardData.amember_id || '呈璽');
                 
+                // 🔧 新增：PAGEVIEW加總功能
+                this.calculateAndDisplayPageview();
+                
                 console.log('✅ 卡片預覽已更新');
+            }
+            
+            // 🔧 新增：PAGEVIEW加總計算和顯示
+            calculateAndDisplayPageview() {
+                try {
+                    let totalPageview = 0;
+                    const pageviewFields = [
+                        'pageview_1', 'pageview_2', 'pageview_3', 'pageview_4',
+                        'pageview_5', 'pageview_6', 'pageview_7', 'pageview_8'
+                    ];
+                    
+                    // 計算所有pageview欄位的總和
+                    pageviewFields.forEach(field => {
+                        const value = parseInt(this.cardData[field]) || 0;
+                        totalPageview += value;
+                    });
+                    
+                    console.log('📊 PAGEVIEW計算:', {
+                        fields: pageviewFields.map(f => ({ field: f, value: this.cardData[f] || 0 })),
+                        total: totalPageview
+                    });
+                    
+                    // 更新頁面顯示
+                    this.updatePageviewDisplay(totalPageview);
+                    
+                } catch (error) {
+                    console.error('❌ PAGEVIEW計算失敗:', error);
+                    this.updatePageviewDisplay(0);
+                }
+            }
+            
+            // 🔧 新增：更新PAGEVIEW顯示
+            updatePageviewDisplay(totalPageview) {
+                // 格式化顯示（補零到4位數）
+                const formattedPageview = String(totalPageview).padStart(4, '0');
+                
+                // 更新會員資訊區域，加入PAGEVIEW顯示
+                const memberId = document.getElementById('member-id');
+                const originalText = memberId.textContent;
+                memberId.innerHTML = `
+                    <div>會員編號: ${this.cardData.amember_id || '呈璽'}</div>
+                    <div style="margin-top: 5px; font-size: 12px; color: #4CAF50;">
+                        📊 總瀏覽量: ${formattedPageview}
+                    </div>
+                `;
+                
+                console.log('✅ PAGEVIEW顯示已更新:', formattedPageview);
             }
             
             showLoading() {

@@ -5100,19 +5100,14 @@ function switchTab(tabName) {
         }, 200); // 縮短延遲時間
       }
     } else if (tabName === 'promo-cards') {
-      // 載入宣傳卡片數據（如果還沒載入）
-      setTimeout(() => {
-        console.log('🔄 載入宣傳卡片資料...');
-        try {
-          if (!window.promoCardsLoaded) {
-            loadPromoCards().then(() => {
-              window.promoCardsLoaded = true;
-            });
-          }
-        } catch (e) {
-          console.error('❌ 宣傳卡片載入失敗:', e);
-        }
-      }, 300);
+      // 🔧 修復排序問題：不重新載入宣傳卡片，只更新界面
+      console.log('🔄 切換到宣傳卡片頁面，保持現有排序');
+      // 不重新載入，避免排序重置
+      if (window.promoCardsLoaded) {
+        console.log('✅ 宣傳卡片已載入，保持現有排序');
+      } else {
+        console.log('⚠️ 宣傳卡片尚未載入，但不會重新載入以避免排序重置');
+      }
     }
   } else {
     console.error('❌ 頁籤切換失敗 - 找不到目標元素');
