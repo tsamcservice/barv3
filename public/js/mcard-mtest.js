@@ -1,9 +1,9 @@
-// 🚀 手機版會員卡系統 - v20250714-NF-FIXED
+// 🚀 手機版會員卡系統 - v20250714-NF-FIXED-V3
 // LIFF ID: 2007327814-OoJBbnwP (MTEST測試版)
 // 更新日期: 2025-07-14
 
 // 版本標識
-const VERSION_TAG = 'MTEST-v20250714-NF-FIXED';  
+const VERSION_TAG = 'MTEST-v20250714-NF-FIXED-V3';  
 const IS_MOBILE_VERSION = true;
 
 // 手機版功能開關
@@ -1033,7 +1033,7 @@ function setImageUserStyle(img, url) {
     img.style.border = '3px solid #F44336'; // 紅色表示失敗
     img.title = '圖片載入失敗，請檢查URL';
     // 🔧 顯示錯誤佔位符
-    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZlYmVlIi8+PHRleHQgeD0iNTAlIiB5PSI0NSUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Y0NDMzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWcluePh+eEoeazleiyn+WFpTwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjU1JSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZjQ0MzM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+6KuL5qOA5p+lVVJMPC90ZXh0Pjwvc3ZnPg==';
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZlYmVlIi8+PHRleHQgeD0iNTAlIHk9IjQ1JSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZjQ0MzM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+6KuL5qOA5p+lVVJMPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNmNDQzMzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7ml+ePh+eEoeazleiyn+WFpTwvdGV4dD48L3N2Zz4=';
   };
   
   // 最後設定圖片URL觸發載入
@@ -3718,6 +3718,13 @@ function initSyncScrolling() {
 // 載入宣傳卡片時同時渲染 selector
 async function loadPromoCards() {
   try {
+    // 🔧 關鍵修復：檢查是否已經載入過，避免重複載入
+    if (window.promoCardsLoaded && promoCardList.length > 0) {
+      console.log('✅ 宣傳卡片已載入，跳過重複載入');
+      return;
+    }
+    
+    console.log('🔄 開始載入宣傳卡片...');
     const res = await fetch('/api/promo-cards');
     const result = await res.json();
     if (result.success && Array.isArray(result.data)) {
@@ -3729,6 +3736,7 @@ async function loadPromoCards() {
       
       // 🔧 修正：使用新的排序管理器
       sortingManager.promoCardsLoaded = true;
+      window.promoCardsLoaded = true; // 標記已載入
       debugCardSorting('宣傳卡片載入完成');
       
       // 🔧 關鍵修正：優化排序處理邏輯
@@ -5070,11 +5078,11 @@ function switchTab(tabName) {
     
     console.log('✅ 頁籤切換完成:', tabName);
     
-    // 特殊處理：切換到不同頁籤時的資料載入
+    // 🔧 修復排序問題：特殊處理不同頁籤的資料載入
     if (tabName === 'preview') {
-      // 🔧 修正：先確保宣傳卡片已載入，再渲染預覽
+      // 🔧 關鍵修復：檢查是否已有排序資料，避免重新載入
       if (!window.promoCardsLoaded) {
-        console.log('🔄 載入宣傳卡片中...');
+        console.log('🔄 宣傳卡片尚未載入，載入中...');
         showPreviewLoading();
         
         loadPromoCards().then(async () => {
@@ -5088,7 +5096,8 @@ function switchTab(tabName) {
           hidePreviewLoading();
         });
       } else {
-        // 宣傳卡片已載入，直接渲染
+        // 🔧 關鍵修復：宣傳卡片已載入，直接渲染，不重新載入
+        console.log('✅ 宣傳卡片已載入，直接渲染預覽，保持現有排序');
         setTimeout(() => {
           console.log('🔄 更新預覽內容...');
           try {
@@ -5097,16 +5106,25 @@ function switchTab(tabName) {
           } catch (e) {
             console.error('❌ 預覽更新失敗:', e);
           }
-        }, 200); // 縮短延遲時間
+        }, 200);
       }
     } else if (tabName === 'promo-cards') {
-      // 🔧 修復排序問題：不重新載入宣傳卡片，只更新界面
-      console.log('🔄 切換到宣傳卡片頁面，保持現有排序');
-      // 不重新載入，避免排序重置
-      if (window.promoCardsLoaded) {
-        console.log('✅ 宣傳卡片已載入，保持現有排序');
+      // 🔧 關鍵修復：宣傳卡片頁面不重新載入，只更新界面
+      console.log('🔄 切換到宣傳卡片頁面，保持現有排序，不重新載入');
+      
+      // 如果宣傳卡片尚未載入，才載入一次
+      if (!window.promoCardsLoaded) {
+        console.log('⚠️ 宣傳卡片尚未載入，執行一次性載入');
+        loadPromoCards().then(() => {
+          window.promoCardsLoaded = true;
+          console.log('✅ 宣傳卡片載入完成，保持現有排序');
+        }).catch((e) => {
+          console.error('❌ 宣傳卡片載入失敗:', e);
+        });
       } else {
-        console.log('⚠️ 宣傳卡片尚未載入，但不會重新載入以避免排序重置');
+        console.log('✅ 宣傳卡片已載入，保持現有排序');
+        // 只更新界面顯示，不改變排序
+        renderPromoCardListSortable();
       }
     }
   } else {
@@ -5275,6 +5293,8 @@ class SortingSequenceManager {
     await this.waitForBothLoaded();
     if (this.pendingCardData && this.pendingCardData.card_order) {
       console.log('🔄 [排序調試] 開始處理排序，兩個資料都已載入');
+      console.log('📋 [排序調試] 待處理的card_order:', this.pendingCardData.card_order);
+      
       const result = this.rebuildCardOrder(this.pendingCardData.card_order);
       if (result) {
         console.log('✅ [排序調試] 排序處理成功');
@@ -5296,6 +5316,7 @@ class SortingSequenceManager {
       }
     } else {
       console.log('⚠️ [排序調試] 沒有可處理的排序資料');
+      console.log('📋 [排序調試] pendingCardData:', this.pendingCardData);
       // 使用預設初始化
       initAllCardsSortable();
       renderPromoCardListSortable();

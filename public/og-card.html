@@ -291,6 +291,24 @@
         
         <div class="footer">
             <p>© 2025 呈璽元宇宙. 保留所有權利.</p>
+            
+            <!-- 🔧 新增：OG機制說明 -->
+            <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 12px; color: #666;">
+                <h4 style="margin: 0 0 10px 0; color: #333;">📋 OG機制說明</h4>
+                <p style="margin: 0 0 8px 0;"><strong>🎯 功能：</strong>動態生成個別化會員卡預覽頁面</p>
+                <p style="margin: 0 0 8px 0;"><strong>📊 統計：</strong>自動計算並顯示總瀏覽量與總點數</p>
+                <p style="margin: 0 0 8px 0;"><strong>🔗 分享：</strong>支援多平台社交分享功能</p>
+                <p style="margin: 0 0 8px 0;"><strong>⚡ 啟動時機：</strong></p>
+                <ul style="margin: 0 0 8px 0; padding-left: 20px;">
+                    <li>用戶點擊分享按鈕時自動生成</li>
+                    <li>透過shareData參數傳遞卡片資料</li>
+                    <li>支援LINE、Email、Facebook等平台</li>
+                    <li>提供SEO優化的Meta Tags</li>
+                </ul>
+                <p style="margin: 0; font-size: 11px; color: #999;">
+                    💡 此頁面可作為未來三頁面架構的分享頁面範本
+                </p>
+            </div>
         </div>
     </div>
     
@@ -416,7 +434,8 @@
             updateOGMetaTags() {
                 if (!this.cardData) return;
                 
-                const title = this.cardData.main_title_1 || '專屬會員卡';
+                // 🔧 改進：使用實際的主標題，而不是固定文字
+                const title = this.cardData.main_title_1 || this.cardData.display_name || '專屬會員卡';
                 const description = this.cardData.main_title_2 || '呈璽元宇宙3D展覽館';
                 const image = this.cardData.main_image_url || 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png';
                 const url = window.location.href;
@@ -441,15 +460,18 @@
             showCardPreview() {
                 if (!this.cardData) return;
                 
+                // 🔧 改進：動態生成個別化會員卡
+                this.generatePersonalizedCard();
+                
                 // 更新卡片圖片
                 const cardImage = document.getElementById('card-image');
                 if (this.cardData.main_image_url) {
                     cardImage.src = this.cardData.main_image_url;
                 }
                 
-                // 更新卡片標題
+                // 🔧 改進：使用實際的主標題文字
                 const cardTitle = document.getElementById('card-title');
-                cardTitle.textContent = this.cardData.main_title_1 || '歡迎來到呈璽元宇宙';
+                cardTitle.textContent = this.cardData.main_title_1 || this.cardData.display_name || '歡迎來到呈璽元宇宙';
                 
                 // 更新卡片描述
                 const cardDescription = document.getElementById('card-description');
@@ -465,7 +487,62 @@
                 // 🔧 新增：PAGEVIEW加總功能
                 this.calculateAndDisplayPageview();
                 
-                console.log('✅ 卡片預覽已更新');
+                // 🔧 新增：點數加總機制
+                this.calculateAndDisplayPoints();
+                
+                console.log('✅ 個別化會員卡預覽已更新');
+            }
+            
+            // 🔧 新增：動態生成個別化會員卡
+            generatePersonalizedCard() {
+                try {
+                    // 根據用戶資料生成個別化內容
+                    const personalizedData = {
+                        title: this.cardData.main_title_1 || this.cardData.display_name || '呈璽會員',
+                        subtitle: this.cardData.main_title_2 || '3D展覽館',
+                        memberName: this.cardData.display_name || '呈璽會員',
+                        memberId: this.cardData.amember_id || '呈璽',
+                        image: this.cardData.main_image_url || 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png',
+                        points: this.calculateTotalPoints(),
+                        pageview: this.calculateTotalPageview()
+                    };
+                    
+                    console.log('🎨 生成個別化會員卡:', personalizedData);
+                    
+                    // 更新頁面標題為個別化標題
+                    document.querySelector('.header h1').textContent = personalizedData.title;
+                    
+                } catch (error) {
+                    console.error('❌ 個別化會員卡生成失敗:', error);
+                }
+            }
+            
+            // 🔧 新增：計算總點數
+            calculateTotalPoints() {
+                try {
+                    let totalPoints = 0;
+                    const pointsFields = [
+                        'points_1', 'points_2', 'points_3', 'points_4',
+                        'points_5', 'points_6', 'points_7', 'points_8'
+                    ];
+                    
+                    // 計算所有點數欄位的總和
+                    pointsFields.forEach(field => {
+                        const value = parseInt(this.cardData[field]) || 0;
+                        totalPoints += value;
+                    });
+                    
+                    console.log('💰 點數計算:', {
+                        fields: pointsFields.map(f => ({ field: f, value: this.cardData[f] || 0 })),
+                        total: totalPoints
+                    });
+                    
+                    return totalPoints;
+                    
+                } catch (error) {
+                    console.error('❌ 點數計算失敗:', error);
+                    return 0;
+                }
             }
             
             // 🔧 新增：PAGEVIEW加總計算和顯示
@@ -497,6 +574,62 @@
                 }
             }
             
+            // 🔧 新增：計算總PAGEVIEW
+            calculateTotalPageview() {
+                try {
+                    let totalPageview = 0;
+                    const pageviewFields = [
+                        'pageview_1', 'pageview_2', 'pageview_3', 'pageview_4',
+                        'pageview_5', 'pageview_6', 'pageview_7', 'pageview_8'
+                    ];
+                    
+                    pageviewFields.forEach(field => {
+                        const value = parseInt(this.cardData[field]) || 0;
+                        totalPageview += value;
+                    });
+                    
+                    return totalPageview;
+                    
+                } catch (error) {
+                    console.error('❌ PAGEVIEW計算失敗:', error);
+                    return 0;
+                }
+            }
+            
+            // 🔧 新增：計算和顯示點數
+            calculateAndDisplayPoints() {
+                try {
+                    const totalPoints = this.calculateTotalPoints();
+                    this.updatePointsDisplay(totalPoints);
+                    
+                } catch (error) {
+                    console.error('❌ 點數顯示失敗:', error);
+                    this.updatePointsDisplay(0);
+                }
+            }
+            
+            // 🔧 新增：更新點數顯示
+            updatePointsDisplay(totalPoints) {
+                // 格式化顯示（補零到4位數）
+                const formattedPoints = String(totalPoints).padStart(4, '0');
+                
+                // 更新會員資訊區域，加入點數顯示
+                const memberId = document.getElementById('member-id');
+                const originalText = memberId.innerHTML;
+                
+                // 檢查是否已經有統計資訊，避免重複添加
+                if (!originalText.includes('總點數')) {
+                    memberId.innerHTML = `
+                        <div>會員編號: ${this.cardData.amember_id || '呈璽'}</div>
+                        <div style="margin-top: 5px; font-size: 12px; color: #4CAF50;">
+                            💰 總點數: ${formattedPoints}
+                        </div>
+                    `;
+                }
+                
+                console.log('✅ 點數顯示已更新:', formattedPoints);
+            }
+            
             // 🔧 新增：更新PAGEVIEW顯示
             updatePageviewDisplay(totalPageview) {
                 // 格式化顯示（補零到4位數）
@@ -504,13 +637,17 @@
                 
                 // 更新會員資訊區域，加入PAGEVIEW顯示
                 const memberId = document.getElementById('member-id');
-                const originalText = memberId.textContent;
-                memberId.innerHTML = `
-                    <div>會員編號: ${this.cardData.amember_id || '呈璽'}</div>
-                    <div style="margin-top: 5px; font-size: 12px; color: #4CAF50;">
-                        📊 總瀏覽量: ${formattedPageview}
-                    </div>
-                `;
+                const originalText = memberId.innerHTML;
+                
+                // 檢查是否已經有統計資訊，避免重複添加
+                if (!originalText.includes('總瀏覽量')) {
+                    memberId.innerHTML = `
+                        <div>會員編號: ${this.cardData.amember_id || '呈璽'}</div>
+                        <div style="margin-top: 5px; font-size: 12px; color: #4CAF50;">
+                            📊 總瀏覽量: ${formattedPageview}
+                        </div>
+                    `;
+                }
                 
                 console.log('✅ PAGEVIEW顯示已更新:', formattedPageview);
             }
