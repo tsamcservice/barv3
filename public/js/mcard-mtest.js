@@ -2804,15 +2804,19 @@ function shareToInstagram() {
 function copyShareLink() {
   try {
     const formData = getFormData();
-    // 🔧 修正：使用支援中文的編碼方式
-    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
+    
+    // 🔧 修正：生成簡短URL (pageId_userId格式)
+    const pageId = 'M01001';
+    const userId = liffProfile.userId;
+    const shortCode = `${pageId}_${userId}`;
+    
     const currentUrl = window.location.origin;
-    // 修正：使用現有的mcard-mtest.html，並添加特殊參數
-    const shareUrl = `${currentUrl}/mcard-mtest.html?shareData=${shareData}&view=true`;
+    // 🔧 修正：統一指向OG頁面並使用簡短URL
+    const shareUrl = `${currentUrl}/og-card.html?code=${shortCode}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
       alert('📋 分享連結已複製到剪貼簿！');
-      console.log('✅ 分享連結複製成功');
+      console.log('✅ 分享連結複製成功:', shareUrl);
     }).catch(err => {
       console.error('複製失敗:', err);
       // 備用方案：顯示連結讓用戶手動複製

@@ -326,25 +326,53 @@
                 this.init();
             }
             
-            init() {
-                console.log('🎯 OG預覽頁面初始化');
-                this.parseURLParams();
-                this.setupDebugMode();
-                this.loadCardData();
+            async init() {
+                console.log('🚀 初始化OG卡片系統');
+                
+                try {
+                    // 檢查載入方式
+                    if (this.shareData) {
+                        console.log('📥 使用shareData載入');
+                        await this.loadFromShareData();
+                    } else if (this.shortCode) {
+                        console.log('📥 使用簡短編碼載入');
+                        await this.loadFromShortCode();
+                    } else if (this.pageId && this.userId) {
+                        console.log('📥 使用API載入');
+                        await this.loadFromAPI();
+                    } else {
+                        console.log('📋 使用預設資料');
+                        this.useDefaultData();
+                    }
+                    
+                    // 更新OG Meta Tags
+                    this.updateOGMetaTags();
+                    
+                    // 顯示卡片預覽
+                    this.showCardPreview();
+                    
+                    console.log('✅ OG卡片系統初始化完成');
+                    
+                } catch (error) {
+                    console.error('❌ OG卡片系統初始化失敗:', error);
+                    this.showError('載入失敗: ' + error.message);
+                }
             }
             
             parseURLParams() {
                 const urlParams = new URLSearchParams(window.location.search);
+                
+                // 支援多種參數格式
                 this.shareData = urlParams.get('shareData');
-                this.cardId = urlParams.get('cardId');
+                this.pageId = urlParams.get('pageId');
                 this.userId = urlParams.get('userId');
-                this.pageId = urlParams.get('pageId') || 'M01001';
+                this.shortCode = urlParams.get('code'); // 🔧 新增：簡短編碼支援
                 
                 console.log('📋 URL參數解析:', {
                     shareData: !!this.shareData,
-                    cardId: this.cardId,
+                    pageId: this.pageId,
                     userId: this.userId,
-                    pageId: this.pageId
+                    shortCode: this.shortCode
                 });
             }
             
@@ -389,19 +417,34 @@
                 
                 try {
                     // 🔧 修復編碼問題：使用正確的解碼方式
-                    const decodedData = decodeURIComponent(escape(atob(this.shareData)));
-                    this.cardData = JSON.parse(decodedData);
-                    console.log('✅ 成功解析shareData:', this.cardData);
+                    let decodedData;
+                    try {
+                        // 方法1：直接解碼
+                        decodedData = decodeURIComponent(atob(this.shareData));
+                        this.cardData = JSON.parse(decodedData);
+                        console.log('✅ 方法1解碼成功:', this.cardData);
+                    } catch (error1) {
+                        console.log('方法1失敗，嘗試方法2');
+                        try {
+                            // 方法2：先base64解碼再URI解碼
+                            decodedData = atob(decodeURIComponent(this.shareData));
+                            this.cardData = JSON.parse(decodedData);
+                            console.log('✅ 方法2解碼成功:', this.cardData);
+                        } catch (error2) {
+                            console.log('方法2失敗，嘗試方法3');
+                            try {
+                                // 方法3：直接base64解碼
+                                decodedData = atob(this.shareData);
+                                this.cardData = JSON.parse(decodedData);
+                                console.log('✅ 方法3解碼成功:', this.cardData);
+                            } catch (error3) {
+                                throw new Error(`所有解碼方法都失敗: ${error1.message} | ${error2.message} | ${error3.message}`);
+                            }
+                        }
+                    }
                 } catch (error) {
                     console.error('❌ shareData解析失敗:', error);
-                    // 🔧 嘗試備用解碼方式
-                    try {
-                        const decodedData = atob(this.shareData);
-                        this.cardData = JSON.parse(decodedData);
-                        console.log('✅ 備用解碼成功:', this.cardData);
-                    } catch (backupError) {
-                        throw new Error('shareData解析失敗: ' + error.message + ' | 備用解碼也失敗: ' + backupError.message);
-                    }
+                    throw new Error('shareData解析失敗: ' + error.message);
                 }
             }
             
@@ -416,6 +459,32 @@
                     console.log('✅ 成功從API載入:', this.cardData);
                 } else {
                     throw new Error('API載入失敗: ' + (result.error || '未知錯誤'));
+                }
+            }
+            
+            // 🔧 新增：從簡短編碼載入
+            async loadFromShortCode() {
+                console.log('📥 從簡短編碼載入卡片資料:', this.shortCode);
+                
+                try {
+                    // 解析簡短編碼 (格式: pageId_userId)
+                    const [pageId, userId] = this.shortCode.split('_');
+                    
+                    if (!pageId || !userId) {
+                        throw new Error('簡短編碼格式錯誤');
+                    }
+                    
+                    this.pageId = pageId;
+                    this.userId = userId;
+                    
+                    console.log('📋 解析簡短編碼:', { pageId, userId });
+                    
+                    // 使用API載入資料
+                    await this.loadFromAPI();
+                    
+                } catch (error) {
+                    console.error('❌ 簡短編碼解析失敗:', error);
+                    throw new Error('簡短編碼解析失敗: ' + error.message);
                 }
             }
             
@@ -615,16 +684,23 @@
                 
                 // 更新會員資訊區域，加入點數顯示
                 const memberId = document.getElementById('member-id');
-                const originalText = memberId.innerHTML;
-                
-                // 檢查是否已經有統計資訊，避免重複添加
-                if (!originalText.includes('總點數')) {
-                    memberId.innerHTML = `
-                        <div>會員編號: ${this.cardData.amember_id || '呈璽'}</div>
-                        <div style="margin-top: 5px; font-size: 12px; color: #4CAF50;">
-                            💰 總點數: ${formattedPoints}
-                        </div>
-                    `;
+                if (memberId) {
+                    // 檢查是否已經有統計資訊，避免重複添加
+                    const currentContent = memberId.innerHTML;
+                    if (!currentContent.includes('總點數')) {
+                        memberId.innerHTML = `
+                            <div>會員編號: ${this.cardData.amember_id || '呈璽'}</div>
+                            <div style="margin-top: 5px; font-size: 12px; color: #4CAF50;">
+                                💰 總點數: ${formattedPoints}
+                            </div>
+                        `;
+                    } else {
+                        // 如果已有統計資訊，只更新點數部分
+                        memberId.innerHTML = currentContent.replace(
+                            /💰 總點數: \d+/,
+                            `💰 總點數: ${formattedPoints}`
+                        );
+                    }
                 }
                 
                 console.log('✅ 點數顯示已更新:', formattedPoints);
@@ -637,16 +713,23 @@
                 
                 // 更新會員資訊區域，加入PAGEVIEW顯示
                 const memberId = document.getElementById('member-id');
-                const originalText = memberId.innerHTML;
-                
-                // 檢查是否已經有統計資訊，避免重複添加
-                if (!originalText.includes('總瀏覽量')) {
-                    memberId.innerHTML = `
-                        <div>會員編號: ${this.cardData.amember_id || '呈璽'}</div>
-                        <div style="margin-top: 5px; font-size: 12px; color: #4CAF50;">
-                            📊 總瀏覽量: ${formattedPageview}
-                        </div>
-                    `;
+                if (memberId) {
+                    // 檢查是否已經有統計資訊，避免重複添加
+                    const currentContent = memberId.innerHTML;
+                    if (!currentContent.includes('總瀏覽量')) {
+                        memberId.innerHTML = `
+                            <div>會員編號: ${this.cardData.amember_id || '呈璽'}</div>
+                            <div style="margin-top: 5px; font-size: 12px; color: #4CAF50;">
+                                📊 總瀏覽量: ${formattedPageview}
+                            </div>
+                        `;
+                    } else {
+                        // 如果已有統計資訊，只更新PAGEVIEW部分
+                        memberId.innerHTML = currentContent.replace(
+                            /📊 總瀏覽量: \d+/,
+                            `📊 總瀏覽量: ${formattedPageview}`
+                        );
+                    }
                 }
                 
                 console.log('✅ PAGEVIEW顯示已更新:', formattedPageview);
