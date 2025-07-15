@@ -3735,10 +3735,7 @@ async function loadPromoCards() {
       if (sortingManager.userDataLoaded && sortingManager.pendingCardData) {
         console.log('🔄 宣傳卡片載入完成，處理用戶自定義排序');
         await sortingManager.processCardOrder();
-        // 🔧 修復排序問題：排序處理完成後渲染預覽
-        console.log('🎯 排序處理完成，開始渲染預覽');
-        renderPreview();
-        renderShareJsonBox();
+        // 🔧 修復排序問題：SortingSequenceManager.processCardOrder()會處理渲染
       } else if (sortingManager.userDataLoaded && !sortingManager.pendingCardData) {
         console.log('📋 用戶已登入但沒有自定義排序，執行預設初始化');
         initAllCardsSortable();
@@ -5288,17 +5285,29 @@ class SortingSequenceManager {
         console.log('✅ [排序調試] 排序處理成功');
         // 清除暫存資料
         this.pendingCardData = null;
+        // 🔧 修復排序問題：排序處理完成後渲染預覽
+        console.log('🎯 [排序調試] 排序處理完成，開始渲染預覽');
+        renderPreview();
+        renderShareJsonBox();
       } else {
         console.log('❌ [排序調試] 排序處理失敗，將使用預設初始化');
         // 使用預設初始化
         initAllCardsSortable();
         renderPromoCardListSortable();
+        // 🔧 修復排序問題：預設初始化完成後渲染預覽
+        console.log('🎯 [排序調試] 預設初始化完成，開始渲染預覽');
+        renderPreview();
+        renderShareJsonBox();
       }
     } else {
       console.log('⚠️ [排序調試] 沒有可處理的排序資料');
       // 使用預設初始化
       initAllCardsSortable();
       renderPromoCardListSortable();
+      // 🔧 修復排序問題：預設初始化完成後渲染預覽
+      console.log('🎯 [排序調試] 預設初始化完成，開始渲染預覽');
+      renderPreview();
+      renderShareJsonBox();
     }
   }
   
