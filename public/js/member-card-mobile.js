@@ -1,9 +1,9 @@
-// 🚀 手機版會員卡系統 - v20250626-FINAL
-// LIFF ID: 2007327814-DGly5XNk (手機版正式版)
-// 更新日期: 2025-06-26
+// 🚀 手機版會員卡系統 - v20250714-NF-STABLE
+// LIFF ID: 2007327814-DGly5XN (手機版正式版)
+// 更新日期: 2025-07-14
 
 // 版本標識
-const VERSION_TAG = 'MOBILE-v20250626-FINAL';  
+const VERSION_TAG = 'MOBILE-v20250714-NF-STABLE';  
 const IS_MOBILE_VERSION = true;
 
 // 手機版功能開關
@@ -29,7 +29,7 @@ const UNIFIED_LIFF = {
 };
 
 console.log(`🚀 啟動手機版會員卡系統 ${VERSION_TAG}`);
-console.log('📱 LIFF ID:', '2007327814-DGly5XNk');
+console.log('📱 LIFF ID:', '2007327814-DGly5XN');
 
 // 版本標記函數
 function createVersionTag() {
@@ -3362,6 +3362,11 @@ async function loadPromoCards() {
         initAllCardsSortable();
         renderPromoCardListSortable();
       }
+      
+      // 🔧 修復排序問題：宣傳卡片載入完成後渲染預覽
+      console.log('🎯 宣傳卡片載入完成，開始渲染預覽');
+      renderPreview();
+      renderShareJsonBox();
     }
   } catch (e) {
     console.error('載入宣傳卡片失敗', e);

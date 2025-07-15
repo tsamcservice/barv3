@@ -1,9 +1,9 @@
-// 🚀 手機版會員卡系統 - v20250626-FINAL
+// 🚀 手機版會員卡系統 - v20250714-NF-FIXED
 // LIFF ID: 2007327814-OoJBbnwP (MTEST測試版)
-// 更新日期: 2025-06-26
+// 更新日期: 2025-07-14
 
 // 版本標識
-const VERSION_TAG = 'MOBILE-v20250626-FINAL';  
+const VERSION_TAG = 'MTEST-v20250714-NF-FIXED';  
 const IS_MOBILE_VERSION = true;
 
 // 手機版功能開關
@@ -2721,10 +2721,10 @@ function shareToEmail() {
     const formData = getFormData();
     // 🔧 修正：使用支援中文的編碼方式
     const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
-    const emailUrl = `/share-email.html?shareData=${shareData}`;
+    const ogUrl = `/og-card.html?shareData=${shareData}`;
     
-    window.open(emailUrl, '_blank');
-    console.log('📧 開啟EMAIL分享頁面');
+    window.open(ogUrl, '_blank');
+    console.log('📧 開啟OG預覽分享頁面');
   } catch (error) {
     console.error('EMAIL分享失敗:', error);
     alert('EMAIL分享失敗: ' + error.message);
@@ -2736,10 +2736,10 @@ function shareToFacebook() {
     const formData = getFormData();
     // 🔧 修正：使用支援中文的編碼方式
     const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
-    const fbUrl = `/share-facebook.html?shareData=${shareData}`;
+    const ogUrl = `/og-card.html?shareData=${shareData}`;
     
-    window.open(fbUrl, '_blank');
-    console.log('📘 開啟Facebook分享頁面');
+    window.open(ogUrl, '_blank');
+    console.log('📘 開啟OG預覽分享頁面');
   } catch (error) {
     console.error('Facebook分享失敗:', error);
     alert('Facebook分享失敗: ' + error.message);
@@ -2791,10 +2791,10 @@ function shareToInstagram() {
     const formData = getFormData();
     // 🔧 修正：使用支援中文的編碼方式
     const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
-    const igUrl = `/share-instagram.html?shareData=${shareData}`;
+    const ogUrl = `/og-card.html?shareData=${shareData}`;
     
-    window.open(igUrl, '_blank');
-    console.log('📸 開啟Instagram分享頁面');
+    window.open(ogUrl, '_blank');
+    console.log('📸 開啟OG預覽分享頁面');
   } catch (error) {
     console.error('Instagram分享失敗:', error);
     alert('Instagram分享失敗: ' + error.message);
@@ -3735,10 +3735,18 @@ async function loadPromoCards() {
       if (sortingManager.userDataLoaded && sortingManager.pendingCardData) {
         console.log('🔄 宣傳卡片載入完成，處理用戶自定義排序');
         await sortingManager.processCardOrder();
+        // 🔧 修復排序問題：排序處理完成後渲染預覽
+        console.log('🎯 排序處理完成，開始渲染預覽');
+        renderPreview();
+        renderShareJsonBox();
       } else if (sortingManager.userDataLoaded && !sortingManager.pendingCardData) {
         console.log('📋 用戶已登入但沒有自定義排序，執行預設初始化');
         initAllCardsSortable();
         renderPromoCardListSortable();
+        // 🔧 修復排序問題：預設初始化完成後渲染預覽
+        console.log('🎯 預設初始化完成，開始渲染預覽');
+        renderPreview();
+        renderShareJsonBox();
       } else {
         console.log('📋 用戶資料尚未載入，保持現有排序');
         // 🔧 修正：只在完全沒有卡片時才初始化
@@ -3746,10 +3754,18 @@ async function loadPromoCards() {
           console.log('⚠️ 沒有現有卡片，執行預設初始化');
           initAllCardsSortable();
           renderPromoCardListSortable();
+          // 🔧 修復排序問題：預設初始化完成後渲染預覽
+          console.log('🎯 預設初始化完成，開始渲染預覽');
+          renderPreview();
+          renderShareJsonBox();
         } else {
           console.log('✅ 保持現有卡片排序:', allCardsSortable.map(c => c.id));
           // 只更新界面，不改變排序
           renderPromoCardListSortable();
+          // 🔧 修復排序問題：保持現有排序後渲染預覽
+          console.log('🎯 保持現有排序完成，開始渲染預覽');
+          renderPreview();
+          renderShareJsonBox();
         }
       }
     }
@@ -4931,13 +4947,14 @@ async function initGeneralMode() {
     // 立即執行所有並行任務
     await Promise.all(initTasks);
     
+    // 🔧 修復排序問題：移除立即渲染，讓loadPromoCards處理完card_order後再渲染
     // 🚀 優化：檢查預覽頁面是否為活動頁籤
     const activeContent = document.querySelector('.tab-content.active');
     if (activeContent && activeContent.id === 'tab-preview') {
-      console.log('📊 預覽頁面為活動頁籤，立即渲染');
-      // 🚀 移除延遲，立即渲染
-      renderPreview();
-      renderShareJsonBox();
+      console.log('📊 預覽頁面為活動頁籤，等待宣傳卡片載入後再渲染');
+      // 🔧 關鍵修復：不立即渲染，等待宣傳卡片載入完成
+      // renderPreview();
+      // renderShareJsonBox();
     } else {
       // 簡化預覽
       renderMainCardPreview();

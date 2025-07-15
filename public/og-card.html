@@ -1,90 +1,523 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>會員卡預覽</title>
-  <meta property="og:title" content="會員卡預覽">
-  <meta property="og:image" content="https://barv3.vercel.app/uploads/vip/TS-B1.png">
-  <meta property="og:description" content="我的專屬會員卡，立即預覽！">
-  <link rel="stylesheet" href="js/flex2html.css">
-  <script src="js/flex2html.min.js"></script>
-  <style>
-    body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-    .container { max-width: 480px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; padding: 24px; }
-    h1 { text-align: center; color: #4caf50; margin-bottom: 24px; }
-    #main-card-preview { min-height: 320px; }
-    .error { color: #c62828; text-align: center; margin: 32px 0; font-size: 18px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 卡片預覽 - 呈璽元宇宙</title>
+    
+    <!-- 動態OG Meta Tags -->
+    <meta property="og:title" content="🎯 專屬會員卡 - 呈璽元宇宙" id="og-title">
+    <meta property="og:description" content="歡迎來到呈璽元宇宙3D展覽館，體驗獨特的會員卡分享！" id="og-description">
+    <meta property="og:image" content="https://barv3.vercel.app/uploads/vip/TS-LOGO.png" id="og-image">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://barv3.vercel.app/og-card.html" id="og-url">
+    <meta property="og:site_name" content="呈璽元宇宙">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="🎯 專屬會員卡 - 呈璽元宇宙" id="twitter-title">
+    <meta name="twitter:description" content="歡迎來到呈璽元宇宙3D展覽館，體驗獨特的會員卡分享！" id="twitter-description">
+    <meta name="twitter:image" content="https://barv3.vercel.app/uploads/vip/TS-LOGO.png" id="twitter-image">
+    
+    <!-- 其他Meta Tags -->
+    <meta name="description" content="呈璽元宇宙3D展覽館 - 專屬會員卡分享平台">
+    <meta name="keywords" content="呈璽,元宇宙,3D展覽,會員卡,分享">
+    <meta name="author" content="呈璽元宇宙">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+            position: relative;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card-preview {
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .card-image {
+            width: 200px;
+            height: 200px;
+            border-radius: 15px;
+            object-fit: cover;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 3px solid #4CAF50;
+        }
+        
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .card-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        
+        .member-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .member-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .member-id {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .share-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .share-btn.line {
+            background: #00C300;
+            color: white;
+        }
+        
+        .share-btn.email {
+            background: #EA4335;
+            color: white;
+        }
+        
+        .share-btn.facebook {
+            background: #1877F2;
+            color: white;
+        }
+        
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            color: #f44336;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            display: none;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .card-preview {
+                padding: 20px 15px;
+            }
+            
+            .card-image {
+                width: 150px;
+                height: 150px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>會員卡預覽</h1>
-    <div id="main-card-preview"></div>
-    <div id="errorBox" class="error" style="display:none;"></div>
-  </div>
-  <script>
-    function getQueryParam(name) {
-      const url = new URL(window.location.href);
-      return url.searchParams.get(name);
-    }
-    async function safeFetchJson(url) {
-      const res = await fetch(url);
-      const text = await res.text();
-      try { return JSON.parse(text); } catch (e) { return { success: false, error: 'API 回傳非 JSON', raw: text }; }
-    }
-    function formatPageview(val) { return String(val || 0).padStart(4, '0'); }
-    async function renderCardPreview() {
-      const pageId = getQueryParam('pageId');
-      const userId = getQueryParam('userId');
-      const preview = document.getElementById('main-card-preview');
-      const errorBox = document.getElementById('errorBox');
-      preview.innerHTML = '';
-      errorBox.style.display = 'none';
-      if (!pageId) {
-        errorBox.textContent = '請帶入 pageId 參數';
-        errorBox.style.display = '';
-        return;
-      }
-      let flexJson = null;
-      let cardAltTitle = '';
-      if (userId) {
-        // 查詢個人卡片
-        const apiUrl = `/api/cards?pageId=${pageId}&userId=${userId}`;
-        const result = await safeFetchJson(apiUrl);
-        flexJson = result?.data?.[0]?.flex_json;
-        cardAltTitle = result?.data?.[0]?.card_alt_title || '';
-      } else {
-        // 查詢初始卡片
-        const result = await safeFetchJson(`/api/cards?pageId=${pageId}`);
-        const defaultCard = Array.isArray(result?.data) ? result.data.find(card => !card.line_user_id) : null;
-        flexJson = defaultCard?.flex_json;
-        cardAltTitle = defaultCard?.card_alt_title || '';
-      }
-      if (!flexJson) {
-        errorBox.textContent = '查無卡片資料';
-        errorBox.style.display = '';
-        return;
-      }
-      // 若 pageview 欄位存在，補零
-      if (flexJson.body && flexJson.body.contents) {
-        flexJson.body.contents.forEach(c => {
-          if (c.type === 'box' && c.contents) {
-            c.contents.forEach(cc => {
-              if (cc.type === 'text' && cc.text && !isNaN(cc.text)) {
-                cc.text = formatPageview(cc.text);
-              }
-            });
-          }
-        });
-      }
-      flex2html('main-card-preview', flexJson);
-      if (cardAltTitle) {
-        document.title = cardAltTitle + ' - 會員卡預覽';
-        document.querySelector('h1').textContent = cardAltTitle;
-      }
-    }
-    window.onload = renderCardPreview;
-  </script>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 專屬會員卡</h1>
+            <p>呈璽元宇宙3D展覽館</p>
+        </div>
+        
+        <div class="card-preview" id="card-preview">
+            <img src="https://barv3.vercel.app/uploads/vip/TS-LOGO.png" alt="會員卡預覽" class="card-image" id="card-image">
+            <div class="card-title" id="card-title">歡迎來到呈璽元宇宙</div>
+            <div class="card-description" id="card-description">體驗獨特的3D展覽館會員卡分享功能</div>
+            
+            <div class="member-info">
+                <div class="member-name" id="member-name">呈璽會員</div>
+                <div class="member-id" id="member-id">會員編號: 呈璽</div>
+            </div>
+            
+            <div class="share-buttons">
+                <button class="share-btn line" onclick="shareToLine()">
+                    📱 分享到LINE
+                </button>
+                <button class="share-btn email" onclick="shareToEmail()">
+                    📧 分享到EMAIL
+                </button>
+                <button class="share-btn facebook" onclick="shareToFacebook()">
+                    📘 分享到Facebook
+                </button>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>載入卡片資料中...</p>
+        </div>
+        
+        <div class="error" id="error">
+            <p>❌ 載入失敗</p>
+            <p id="error-message">無法載入卡片資料</p>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 呈璽元宇宙. 保留所有權利.</p>
+        </div>
+    </div>
+    
+    <div class="debug-info" id="debug-info">
+        <strong>Debug 資訊:</strong><br>
+        <span id="debug-content"></span>
+    </div>
+    
+    <script>
+        // 🔧 修復排序問題：OG預覽頁面核心邏輯
+        class OGPreviewManager {
+            constructor() {
+                this.cardData = null;
+                this.debugMode = false;
+                this.init();
+            }
+            
+            init() {
+                console.log('🎯 OG預覽頁面初始化');
+                this.parseURLParams();
+                this.setupDebugMode();
+                this.loadCardData();
+            }
+            
+            parseURLParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                this.shareData = urlParams.get('shareData');
+                this.cardId = urlParams.get('cardId');
+                this.userId = urlParams.get('userId');
+                this.pageId = urlParams.get('pageId') || 'M01001';
+                
+                console.log('📋 URL參數解析:', {
+                    shareData: !!this.shareData,
+                    cardId: this.cardId,
+                    userId: this.userId,
+                    pageId: this.pageId
+                });
+            }
+            
+            setupDebugMode() {
+                // 開發模式：按F12顯示調試資訊
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'F12') {
+                        this.debugMode = !this.debugMode;
+                        document.getElementById('debug-info').style.display = this.debugMode ? 'block' : 'none';
+                        console.log('🔧 Debug模式:', this.debugMode ? '開啟' : '關閉');
+                    }
+                });
+            }
+            
+            async loadCardData() {
+                try {
+                    this.showLoading();
+                    
+                    if (this.shareData) {
+                        // 從shareData載入
+                        await this.loadFromShareData();
+                    } else if (this.cardId && this.userId) {
+                        // 從API載入
+                        await this.loadFromAPI();
+                    } else {
+                        // 使用預設資料
+                        this.useDefaultData();
+                    }
+                    
+                    this.updateOGMetaTags();
+                    this.hideLoading();
+                    this.showCardPreview();
+                    
+                } catch (error) {
+                    console.error('❌ 載入卡片資料失敗:', error);
+                    this.showError('載入卡片資料失敗: ' + error.message);
+                }
+            }
+            
+            async loadFromShareData() {
+                console.log('📥 從shareData載入卡片資料');
+                
+                try {
+                    const decodedData = atob(this.shareData);
+                    this.cardData = JSON.parse(decodedData);
+                    console.log('✅ 成功解析shareData:', this.cardData);
+                } catch (error) {
+                    throw new Error('shareData解析失敗: ' + error.message);
+                }
+            }
+            
+            async loadFromAPI() {
+                console.log('📥 從API載入卡片資料');
+                
+                const response = await fetch(`/api/cards?pageId=${this.pageId}&userId=${this.userId}`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    this.cardData = result.data;
+                    console.log('✅ 成功從API載入:', this.cardData);
+                } else {
+                    throw new Error('API載入失敗: ' + (result.error || '未知錯誤'));
+                }
+            }
+            
+            useDefaultData() {
+                console.log('📋 使用預設卡片資料');
+                this.cardData = {
+                    main_title_1: '歡迎來到呈璽元宇宙',
+                    main_title_2: '3D展覽館',
+                    display_name: '呈璽會員',
+                    amember_id: '呈璽',
+                    main_image_url: 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png',
+                    member_image_url: 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png'
+                };
+            }
+            
+            updateOGMetaTags() {
+                if (!this.cardData) return;
+                
+                const title = this.cardData.main_title_1 || '專屬會員卡';
+                const description = this.cardData.main_title_2 || '呈璽元宇宙3D展覽館';
+                const image = this.cardData.main_image_url || 'https://barv3.vercel.app/uploads/vip/TS-LOGO.png';
+                const url = window.location.href;
+                
+                // 更新OG Meta Tags
+                document.getElementById('og-title').setAttribute('content', title);
+                document.getElementById('og-description').setAttribute('content', description);
+                document.getElementById('og-image').setAttribute('content', image);
+                document.getElementById('og-url').setAttribute('content', url);
+                
+                // 更新Twitter Card
+                document.getElementById('twitter-title').setAttribute('content', title);
+                document.getElementById('twitter-description').setAttribute('content', description);
+                document.getElementById('twitter-image').setAttribute('content', image);
+                
+                // 更新頁面標題
+                document.title = title + ' - 呈璽元宇宙';
+                
+                console.log('✅ OG Meta Tags已更新:', { title, description, image, url });
+            }
+            
+            showCardPreview() {
+                if (!this.cardData) return;
+                
+                // 更新卡片圖片
+                const cardImage = document.getElementById('card-image');
+                if (this.cardData.main_image_url) {
+                    cardImage.src = this.cardData.main_image_url;
+                }
+                
+                // 更新卡片標題
+                const cardTitle = document.getElementById('card-title');
+                cardTitle.textContent = this.cardData.main_title_1 || '歡迎來到呈璽元宇宙';
+                
+                // 更新卡片描述
+                const cardDescription = document.getElementById('card-description');
+                cardDescription.textContent = this.cardData.main_title_2 || '體驗獨特的3D展覽館會員卡分享功能';
+                
+                // 更新會員資訊
+                const memberName = document.getElementById('member-name');
+                memberName.textContent = this.cardData.display_name || '呈璽會員';
+                
+                const memberId = document.getElementById('member-id');
+                memberId.textContent = '會員編號: ' + (this.cardData.amember_id || '呈璽');
+                
+                console.log('✅ 卡片預覽已更新');
+            }
+            
+            showLoading() {
+                document.getElementById('card-preview').style.display = 'none';
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+            }
+            
+            hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+            }
+            
+            showCardPreview() {
+                document.getElementById('card-preview').style.display = 'block';
+            }
+            
+            showError(message) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('card-preview').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error-message').textContent = message;
+            }
+            
+            updateDebugInfo() {
+                if (!this.debugMode) return;
+                
+                const debugContent = document.getElementById('debug-content');
+                debugContent.innerHTML = `
+                    shareData: ${!!this.shareData}<br>
+                    cardId: ${this.cardId || '無'}<br>
+                    userId: ${this.userId || '無'}<br>
+                    pageId: ${this.pageId}<br>
+                    cardData: ${this.cardData ? '已載入' : '無'}<br>
+                    時間: ${new Date().toLocaleTimeString()}
+                `;
+            }
+        }
+        
+        // 分享功能
+        function shareToLine() {
+            const shareUrl = `https://liff.line.me/2007327814-OoJBbnwP?pageId=${ogManager.pageId}${ogManager.userId ? '&userId=' + ogManager.userId : ''}`;
+            window.open(shareUrl, '_blank');
+        }
+        
+        function shareToEmail() {
+            const subject = encodeURIComponent('🎯 呈璽元宇宙會員卡分享');
+            const body = encodeURIComponent(`歡迎來到呈璽元宇宙3D展覽館！\n\n查看我的專屬會員卡：\n${window.location.href}`);
+            window.open(`mailto:?subject=${subject}&body=${body}`);
+        }
+        
+        function shareToFacebook() {
+            const url = encodeURIComponent(window.location.href);
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+        }
+        
+        // 初始化
+        const ogManager = new OGPreviewManager();
+        
+        // 定期更新調試資訊
+        setInterval(() => {
+            ogManager.updateDebugInfo();
+        }, 1000);
+        
+        console.log('🚀 OG預覽頁面已載入');
+    </script>
 </body>
 </html> 
