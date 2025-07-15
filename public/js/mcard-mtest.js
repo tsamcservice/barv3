@@ -1,9 +1,9 @@
-// 🚀 手機版會員卡系統 - v20250714-NF-FIXED-V3
+// 🚀 手機版會員卡系統 - v20250715-FINAL
 // LIFF ID: 2007327814-OoJBbnwP (MTEST測試版)
-// 更新日期: 2025-07-14
+// 更新日期: 2025-07-15
 
 // 版本標識
-const VERSION_TAG = 'MTEST-v20250714-NF-FIXED-V3';  
+const VERSION_TAG = 'MTEST-v20250715-FINAL';  
 const IS_MOBILE_VERSION = true;
 
 // 手機版功能開關
