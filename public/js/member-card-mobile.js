@@ -3,7 +3,7 @@
 // 更新日期: 2025-07-15
 
 // 版本標識
-const VERSION_TAG = 'MTEST-v20250715-FINAL';  
+const VERSION_TAG = 'MOBILE-v20250717-FINAL';  
 const IS_MOBILE_VERSION = true;
 
 // 手機版功能開關
