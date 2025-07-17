@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>我專屬的會員卡片 (手機版)</title>
-    <link rel="stylesheet" href="css/style.css?v=20250626">
-    <link rel="stylesheet" href="js/flex2html.css?v=20250626">
+    <title>專屬會員分享卡 (手機版)</title>
+            <link rel="stylesheet" href="css/style.css?v=20250627i">
+    <link rel="stylesheet" href="js/flex2html.css?v=20250627f">
     <script src="js/flex2html.min.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -26,28 +26,24 @@
             height: 100%;
         }
         
-        /* 🔄 修改：單欄垂直布局 - 全屏模式 */
+        /* 🔄 修改：單欄垂直布局 - 徹底統一寬度 */
         .container { 
-            max-width: 100%;
-            margin: 0;
-            padding: 0 8px;
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
             min-height: 100vh;
+            box-sizing: border-box !important;
         }
         
-        /* 📱 手機版優化 - 全屏模式 */
+        /* 📱 手機版優化 - 徹底統一寬度 */
         @media (max-width: 768px) {
             .container {
-                margin: 0;
-                padding: 0 4px;
+                margin: 0 !important;
+                padding: 0 !important;
                 min-height: 100vh;
-            }
-            
-            .form-section,
-            .promo-section,
-            .preview-section {
-                margin-bottom: 8px;
-                padding: 12px;
-                border-radius: 4px;
+                width: 100% !important;
+                max-width: 100% !important;
             }
             
             .section-title {
@@ -72,15 +68,39 @@
             }
         }
         
-        /* 🔄 修改：統一的區塊樣式 */
+        /* 🔄 修改：統一的區塊樣式 - 徹底強制確保所有頁面寬度一致 */
         .form-section,
         .promo-section,
         .preview-section { 
-            background: #fff; 
-            padding: 24px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 24px;
+            background: #fff !important; 
+            padding: 24px !important; 
+            border-radius: 8px !important; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            margin: 0 8px 24px 8px !important;
+            width: calc(100% - 16px) !important;
+            max-width: calc(100% - 16px) !important;
+            min-width: calc(100% - 16px) !important;
+            box-sizing: border-box !important;
+            position: relative !important;
+            left: 0 !important;
+            right: 0 !important;
+        }
+        
+        /* 📱 手機版統一寬度設定 - 徹底強制一致 */
+        @media (max-width: 768px) {
+            .form-section,
+            .promo-section,
+            .preview-section {
+                padding: 12px !important;
+                margin: 0 8px 8px 8px !important;
+                width: calc(100% - 16px) !important;
+                max-width: calc(100% - 16px) !important;
+                min-width: calc(100% - 16px) !important;
+                box-sizing: border-box !important;
+                position: relative !important;
+                left: 0 !important;
+                right: 0 !important;
+            }
         }
         
         .form-group { 
@@ -108,12 +128,22 @@
             box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
         }
         
-        /* 🎨 宣傳卡片區塊樣式 */
-        .promo-list { 
+        /* 🎨 宣傳卡片區塊樣式 - 基礎設定 */
+        .promo-selector .promo-list { 
             display: flex; 
             gap: 8px; 
             margin-top: 16px;
-            flex-wrap: wrap;
+            overflow-x: auto;
+            overflow-y: visible;
+            flex-wrap: nowrap;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .promo-selector .promo-card-thumb {
+            flex-shrink: 0;
+            width: 120px;
+            height: 160px;
         }
         .promo-card-thumb { 
             border: 2px solid #ddd; 
@@ -163,12 +193,91 @@
         }
         
         .promo-selector {
-            max-height: 200px;
-            overflow-y: auto;
+            max-height: 280px;
+            overflow-y: visible;
             margin-bottom: 16px;
             border: 1px solid #e0e0e0;
             border-radius: 4px;
             padding: 8px;
+            background: #fafafa;
+        }
+        
+        /* 🔧 修正：讓選擇器區域與排序區一致 */
+        #promo-card-selector {
+            gap: 8px;
+            margin-top: 16px;
+            overflow-x: auto;
+            overflow-y: visible;
+            flex-wrap: nowrap;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+        }
+        
+        /* 🔧 修正Toggle按鈕功能：使用屬性選擇器精確控制 */
+        #promo-card-selector[style*="display: block"] {
+            display: flex !important;
+        }
+        
+        #promo-card-selector[style*="display: none"] {
+            display: none !important;
+        }
+        
+        /* 🔧 預設隱藏狀態 */
+        #promo-card-selector {
+            display: none;
+        }
+        
+        /* 🔧 選擇器卡片優化：圖片限制在框內，高度調整為220px */
+        #promo-card-selector .promo-card-thumb-select {
+            flex-shrink: 0;
+            width: 120px;
+            height: 220px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 🔧 選擇器卡片內圖片限制 - 調整圖片高度 */
+        #promo-card-selector .promo-card-thumb-select img {
+            width: 100%;
+            height: auto;
+            max-height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        
+        /* 🔧 確保"已加入"等文字完全可見 */
+        #promo-card-selector .promo-card-thumb-select p,
+        #promo-card-selector .promo-card-thumb-select small {
+            margin: 4px 2px !important;
+            line-height: 1.2 !important;
+            font-size: 10px !important;
+            padding: 2px !important;
+        }
+        
+        #promo-card-selector .promo-card-thumb-select:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        #promo-card-selector .promo-card-thumb-select.selected {
+            border-color: #4caf50;
+            box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+        }
+        
+        /* 📱 手機版選擇器滑動優化 */
+        @media (max-width: 768px) {
+            #promo-card-selector {
+                padding: 0 4px 8px 4px;
+                margin: 16px -4px 0 -4px;
+            }
         }
         
         .promo-selected {
@@ -180,22 +289,83 @@
             background: #fafafa;
         }
         
-        /* 位置標籤樣式 */
+        /* 位置標籤樣式 - 與卡片寬度對齊 */
         .position-labels {
             display: flex;
-            justify-content: space-between;
+            gap: 8px;
             margin: 8px 0;
-            padding: 0 20px;
+            padding: 0 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
         }
         
         .position-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
             font-weight: bold;
             background: #e8f5e8;
-            padding: 4px 8px;
-            border-radius: 12px;
+            padding: 3px 6px;
+            border-radius: 10px;
             border: 1px solid #4caf50;
+            flex-shrink: 0;
+            width: 120px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        
+        /* 📱 附加活動卡橫向滑動功能 */
+        .promo-list {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            overflow-x: auto;
+            overflow-y: visible;
+            flex-wrap: nowrap;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .promo-list .promo-card-thumb {
+            flex-shrink: 0;
+            width: 120px;
+            height: 160px;
+        }
+        
+        /* 📱 手機版滑動優化 */
+        @media (max-width: 768px) {
+            .promo-list {
+                padding: 0 4px 8px 4px;
+                margin: 16px -4px 0 -4px;
+            }
+            
+            .position-labels {
+                padding: 0 8px;
+                margin: 8px -4px;
+            }
+        }
+        
+        /* 🎯 點數通知動畫 */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
         
         /* 💻 預覽區域樣式優化 */
@@ -604,13 +774,13 @@
         }
         
         .tab-text {
-            font-size: 15px;
+            font-size: 16px !important;
             font-weight: 600;
             line-height: 1.2;
         }
         
-        /* 🔧 手機版頁籤響應式優化 */
-        @media (max-width: 480px) {
+        /* 🔧 手機版頁籤響應式優化 - 強制設定 */
+        @media (max-width: 768px) {
             .tab-btn {
                 padding: 16px 4px;
             }
@@ -621,7 +791,15 @@
             }
             
             .tab-text {
-                font-size: 13px;
+                font-size: 22px !important;
+                font-weight: 600;
+            }
+        }
+        
+        /* 📱 專門針對手機設備的優化 */
+        @media (max-width: 480px) {
+            .tab-text {
+                font-size: 20px !important;
                 font-weight: 600;
             }
         }
@@ -854,26 +1032,20 @@
     </style>
 </head>
 <body>
-    <!-- 🆕 設備指示器 -->
-    <div class="device-indicator" id="deviceIndicator">
-        載入中...
-    </div>
+    <!-- 移除右上角用戶信息和左上角設備指示器，將移到版權區 -->
     
-    <div style="position:fixed;top:0;right:0;z-index:1000;padding:12px 24px 0 0;text-align:right;">
-        <span id="liffUserInfo" style="display:inline-flex;align-items:center;gap:8px;"></span>
+    <!-- 🎯 主標題與用戶資訊區 - 左對齊避免重疊 -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin: 24px 16px 0 16px; min-height: 40px; gap: 8px;">
+        <h1 style="text-align:left; margin:0; flex: 0 1 auto; font-size: clamp(14px, 3.5vw, 20px); line-height: 1.2; max-width: calc(100% - 80px);">📱 專屬會員分享卡 (手機版)</h1>
+        <div style="flex: 0 0 auto; min-width: 70px; text-align: right;">
+            <div class="liff-user" id="liffUser"></div>
+        </div>
     </div>
-    
-    <h1 style="text-align:center; margin-top:24px;">📱 我專屬的會員卡片 (手機版)</h1>
-    <div style="text-align:center; margin-bottom:20px; color:#666; font-size:14px;">
-        🚀 LIFF ID: 2007327814-DGly5XNk | 版本: v20250624
-    </div>
-    
-
     
     <div class="container">
         <!-- 📱 手機版頁籤導航 -->
         <div class="mobile-tabs">
-            <button class="tab-btn active" data-tab="text-image">
+            <button class="tab-btn" data-tab="text-image">
                 <div class="tab-icon">📝</div>
                 <div class="tab-text">卡片編輯</div>
             </button>
@@ -881,16 +1053,15 @@
                 <div class="tab-icon">🎨</div>
                 <div class="tab-text">附加活動卡</div>
             </button>
-            <button class="tab-btn" data-tab="preview">
+            <button class="tab-btn active" data-tab="preview">
                 <div class="tab-icon">👀</div>
                 <div class="tab-text">預覽及分享</div>
             </button>
         </div>
 
         <!-- 📝 第一頁：文字圖片區 -->
-        <div class="tab-content active" id="tab-text-image">
+        <div class="tab-content" id="tab-text-image">
             <div class="form-section">
-                <div class="liff-user" id="liffUser"></div>
                 <form id="cardForm">
                     <div class="form-group">
                         <label>卡片預覽標題 <span style="color:#999;font-size:12px;font-weight:normal;">（未開啟卡片前，在LINE顯示的文字訊息，內為主標題/會員名字）</span></label>
@@ -1034,14 +1205,19 @@
                 <div class="promo-selector">
                     <div id="promo-card-selector" class="promo-list" style="display:none;"></div>
                 </div>
+                
+                <!-- 📱 排序提示移動到兩個區塊之間 -->
+                <div class="promo-sort-hint" style="text-align: center; margin: 8px 0; padding: 4px 8px; background: #f0f8f0; border-radius: 4px; font-size: 12px; color: #666;">
+                    📱 按卡片下方箭頭左右排序
+                </div>
+                
                 <div class="promo-selected">
-                    <div class="promo-hint">📱 按卡片下方箭頭左右排序</div>
                     <div class="position-labels">
-                        <span class="position-label">位置1</span>
-                        <span class="position-label">位置2</span>
-                        <span class="position-label">位置3</span>
-                        <span class="position-label">位置4</span>
-                        <span class="position-label">位置5</span>
+                        <span class="position-label" id="position-label-1">位置1(+80%)</span>
+                        <span class="position-label" id="position-label-2">位置2(+50%)</span>
+                        <span class="position-label" id="position-label-3">位置3(+30%)</span>
+                        <span class="position-label" id="position-label-4">位置4(+10%)</span>
+                        <span class="position-label" id="position-label-5">位置5(+0%)</span>
                     </div>
                     <div id="promo-cards" class="promo-list"></div>
                 </div>
@@ -1049,7 +1225,7 @@
         </div>
 
         <!-- 👀 第三頁：卡片預覽區 -->
-        <div class="tab-content" id="tab-preview">
+        <div class="tab-content active" id="tab-preview">
             <div class="preview-section">
                 <div class="preview-actions">
                     <button type="button" onclick="shareToLine()" class="action-btn share-btn">
@@ -1060,13 +1236,84 @@
                     </button>
                 </div>
                 
+                <!-- 🆕 多平台分享圖示區域 -->
+                <div class="multi-platform-share" style="margin-top: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    <h4 style="margin: 0 0 16px 0; font-size: 14px; color: #555; text-align: center;">
+                        📤 多平台分享
+                    </h4>
+                    <div class="platform-icons" style="display: flex; justify-content: space-around; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <!-- 社交分享功能暫時隱藏 - 等待功能強化 -->
+                        <button type="button" onclick="shareToEmail()" class="platform-icon-btn email-btn" style="width: 48px; height: 48px; border-radius: 8px; border: none; background: #EA4335; color: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(234, 67, 53, 0.3); display: none; align-items: center; justify-content: center;" title="EMAIL分享(開發中)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="shareToFacebook()" class="platform-icon-btn facebook-btn" style="width: 48px; height: 48px; border-radius: 8px; border: none; background: #1877F2; color: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3); display: none; align-items: center; justify-content: center;" title="Facebook分享(開發中)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="shareToWhatsApp()" class="platform-icon-btn whatsapp-btn" style="width: 48px; height: 48px; border-radius: 8px; border: none; background: #25D366; color: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3); display: none; align-items: center; justify-content: center;" title="WhatsApp分享(開發中)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.488"/>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="shareToTelegram()" class="platform-icon-btn telegram-btn" style="width: 48px; height: 48px; border-radius: 8px; border: none; background: #0088CC; color: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 136, 204, 0.3); display: none; align-items: center; justify-content: center;" title="Telegram分享(開發中)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.820 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="shareToInstagram()" class="platform-icon-btn instagram-btn" style="width: 48px; height: 48px; border-radius: 8px; border: none; background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); color: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(188, 24, 136, 0.3); display: none; align-items: center; justify-content: center;" title="Instagram分享(開發中)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="copyShareLink()" class="platform-icon-btn copy-btn" style="width: 48px; height: 48px; border-radius: 8px; border: none; background: #28A745; color: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3); display: none; align-items: center; justify-content: center;" title="複製連結(開發中)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div style="margin-top: 8px; text-align: center; font-size: 11px; color: #888;">
+                        點擊圖示即可分享到各平台
+                    </div>
+                </div>
+                
+                <!-- 🎨 CSS動畫效果 -->
+                <style>
+                .platform-icon-btn:hover {
+                    transform: scale(1.1);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+                }
+                .platform-icon-btn:active {
+                    transform: scale(0.95);
+                }
+                </style>
+                
                 <div class="preview-container">
+                    <!-- 🔄 載入提示區域 -->
+                    <div id="preview-loading" style="display: none; text-align: center; padding: 40px 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+                        <div style="margin-bottom: 16px;">
+                            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #4caf50; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        </div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 8px;">正在載入您的會員卡...</div>
+                        <div style="font-size: 12px; color: #999;">整合附加活動卡片與排序資料中</div>
+                    </div>
+                    
                     <div id="main-card-preview">
                         <div class="chatbox">
                             <!-- flex2html內容將插入這裡 -->
                         </div>
                     </div>
                 </div>
+                
+                <!-- 🔄 載入動畫CSS -->
+                <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                </style>
                 
                 <!-- JSON資料區域 -->
                 <div class="json-section">
@@ -1091,6 +1338,28 @@
             </div>
         </div>
     </div>
+    
+    <!-- 版權資訊區域 -->
+    <footer style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-top: 1px solid #e0e0e0; text-align: center;">
+        <div style="color: #666; font-size: 12px; line-height: 1.5;">
+            <div style="margin-bottom: 8px;">
+                <strong>📱 專屬會員分享卡系統</strong>
+            </div>
+            <div style="margin-bottom: 4px;">
+                🚀 LIFF ID: 2007327814-DGly5XN | 版本: v20250704-STABLE
+            </div>
+            <div style="margin-bottom: 4px;">
+                📅 更新日期: 2025-06-26 | 手機版正式版
+            </div>
+            <div style="margin-bottom: 8px;">
+                <span id="deviceIndicator" style="background: rgba(76, 175, 80, 0.9); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">載入中...</span>
+                <span id="liffUserInfo" style="margin-left: 8px; color: #666;"></span>
+            </div>
+            <div style="font-size: 11px; color: #999;">
+                © 2025 專屬會員分享卡系統 - 快速分享，精準行銷
+            </div>
+        </div>
+    </footer>
     
     <script src="js/member-card-mobile.js"></script>
 </body>

@@ -1,9 +1,9 @@
-// 🚀 手機版會員卡系統 - v20250626-FINAL
-// LIFF ID: 2007327814-DGly5XNk (手機版正式版)
-// 更新日期: 2025-06-26
+// 🚀 手機版會員卡系統 - v20250715-FINAL
+// LIFF ID: 2007327814-DGly5XNk (MOBILE正式版)
+// 更新日期: 2025-07-15
 
 // 版本標識
-const VERSION_TAG = 'MOBILE-v20250626-FINAL';  
+const VERSION_TAG = 'MTEST-v20250715-FINAL';  
 const IS_MOBILE_VERSION = true;
 
 // 手機版功能開關
@@ -146,8 +146,16 @@ async function handleAutoShareMode() {
   const pageId = getQueryParam('pageId');
   const userId = getQueryParam('userId');
   const bridgeShare = getQueryParam('bridgeShare');
+  const shareData = getQueryParam('shareData'); // 🆕 支援從其他編輯器接收資料
   
-  console.log('🔍 檢查自動分享模式:', { pageId, userId, bridgeShare: !!bridgeShare });
+  console.log('🔍 檢查自動分享模式:', { pageId, userId, bridgeShare: !!bridgeShare, shareData: !!shareData });
+  
+  // 🆕 支援從獨立編輯器接收shareData
+  if (shareData) {
+    console.log('📥 從獨立編輯器接收卡片資料');
+    await handleShareDataFromEditor(shareData);
+    return true;
+  }
   
   // 🆕 橋接分享模式檢測
   if (bridgeShare && MOBILE_FEATURES.bridgeShare) {
@@ -163,6 +171,192 @@ async function handleAutoShareMode() {
   }
   
   return false;
+}
+
+// 🆕 處理來自獨立編輯器的分享資料
+async function handleShareDataFromEditor(shareDataParam) {
+  try {
+    console.log('📥 解析獨立編輯器分享資料...');
+    
+    // 解碼base64資料
+    let cardData;
+    try {
+      const decodedData = atob(shareDataParam);
+      cardData = JSON.parse(decodedData);
+      console.log('✅ 成功解析卡片資料:', cardData);
+    } catch (e) {
+      throw new Error('卡片資料解析失敗');
+    }
+    
+    // 顯示載入狀態
+    showShareDataLoading();
+    
+    // 填入表單資料
+    fillFormWithEditorData(cardData);
+    
+    // 立即更新預覽
+    renderPreview();
+    
+    // 切換到預覽頁面
+    switchTab('preview');
+    
+    // 隱藏載入狀態
+    hideShareDataLoading();
+    
+    // 顯示來源提示
+    showShareDataSuccess();
+    
+    // 🆕 3秒後自動執行分享
+    setTimeout(async () => {
+      console.log('🚀 自動執行LINE分享...');
+      await shareToLine();
+    }, 3000);
+    
+  } catch (error) {
+    console.error('❌ 處理獨立編輯器資料失敗:', error);
+    hideShareDataLoading();
+    showShareDataError(error.message);
+  }
+}
+
+// 填入來自獨立編輯器的表單資料
+function fillFormWithEditorData(cardData) {
+  console.log('📝 填入獨立編輯器資料到表單...');
+  
+  // 基本資料映射
+  const fieldMapping = {
+    'main_title_1': 'main_title_1',
+    'main_title_2': 'main_title_2', 
+    'display_name': 'display_name',
+    'main_image_url': 'main_image_url',
+    'member_image_url': 'member_image_url',
+    'button_1_text': 'button_1_text',
+    'button_1_url': 'button_1_url'
+  };
+  
+  // 填入對應欄位
+  Object.keys(fieldMapping).forEach(editorField => {
+    const formField = fieldMapping[editorField];
+    const value = cardData[editorField];
+    
+    if (value) {
+      const element = document.getElementById(formField);
+      if (element) {
+        element.value = value;
+        console.log(`✅ 設定 ${formField}:`, value);
+      }
+    }
+  });
+  
+  // 預設值設定
+  document.getElementById('s_button_text').value = '分享卡片';
+  
+  console.log('✅ 表單資料填入完成');
+}
+
+// 顯示shareData載入狀態
+function showShareDataLoading() {
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'shareDataLoading';
+  loadingDiv.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(76, 175, 80, 0.95);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+  
+  loadingDiv.innerHTML = `
+    <div style="margin-bottom: 16px;">
+      <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    </div>
+    <h3 style="margin: 0 0 10px 0;">📥 載入編輯器資料</h3>
+    <p style="margin: 0;">正在處理您的卡片資料...</p>
+  `;
+  
+  document.body.appendChild(loadingDiv);
+}
+
+// 隱藏shareData載入狀態
+function hideShareDataLoading() {
+  const loadingDiv = document.getElementById('shareDataLoading');
+  if (loadingDiv) {
+    loadingDiv.remove();
+  }
+}
+
+// 顯示shareData成功提示
+function showShareDataSuccess() {
+  const successDiv = document.createElement('div');
+  successDiv.id = 'shareDataSuccess';
+  successDiv.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(76, 175, 80, 0.95);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+  
+  successDiv.innerHTML = `
+    ✅ 已載入快速編輯器資料，3秒後自動分享到LINE
+  `;
+  
+  document.body.appendChild(successDiv);
+  
+  // 6秒後自動隱藏
+  setTimeout(() => {
+    if (successDiv.parentElement) {
+      successDiv.remove();
+    }
+  }, 6000);
+}
+
+// 顯示shareData錯誤提示
+function showShareDataError(errorMessage) {
+  const errorDiv = document.createElement('div');
+  errorDiv.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(244, 67, 54, 0.95);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+  
+  errorDiv.innerHTML = `
+    <h3 style="margin: 0 0 10px 0;">❌ 載入失敗</h3>
+    <p style="margin: 0 0 15px 0;">${errorMessage}</p>
+    <button onclick="this.parentElement.remove()" style="
+      background: white;
+      color: #f44336;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    ">確定</button>
+  `;
+  
+  document.body.appendChild(errorDiv);
 }
 
 // 🆕 橋接分享處理
@@ -718,14 +912,14 @@ const defaultCard = {
   button_1_url: 'https://lin.ee/JLLIBlP',
   button_1_color: '#A4924A', // 按鈕顏色 
   s_button_text: '分享給好友',
-      s_button_url: 'https://liff.line.me/2007327814-DGly5XNk?pageId=M01001', // 🚀 手機版正式版 LIFF+頁面ID
+              s_button_url: 'https://liff.line.me/2007327814-DGly5XNk?pageId=M01001', // 🚀 MOBILE正式版 LIFF+頁面ID
   s_button_color: '#A4924B',
   card_alt_title: '我在呈璽/呈璽'
 };
 
 // 取得 LINE 頭像與名字
 let liffProfile = { displayName: '', pictureUrl: '', userId: '' };
-const liffId = '2007327814-DGly5XNk'; // 🚀 同CHANNEL ID測試版LIFF ID
+const liffId = '2007327814-DGly5XNk'; // 🚀 MOBILE正式版LIFF ID
 
 // 🔄 修改：統一的用戶資訊顯示
 function renderLiffUserInfo(profile) {
@@ -839,7 +1033,7 @@ function setImageUserStyle(img, url) {
     img.style.border = '3px solid #F44336'; // 紅色表示失敗
     img.title = '圖片載入失敗，請檢查URL';
     // 🔧 顯示錯誤佔位符
-    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZlYmVlIi8+PHRleHQgeD0iNTAlIiB5PSI0NSUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Y0NDMzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWcluePh+eEoeazleiyn+WFpTwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjU1JSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZjQ0MzM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+6KuL5qOA5p+lVVJMPC90ZXh0Pjwvc3ZnPg==';
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZlYmVlIi8+PHRleHQgeD0iNTAlIHk9IjQ1JSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZjQ0MzM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+6KuL5qOA5p+lVVJMPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNmNDQzMzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7ml+ePh+eEoeazleiyn+WFpTwvdGV4dD48L3N2Zz4=';
   };
   
   // 最後設定圖片URL觸發載入
@@ -1019,29 +1213,35 @@ async function fillAllFieldsWithProfile() {
         console.log('✅ 找到用戶個人卡片，填充資料:', personalCard);
         fillFormWithData(personalCard);
         
-        // 🔧 關鍵：如果有card_order，暫存到window.pendingCardData
+        // 🔧 修正：使用新的card_order解析邏輯
         if (personalCard.card_order) {
+          debugCardSorting('個人卡片載入', personalCard);
           console.log('📋 暫存card_order資料:', personalCard.card_order);
-          // 解析 card_order（可能是字串）
-          let cardOrder = personalCard.card_order;
-          if (typeof cardOrder === 'string') {
-            try {
-              cardOrder = JSON.parse(cardOrder);
-              console.log('📋 解析card_order字串:', cardOrder);
-            } catch (e) {
-              console.log('❌ card_order解析失敗:', e);
-              cardOrder = null;
-            }
-          }
           
-          if (cardOrder && Array.isArray(cardOrder)) {
-            window.pendingCardData = { ...personalCard, card_order: cardOrder };
+          // 使用增強的解析函數
+          const cardOrder = parseCardOrder(personalCard.card_order);
+          
+          if (cardOrder) {
+            sortingManager.pendingCardData = { ...personalCard, card_order: cardOrder };
+            sortingManager.userDataLoaded = true;
             console.log('✅ card_order暫存成功:', cardOrder);
+            
+            // 嘗試立即處理排序（如果宣傳卡片已經載入）
+            if (sortingManager.promoCardsLoaded) {
+              // 非同步處理，避免阻塞載入流程
+              sortingManager.processCardOrder().catch(error => {
+                console.error('❌ 排序處理失敗:', error);
+                // 失敗時使用預設初始化
+                initAllCardsSortable();
+                renderPromoCardListSortable();
+              });
+            }
           } else {
             console.log('⚠️ card_order格式不正確，跳過暫存');
           }
         } else {
           console.log('⚠️ 個人卡片沒有card_order資料');
+          sortingManager.userDataLoaded = true;
         }
       } else {
         console.log('⚠️ 未找到用戶個人卡片，使用預設資料');
@@ -2044,6 +2244,26 @@ window.onload = async function() {
       console.log('🎯 載入現有卡片資料，開始初始化圖片預覽...');
       initImagePreviews();
       
+      // 🔧 關鍵修正：cardLoaded=true時也要設定sortingManager狀態
+      const cardData = result.data[0];
+      console.log('🔄 載入現有卡片資料，設定sorting manager狀態');
+      
+      // 處理card_order排序邏輯
+      if (cardData && cardData.card_order) {
+        const cardOrder = parseCardOrder(cardData.card_order);
+        if (cardOrder) {
+          sortingManager.pendingCardData = { ...cardData, card_order: cardOrder };
+          sortingManager.userDataLoaded = true;
+          console.log('✅ 從現有卡片資料暫存card_order:', cardOrder);
+        } else {
+          console.log('⚠️ 無法解析現有卡片的card_order，使用預設狀態');
+          sortingManager.userDataLoaded = true;
+        }
+      } else {
+        console.log('⚠️ 現有卡片沒有card_order資料，使用預設狀態');
+        sortingManager.userDataLoaded = true;
+      }
+      
       // 🔧 強制觸發所有現有圖片的預覽顯示
       setTimeout(() => {
         const imageFields = [
@@ -2138,27 +2358,96 @@ window.onload = async function() {
             console.log('卡片排序處理完成');
           }
         } else if (loadedFlexJson && loadedFlexJson.contents && loadedFlexJson.contents.type === 'carousel') {
-          // 若沒有card_order但有carousel，還原排序（舊邏輯保留）
+          // 🔧 修正：使用正確的主卡片識別邏輯重建排序
+          console.log('⚠️ 沒有card_order，嘗試從carousel重建排序');
           const flexArr = loadedFlexJson.contents.contents;
           let newAllCards = [];
           let newSelectedPromo = [];
-          flexArr.forEach(flex => {
-            // 判斷是主卡還是宣傳卡
-            if (flex.body && flex.body.contents && flex.body.contents.some && flex.body.contents.some(c => c.type === 'box' && c.contents && c.contents.some && c.contents.some(cc => cc.text === '主卡片'))) {
-              // 主卡
-              newAllCards.push({ type: 'main', id: 'main', flex_json: flex, img: getFormData().main_image_url || defaultCard.main_image_url });
+          
+          flexArr.forEach((flex, index) => {
+            console.log(`🔍 檢查第${index}個卡片:`, {
+              hasFooter: !!flex.footer,
+              footerText: flex.footer?.contents?.[0]?.text,
+              _cardType: flex._cardType,
+              _cardId: flex._cardId
+            });
+            
+            // 🔧 修正：使用增強的主卡片識別函數
+            if (isMainCard(flex)) {
+              console.log(`✅ 第${index}個卡片被識別為主卡片`);
+              newAllCards.push({ 
+                type: 'main', 
+                id: 'main', 
+                flex_json: flex, 
+                img: getFormData().main_image_url || defaultCard.main_image_url 
+              });
             } else {
-              // 宣傳卡
-              const found = promoCardList.find(c => JSON.stringify(c.flex_json) === JSON.stringify(flex));
+              console.log(`🔍 第${index}個卡片被識別為宣傳卡片，嘗試匹配...`);
+              // 🔧 修正：使用更穩定的宣傳卡片匹配邏輯
+              let found = null;
+              
+              // 方法1: 使用_cardId匹配
+              if (flex._cardId) {
+                found = promoCardList.find(c => c.id === flex._cardId);
+                if (found) {
+                  console.log(`✅ 通過_cardId匹配到宣傳卡片: ${found.id}`);
+                }
+              }
+              
+              // 方法2: 使用圖片URL匹配（更穩定）
+              if (!found && flex.body?.contents?.[0]?.url) {
+                const flexImageUrl = flex.body.contents[0].url;
+                found = promoCardList.find(c => {
+                  const promoImageUrl = c.flex_json?.body?.contents?.[0]?.url;
+                  return promoImageUrl && promoImageUrl === flexImageUrl;
+                });
+                if (found) {
+                  console.log(`✅ 通過圖片URL匹配到宣傳卡片: ${found.id}`);
+                }
+              }
+              
+                             // 方法3: 使用標題匹配（後備方案）
+               if (!found && flex.body?.contents) {
+                 const flexTitle = extractTitleFromFlex(flex);
+                 if (flexTitle) {
+                   found = promoCardList.find(c => 
+                     c.main_title_1 === flexTitle || 
+                     c.main_title_2 === flexTitle
+                   );
+                   if (found) {
+                     console.log(`✅ 通過標題匹配到宣傳卡片: ${found.id}`);
+                   }
+                 }
+               }
+              
               if (found) {
-                newAllCards.push({ type: 'promo', id: found.id, flex_json: found.flex_json, img: found.flex_json.body.contents[0].url });
+                // 🔧 為宣傳卡片加入標識
+                const promoFlexJson = JSON.parse(JSON.stringify(found.flex_json));
+                promoFlexJson._cardId = found.id;
+                promoFlexJson._cardType = 'promo';
+                
+                newAllCards.push({ 
+                  type: 'promo', 
+                  id: found.id, 
+                  flex_json: promoFlexJson, 
+                  img: found.flex_json.body.contents[0].url 
+                });
                 newSelectedPromo.push(found.id);
+                console.log(`✅ 成功加入宣傳卡片: ${found.id} - ${found.main_title_1}`);
+              } else {
+                console.log(`❌ 無法匹配第${index}個卡片，跳過`);
               }
             }
           });
+          
           if (newAllCards.length > 0) {
+            console.log('📋 從carousel重建的排序:', newAllCards.map(c => `${c.type}:${c.id}`));
             allCardsSortable = newAllCards;
             selectedPromoCards = newSelectedPromo;
+            renderPromoCardSelector();
+            console.log('✅ carousel排序重建完成');
+          } else {
+            console.log('⚠️ carousel重建失敗，使用預設初始化');
           }
         }
         delete window.pendingCardData; // 處理完成後清除暫存資料
@@ -2199,8 +2488,11 @@ window.onload = async function() {
 // 主卡片與宣傳卡片拖曳排序功能
 let allCardsSortable = [];
 
-// 初始化排序區卡片陣列
+// 🔧 修正：優化初始化排序區卡片陣列
 function initAllCardsSortable() {
+  debugCardSorting('初始化卡片陣列');
+  console.log('🔄 [排序調試] initAllCardsSortable被調用，當前allCardsSortable:', allCardsSortable?.map(c => c.id));
+  
   // 先建立主卡片
   const mainCard = {
     type: 'main',
@@ -2209,46 +2501,58 @@ function initAllCardsSortable() {
     img: getFormData().main_image_url || defaultCard.main_image_url
   };
 
-  // 如果有宣傳卡片，則加入主卡片和宣傳卡片
+  // 🔧 修正：按照資料庫順序（promoCardList順序）來初始化，而不是selectedPromoCards順序
   if (selectedPromoCards.length > 0) {
-    allCardsSortable = [
-      mainCard,
-      ...selectedPromoCards.map(id => {
-        const card = promoCardList.find(c => c.id === id);
-        if (card) {
-          // **關鍵修復：為宣傳卡片的flex_json加入_cardId標識**
-          const promoFlexJson = JSON.parse(JSON.stringify(card.flex_json)); // 深度複製
-          promoFlexJson._cardId = card.id; // 加入宣傳卡片ID
-          promoFlexJson._cardType = 'promo'; // 標示為宣傳卡片
-          console.log('🏷️ 為宣傳卡片加入標識:', card.id);
-          
-          return { 
-            type: 'promo', 
-            id: card.id, 
-            flex_json: promoFlexJson, 
-            img: card.flex_json.body.contents[0].url 
-          };
-        }
-        return null;
-      }).filter(Boolean)
-    ];
+    // 按照 promoCardList 的順序來排列選中的卡片
+    const sortedSelectedCards = [];
+    
+    // 🔧 深度修正：先打印當前的promoCardList和selectedPromoCards狀態用於調試
+    console.log('🔍 初始化卡片排序調試資訊:');
+    console.log('promoCardList (資料庫順序):', promoCardList.map(c => ({ id: c.id, title: c.main_title_1 })));
+    console.log('selectedPromoCards (選中的卡片ID):', selectedPromoCards);
+    
+    // 遍歷 promoCardList（資料庫順序），找出被選中的卡片
+    for (const card of promoCardList) {
+      if (selectedPromoCards.includes(card.id)) {
+        // **關鍵修復：為宣傳卡片的flex_json加入_cardId標識**
+        const promoFlexJson = JSON.parse(JSON.stringify(card.flex_json)); // 深度複製
+        promoFlexJson._cardId = card.id; // 加入宣傳卡片ID
+        promoFlexJson._cardType = 'promo'; // 標示為宣傳卡片
+        console.log('🏷️ 按資料庫順序為宣傳卡片加入標識:', card.id, card.main_title_1);
+        
+        sortedSelectedCards.push({ 
+          type: 'promo', 
+          id: card.id, 
+          flex_json: promoFlexJson, 
+          img: card.flex_json.body.contents[0].url 
+        });
+      }
+    }
+    
+    allCardsSortable = [mainCard, ...sortedSelectedCards];
+    console.log('✅ 按資料庫順序初始化卡片:', allCardsSortable.map(c => ({ id: c.id, type: c.type })));
   } else {
     // 如果沒有宣傳卡片，只加入主卡片
     allCardsSortable = [mainCard];
   }
+  
+  // 立即更新預覽
+  renderPreview();
 }
 
-// renderPromoCardListSortable 箭頭寬度縮小，padding減少
+// 🔧 修正：優化卡片列表渲染邏輯
 function renderPromoCardListSortable() {
   const container = document.getElementById('promo-cards');
   if (!container) return;
   
-  // 🔧 修復：只有在完全沒有卡片時才初始化，避免覆蓋從資料庫載入的排序
+  debugCardSorting('渲染卡片列表');
+  
+  // 🔧 修正：只有在完全沒有卡片時才初始化，避免覆蓋從資料庫載入的排序
   if (allCardsSortable.length === 0) {
     console.log('⚠️ allCardsSortable為空，執行初始化');
     initAllCardsSortable();
   } else {
-    console.log('✅ allCardsSortable已有資料，跳過初始化以保持排序:', allCardsSortable.map(c => c.id));
+    console.log('✅ allCardsSortable已有資料，跳過初始化以保持排序:', allCardsSortable.map(c => ({ id: c.id, type: c.type })));
   }
   
   container.innerHTML = '';
@@ -2300,9 +2604,20 @@ function renderPromoCardSelector() {
     thumb.onclick = () => {
       const idx = selectedPromoCards.indexOf(card.id);
       if (idx === -1) {
+        // 🔧 深度修正：加入卡片時保持資料庫順序
         selectedPromoCards.push(card.id);
+        // 重新按資料庫順序排序selectedPromoCards
+        selectedPromoCards.sort((a, b) => {
+          const aIndex = promoCardList.findIndex(c => c.id === a);
+          const bIndex = promoCardList.findIndex(c => c.id === b);
+          return aIndex - bIndex;
+        });
+        console.log('✅ 加入卡片後重新排序:', selectedPromoCards);
+        debugCardSorting('加入宣傳卡片', { cardId: card.id, newOrder: selectedPromoCards });
       } else {
         selectedPromoCards.splice(idx, 1);
+        console.log('✅ 移除卡片後的順序:', selectedPromoCards);
+        debugCardSorting('移除宣傳卡片', { cardId: card.id, newOrder: selectedPromoCards });
       }
       initAllCardsSortable();
       renderPromoCardSelector();
@@ -2312,24 +2627,39 @@ function renderPromoCardSelector() {
   });
 }
 
-// 左右移動排序函數
+// 🔧 修正：優化拖拉排序函數
 window.moveCardLeft = function(idx) {
   if (idx <= 0) return;
+  debugCardSorting('向左移動卡片', { fromIndex: idx, toIndex: idx - 1 });
+  
   const tmp = allCardsSortable[idx];
   allCardsSortable[idx] = allCardsSortable[idx - 1];
   allCardsSortable[idx - 1] = tmp;
+  
   // 更新 selectedPromoCards 順序
   selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
   renderPromoCardListSortable();
+  
+  // 立即更新預覽
+  renderPreview();
+  console.log('✅ [排序調試] 左移完成，新順序:', allCardsSortable.map(c => c.id));
 };
+
 window.moveCardRight = function(idx) {
   if (idx >= allCardsSortable.length - 1) return;
+  debugCardSorting('向右移動卡片', { fromIndex: idx, toIndex: idx + 1 });
+  
   const tmp = allCardsSortable[idx];
   allCardsSortable[idx] = allCardsSortable[idx + 1];
   allCardsSortable[idx + 1] = tmp;
+  
   // 更新 selectedPromoCards 順序
   selectedPromoCards = allCardsSortable.filter(c => c.type === 'promo').map(c => c.id);
   renderPromoCardListSortable();
+  
+  // 立即更新預覽
+  renderPreview();
+  console.log('✅ [排序調試] 右移完成，新順序:', allCardsSortable.map(c => c.id));
 };
 
 // 🚀 高效能點數系統 - 先分享後處理策略
@@ -2382,6 +2712,122 @@ async function shareToLine() {
   } catch (err) {
     hideShareLoading();
     alert('分享失敗: ' + err.message);
+  }
+}
+
+// 🆕 多平台分享函數
+function shareToEmail() {
+  try {
+    const formData = getFormData();
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
+    const ogUrl = `/og-card.html?shareData=${shareData}`;
+    
+    window.open(ogUrl, '_blank');
+    console.log('📧 開啟OG預覽分享頁面');
+  } catch (error) {
+    console.error('EMAIL分享失敗:', error);
+    alert('EMAIL分享失敗: ' + error.message);
+  }
+}
+
+function shareToFacebook() {
+  try {
+    const formData = getFormData();
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
+    const ogUrl = `/og-card.html?shareData=${shareData}`;
+    
+    window.open(ogUrl, '_blank');
+    console.log('📘 開啟OG預覽分享頁面');
+  } catch (error) {
+    console.error('Facebook分享失敗:', error);
+    alert('Facebook分享失敗: ' + error.message);
+  }
+}
+
+function shareToWhatsApp() {
+  try {
+    const formData = getFormData();
+    const cardTitle = formData.main_title_1 || formData.display_name || '我的會員卡';
+    const shareText = `📱 ${cardTitle}\n\n🎯 查看我的專屬會員卡！`;
+    
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
+    const currentUrl = window.location.origin;
+    const shareUrl = `${currentUrl}/mcard-mtest.html?shareData=${shareData}&view=true`;
+    
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`;
+    window.open(whatsappUrl, '_blank');
+    console.log('💬 開啟WhatsApp分享');
+  } catch (error) {
+    console.error('WhatsApp分享失敗:', error);
+    alert('WhatsApp分享失敗: ' + error.message);
+  }
+}
+
+function shareToTelegram() {
+  try {
+    const formData = getFormData();
+    const cardTitle = formData.main_title_1 || formData.display_name || '我的會員卡';
+    const shareText = `📱 ${cardTitle}\n\n🎯 查看我的專屬會員卡！`;
+    
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
+    const currentUrl = window.location.origin;
+    const shareUrl = `${currentUrl}/mcard-mtest.html?shareData=${shareData}&view=true`;
+    
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+    window.open(telegramUrl, '_blank');
+    console.log('✈️ 開啟Telegram分享');
+  } catch (error) {
+    console.error('Telegram分享失敗:', error);
+    alert('Telegram分享失敗: ' + error.message);
+  }
+}
+
+function shareToInstagram() {
+  try {
+    const formData = getFormData();
+    // 🔧 修正：使用支援中文的編碼方式
+    const shareData = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
+    const ogUrl = `/og-card.html?shareData=${shareData}`;
+    
+    window.open(ogUrl, '_blank');
+    console.log('📸 開啟OG預覽分享頁面');
+  } catch (error) {
+    console.error('Instagram分享失敗:', error);
+    alert('Instagram分享失敗: ' + error.message);
+  }
+}
+
+function copyShareLink() {
+  try {
+    const formData = getFormData();
+    
+    // 🔧 修正：生成簡短URL (pageId_userId格式)
+    const pageId = 'M01001';
+    const userId = liffProfile.userId;
+    const shortCode = `${pageId}_${userId}`;
+    
+    const currentUrl = window.location.origin;
+    // 🔧 修正：統一指向OG頁面並使用簡短URL
+    const shareUrl = `${currentUrl}/og-card.html?code=${shortCode}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('📋 分享連結已複製到剪貼簿！');
+      console.log('✅ 分享連結複製成功:', shareUrl);
+    }).catch(err => {
+      console.error('複製失敗:', err);
+      // 備用方案：顯示連結讓用戶手動複製
+      const result = prompt('請複製以下連結：', shareUrl);
+      if (result !== null) {
+        console.log('✅ 用戶手動複製連結');
+      }
+    });
+  } catch (error) {
+    console.error('複製連結失敗:', error);
+    alert('複製連結失敗: ' + error.message);
   }
 }
 
@@ -2892,11 +3338,11 @@ window.addEventListener('DOMContentLoaded', function() {
         let flexJson;
         if (allCardsSortable && allCardsSortable.length > 1) {
           // 多卡片模式：生成carousel
-          const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
-          if (mainCardIndex !== -1) {
-            allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...formData, page_id: 'M01001' });
-            allCardsSortable[mainCardIndex].img = formData.main_image_url || defaultCard.main_image_url;
-          }
+                      const mainCardIndex = allCardsSortable.findIndex(c => c.type === 'main');
+            if (mainCardIndex !== -1) {
+              allCardsSortable[mainCardIndex].flex_json = getMainBubble({ ...formData, page_id: 'M01001' });
+              allCardsSortable[mainCardIndex].img = formData.main_image_url || defaultCard.main_image_url;
+            }
           
           const flexArr = allCardsSortable.map(c => c.flex_json);
           flexJson = {
@@ -2909,19 +3355,19 @@ window.addEventListener('DOMContentLoaded', function() {
           };
         } else {
           // 單卡片模式
-          flexJson = {
-            type: 'flex',
-            altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
-            contents: getMainBubble({ ...formData, page_id: 'M01001' })
-          };
+                        flexJson = {
+                type: 'flex',
+                altText: formData.card_alt_title || formData.main_title_1 || defaultCard.main_title_1,
+                contents: getMainBubble({ ...formData, page_id: 'M01001' })
+              };
         }
         
         // 清理FLEX JSON用於儲存
         const cleanFlexJsonForSave = cleanFlexJsonForShare(flexJson);
         
-        // 準備儲存資料
-        const saveData = {
-          page_id: 'M01001',
+                  // 準備儲存資料
+          const saveData = {
+            page_id: 'M01001',
           line_user_id: liffProfile.userId,
           ...formData,
           flex_json: cleanFlexJsonForSave,
@@ -3276,6 +3722,13 @@ function initSyncScrolling() {
 // 載入宣傳卡片時同時渲染 selector
 async function loadPromoCards() {
   try {
+    // 🔧 關鍵修復：檢查是否已經載入過，避免重複載入
+    if (window.promoCardsLoaded && promoCardList.length > 0) {
+      console.log('✅ 宣傳卡片已載入，跳過重複載入');
+      return;
+    }
+    
+    console.log('🔄 開始載入宣傳卡片...');
     const res = await fetch('/api/promo-cards');
     const result = await res.json();
     if (result.success && Array.isArray(result.data)) {
@@ -3285,82 +3738,44 @@ async function loadPromoCards() {
       // 🆕 載入位置標籤加成數值
       await updatePositionLabels();
       
-      // 🔧 修復：先檢查是否有暫存的card_order資料，再決定是否初始化
-      let hasProcessedCardOrder = false;
+      // 🔧 修正：使用新的排序管理器
+      sortingManager.promoCardsLoaded = true;
+      window.promoCardsLoaded = true; // 標記已載入
+      debugCardSorting('宣傳卡片載入完成');
       
-      // **修復問題2：在宣傳卡片載入完成後處理card_order排序**
-      if (window.pendingCardData) {
-        const cardData = window.pendingCardData;
-        console.log('處理暫存的卡片資料:', cardData);
-        console.log('card_order:', cardData.card_order);
-        
-        // 處理已載入的卡片資料的排序
-        if (cardData.card_order && Array.isArray(cardData.card_order)) {
-          const cardOrder = cardData.card_order;
-          let newAllCards = [];
-          let newSelectedPromo = [];
-          
-          console.log('按照card_order重建卡片:', cardOrder);
-          
-          // 按照card_order順序重建卡片陣列
-          cardOrder.forEach(cardId => {
-            if (cardId === 'main') {
-              // 主卡片
-              newAllCards.push({ 
-                type: 'main', 
-                id: 'main', 
-                flex_json: getMainBubble(getFormData()), 
-                img: getFormData().main_image_url || defaultCard.main_image_url 
-              });
-              console.log('加入主卡片');
-            } else {
-              // 宣傳卡片 - 從promoCardList中找到對應的卡片
-              const found = promoCardList.find(c => c.id === cardId);
-              if (found) {
-                // **關鍵修復：為宣傳卡片的flex_json加入_cardId標識**
-                const promoFlexJson = JSON.parse(JSON.stringify(found.flex_json)); // 深度複製
-                promoFlexJson._cardId = found.id; // 加入宣傳卡片ID
-                promoFlexJson._cardType = 'promo'; // 標示為宣傳卡片
-                console.log('🏷️ card_order重建：為宣傳卡片加入標識:', found.id);
-                
-                newAllCards.push({ 
-                  type: 'promo', 
-                  id: found.id, 
-                  flex_json: promoFlexJson, 
-                  img: found.flex_json.body.contents[0].url 
-                });
-                newSelectedPromo.push(found.id);
-                console.log('加入宣傳卡片:', found.id, found.main_title_1);
-              } else {
-                console.log('找不到宣傳卡片:', cardId);
-              }
-            }
-          });
-          
-          console.log('最終卡片陣列:', newAllCards);
-          console.log('最終選中的宣傳卡片:', newSelectedPromo);
-          
-          if (newAllCards.length > 0) {
-            allCardsSortable = newAllCards;
-            selectedPromoCards = newSelectedPromo;
-            hasProcessedCardOrder = true;
-            renderPromoCardSelector(); // **修復問題2-2：重新渲染選擇器以正確顯示狀態**
-            renderPromoCardListSortable();
-            console.log('✅ 卡片排序處理完成，順序:', allCardsSortable.map(c => c.id));
-          }
-        } else {
-          console.log('沒有有效的card_order數據');
-        }
-        delete window.pendingCardData; // 清除暫存資料
-      } else {
-        console.log('沒有找到暫存的卡片資料');
-      }
-      
-      // 🔧 只有在沒有處理card_order的情況下才執行預設初始化
-      if (!hasProcessedCardOrder) {
-        console.log('📋 沒有card_order資料，執行預設初始化');
+      // 🔧 關鍵修正：優化排序處理邏輯
+      if (sortingManager.userDataLoaded && sortingManager.pendingCardData) {
+        console.log('🔄 宣傳卡片載入完成，處理用戶自定義排序');
+        await sortingManager.processCardOrder();
+        // 🔧 修復排序問題：SortingSequenceManager.processCardOrder()會處理渲染
+      } else if (sortingManager.userDataLoaded && !sortingManager.pendingCardData) {
+        console.log('📋 用戶已登入但沒有自定義排序，執行預設初始化');
         initAllCardsSortable();
         renderPromoCardListSortable();
+        // 🔧 修復排序問題：預設初始化完成後渲染預覽
+        console.log('🎯 預設初始化完成，開始渲染預覽');
+        renderPreview();
+        renderShareJsonBox();
+      } else {
+        console.log('📋 用戶資料尚未載入，保持現有排序');
+        // 🔧 修正：只在完全沒有卡片時才初始化
+        if (!allCardsSortable || allCardsSortable.length === 0) {
+          console.log('⚠️ 沒有現有卡片，執行預設初始化');
+          initAllCardsSortable();
+          renderPromoCardListSortable();
+          // 🔧 修復排序問題：預設初始化完成後渲染預覽
+          console.log('🎯 預設初始化完成，開始渲染預覽');
+          renderPreview();
+          renderShareJsonBox();
+        } else {
+          console.log('✅ 保持現有卡片排序:', allCardsSortable.map(c => c.id));
+          // 只更新界面，不改變排序
+          renderPromoCardListSortable();
+          // 🔧 修復排序問題：保持現有排序後渲染預覽
+          console.log('🎯 保持現有排序完成，開始渲染預覽');
+          renderPreview();
+          renderShareJsonBox();
+        }
       }
     }
   } catch (e) {
@@ -4153,129 +4568,410 @@ function fillFormWithData(cardData) {
   console.log('✅ 表單資料填充完成');
 }
 
-// 🔄 統一LIFF初始化函數
-async function initUnifiedLiff() {
+// 🚀 統一的用戶卡片資料載入邏輯
+async function loadUserCardData(userData) {
+  console.log('🔍 載入用戶卡片資料，用戶ID:', userData.userId);
+  
   try {
-    console.log('🚀 開始LIFF初始化...');
+    // 1. 先檢查資料庫是否已有該用戶的資料
+    const response = await fetch(`/api/cards?pageId=M01001&userId=${userData.userId}`);
+    const result = await response.json();
     
-    if (!window.liff) {
-      console.log('❌ LIFF SDK未載入');
-      return false;
+    if (result.success && result.data && result.data.length > 0) {
+      // 2-1-B: 已有資料的用戶 - 載入個人化資料
+      console.log('✅ 找到用戶資料，載入個人化卡片');
+      showAuthLoading('載入您的個人化卡片...');
+      
+      const userCard = result.data[0];
+      fillFormWithData(userCard);
+      
+      // 更新點數顯示
+      updatePointsDisplay(userCard.user_points || 168);
+      
+      console.log('✅ 已載入用戶的個人化卡片資料');
+      
+    } else {
+      // 2-1-A: 首次登入用戶 - 使用M01001初始資料+LINE個人資料
+      console.log('⚠️ 首次登入用戶，創建個人化卡片');
+      showAuthLoading('為您創建專屬卡片...');
+      
+      // 讀取M01001的初始卡片資料（不帶userId，取得預設範本）
+      const defaultResponse = await fetch(`/api/cards?pageId=M01001`);
+      const defaultResult = await defaultResponse.json();
+      
+      if (defaultResult.success && defaultResult.data && defaultResult.data.length > 0) {
+        // 找到沒有user_id的預設卡片
+        const defaultCard = defaultResult.data.find(card => !card.line_user_id) || defaultResult.data[0];
+        
+        // 融合LINE個人資料到初始卡片
+        const personalizedCard = {
+          ...defaultCard,
+          // 🔧 重要：加入LINE個人資料
+          line_user_id: userData.userId,
+          user_id: userData.userId,
+          display_name: userData.displayName,
+          picture_url: userData.pictureUrl,
+          // 確保點數為168
+          user_points: 168
+        };
+        
+        console.log('🎨 融合LINE個人資料到初始卡片');
+        fillFormWithData(personalizedCard);
+        
+        // 更新點數顯示
+        updatePointsDisplay(168);
+        
+        console.log('✅ 已創建首次登入的個人化卡片');
+      } else {
+        console.error('❌ 無法讀取M01001初始卡片資料');
+        showAuthError('無法載入卡片資料，請聯絡管理員');
+      }
     }
     
-    // 初始化LIFF
-    await liff.init({ liffId: '2007327814-DGly5XNk' });
-    console.log('✅ LIFF初始化成功');
+  } catch (error) {
+    console.error('❌ 載入用戶卡片資料失敗:', error);
+    showAuthError('載入卡片資料失敗，請重試');
+  }
+}
+
+// 🆕 更新點數顯示
+function updatePointsDisplay(points) {
+  // 更新所有可能的點數顯示元素
+  const pointsElements = document.querySelectorAll('[data-points-display]');
+  pointsElements.forEach(el => {
+    el.textContent = points;
+  });
+  
+  // 更新特定的點數顯示區域
+  if (window.liffProfile) {
+    window.liffProfile.currentPoints = points;
+  }
+  
+  console.log(`💰 點數顯示已更新：${points}`);
+}
+
+// 🔄 統一LIFF初始化函數 - 📈 載入速度優化版本
+async function initUnifiedLiff() {
+  console.log('🚀 開始統一LIFF認證流程...');
+  
+  try {
+    const liffId = '2007327814-DGly5XNk'; // ENDPOINT URL應設定為: https://barv3.vercel.app/member-card-mobile.html
     
-    // 檢查登入狀態
+    // 🚀 優化：並行處理認證狀態檢查
+    const authTasks = [];
+    
+    // 1. 並行檢查本地快取和LIFF初始化
+    authTasks.push(checkLocalAuth());
+    authTasks.push(initLiffSdk(liffId));
+    
+    const [localAuthResult, liffInitResult] = await Promise.all(authTasks);
+    
+    // 2. 如果本地認證有效，直接使用
+    if (localAuthResult.valid) {
+      console.log('✅ 使用本地認證，跳過LIFF流程');
+      setupUserProfile(localAuthResult.userData);
+      return true;
+    }
+    
+    // 3. 檢查LIFF登入狀態
     if (!liff.isLoggedIn()) {
-      console.log('🔑 用戶未登入，跳轉至登入頁面');
-      liff.login();
+      console.log('🔑 需要登入，啟動登入流程');
+      liff.login({
+        redirectUri: window.location.href
+      });
       return false;
     }
     
-    // 獲取用戶資料
+    // 4. 🚀 並行獲取用戶資料和預載入必要資源
     const profile = await liff.getProfile();
-    console.log('👤 獲取用戶資料成功:', profile.displayName);
     
-    // 更新UNIFIED_LIFF物件
-    UNIFIED_LIFF.isLoggedIn = true;
-    UNIFIED_LIFF.profile = {
+    // 5. 立即設定用戶資料並開始並行載入
+    const userData = {
       userId: profile.userId,
       displayName: profile.displayName,
-      pictureUrl: profile.pictureUrl
+      pictureUrl: profile.pictureUrl,
+      timestamp: Date.now(),
+      liffAuthenticated: true
     };
     
-    // 更新全域變數（相容性）
-    window.liffProfile = profile;
+    // 6. 🚀 並行處理：儲存認證資料 + 載入用戶卡片 + 預載入宣傳卡片
+    const postAuthTasks = [
+      saveAuthData(userData),
+      loadUserCardDataFast(userData),
+      preloadPromoCards()
+    ];
     
-    // 更新設備指示器
-    updateDeviceIndicator();
+    setupUserProfile(userData);
+    await Promise.all(postAuthTasks);
     
+    console.log('🎉 統一LIFF認證完成！');
     return true;
     
   } catch (error) {
-    console.error('❌ LIFF初始化失敗:', error);
-    updateDeviceIndicator();
+    console.error('❌ LIFF認證失敗:', error);
+    return await handleAuthError(error);
+  }
+}
+
+// 🚀 新增：檢查本地認證狀態
+async function checkLocalAuth() {
+  try {
+    const storedProfile = localStorage.getItem('lineUserProfile');
+    const storedAuth = localStorage.getItem('lineAuthCompleted');
+    
+    if (storedProfile && storedAuth) {
+      const userData = JSON.parse(storedProfile);
+      if (userData.userId && userData.displayName && userData.timestamp) {
+        const hoursPassed = (Date.now() - userData.timestamp) / (1000 * 60 * 60);
+        
+        if (hoursPassed < 24) {
+          return { valid: true, userData };
+        }
+      }
+    }
+    
+    return { valid: false, userData: null };
+  } catch (error) {
+    console.log('⚠️ 本地認證檢查失敗:', error);
+    return { valid: false, userData: null };
+  }
+}
+
+// 🚀 新增：LIFF SDK初始化
+async function initLiffSdk(liffId) {
+  await liff.init({ liffId });
+  console.log('✅ LIFF SDK初始化完成');
+  return true;
+}
+
+// 🚀 新增：設定用戶資料
+function setupUserProfile(userData) {
+  window.liffProfile = userData;
+  UNIFIED_LIFF.isLoggedIn = true;
+  UNIFIED_LIFF.profile = {
+    userId: userData.userId,
+    displayName: userData.displayName,
+    pictureUrl: userData.pictureUrl
+  };
+  
+  // 立即更新UI
+  renderLiffUserInfo(userData);
+  updateDeviceIndicator();
+}
+
+// 🚀 新增：儲存認證資料
+async function saveAuthData(userData) {
+  localStorage.setItem('lineUserProfile', JSON.stringify(userData));
+  localStorage.setItem('lineAuthCompleted', 'true');
+  localStorage.setItem('authTimestamp', Date.now().toString());
+  console.log('💾 認證資料已儲存');
+}
+
+// 🚀 新增：快速載入用戶卡片資料
+async function loadUserCardDataFast(userData) {
+  console.log('🔍 快速載入用戶卡片資料...');
+  
+  try {
+    const response = await fetch(`/api/cards?pageId=M01001&userId=${userData.userId}`);
+    const result = await response.json();
+    
+    if (result.success && result.data && result.data.length > 0) {
+      // 已有資料 - 直接填入表單
+      const userCard = result.data[0];
+      fillFormWithData(userCard);
+      updatePointsDisplay(userCard.user_points || 168);
+      console.log('✅ 載入用戶個人化資料');
+    } else {
+      // 首次登入 - 並行載入預設資料和LINE資料
+      const [defaultCard] = await Promise.all([
+        loadDefaultCardData(),
+        fillLineProfileData(userData)
+      ]);
+      
+      if (defaultCard) {
+        const personalizedCard = {
+          ...defaultCard,
+          line_user_id: userData.userId,
+          display_name: userData.displayName,
+          member_image_url: userData.pictureUrl,
+          user_points: 168
+        };
+        
+        fillFormWithData(personalizedCard);
+        updatePointsDisplay(168);
+        
+        // 🔧 關鍵：首次登入後立即觸發預覽更新，確保LINE個人資料顯示
+        console.log('🎨 首次登入，立即更新預覽以顯示LINE個人資料...');
+        setTimeout(() => {
+          renderPreview();
+          renderShareJsonBox();
+          console.log('✅ 首次登入預覽更新完成');
+        }, 200);
+        
+        console.log('✅ 創建首次登入用戶資料');
+      }
+    }
+  } catch (error) {
+    console.error('❌ 載入用戶資料失敗:', error);
+  }
+}
+
+// 🚀 新增：預載入宣傳卡片
+async function preloadPromoCards() {
+  try {
+    if (!window.promoCardsLoaded) {
+      await loadPromoCards();
+      window.promoCardsLoaded = true;
+      console.log('🎨 宣傳卡片預載入完成');
+    }
+  } catch (error) {
+    console.log('⚠️ 宣傳卡片預載入失敗:', error);
+  }
+}
+
+// 🚀 新增：載入預設卡片資料
+async function loadDefaultCardData() {
+  try {
+    const response = await fetch('/api/cards?pageId=M01001');
+    const result = await response.json();
+    
+    if (result.success && result.data && result.data.length > 0) {
+      const defaultCard = result.data.find(card => !card.line_user_id) || result.data[0];
+      return defaultCard;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ 載入預設卡片失敗:', error);
+    return null;
+  }
+}
+
+// 🚀 新增：填入LINE個人資料並觸發預覽更新
+async function fillLineProfileData(userData) {
+  console.log('🎨 填入LINE個人資料:', userData.displayName);
+  
+  const displayNameInput = document.getElementById('display_name');
+  const memberImageInput = document.getElementById('member_image_url');
+  const memberImagePreview = document.getElementById('member_image_preview');
+  
+  if (displayNameInput) {
+    setInputDefaultStyle(displayNameInput, userData.displayName);
+    // 觸發input事件以更新預覽
+    displayNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  
+  if (memberImageInput) {
+    setInputDefaultStyle(memberImageInput, userData.pictureUrl);
+    // 觸發input事件以更新預覽
+    memberImageInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  
+  if (memberImagePreview) {
+    setImageUserStyle(memberImagePreview, userData.pictureUrl);
+  }
+  
+  // 🔧 關鍵：立即觸發預覽更新，確保LINE個人資料能顯示在預覽卡片中
+  console.log('🔄 LINE個人資料已填入，觸發預覽更新...');
+  
+  // 延遲一點時間確保DOM更新完成
+  setTimeout(() => {
+    renderPreview();
+    renderShareJsonBox();
+    console.log('✅ LINE個人資料預覽更新完成');
+  }, 100);
+}
+
+// 🚀 新增：認證錯誤處理
+async function handleAuthError(error) {
+  const cachedProfile = getCachedProfile();
+  if (cachedProfile && isProfileValid(cachedProfile)) {
+    console.log('🔄 使用備用快取資料');
+    setupUserProfile(cachedProfile);
+    return true;
+  } else {
+    console.error('❌ 認證完全失敗');
     return false;
   }
 }
 
-// 🔄 統一的主初始化函數
-async function initUnifiedSystem() {
-  console.log('🚀 統一LIFF系統初始化開始...');
-  
+// 🆕 取得快取的認證資料
+function getCachedProfile() {
   try {
-    // 1. 初始化LIFF
-    const liffSuccess = await initUnifiedLiff();
-    if (!liffSuccess) {
-      console.log('⏸️ LIFF初始化失敗或需要登入，停止初始化');
-      return;
-    }
-    
-    // 2. 檢查自動分享模式
-    const isAutoShare = await handleAutoShareMode();
-    if (isAutoShare) {
-      console.log('📤 自動分享模式，跳過一般初始化');
-      return;
-    }
-    
-    // 3. 載入響應式功能
-    loadResponsiveFeatures();
-    
-    // 4. 一般模式初始化
-    console.log('📝 進入一般編輯模式');
-    await initGeneralMode();
-    
+    const cached = localStorage.getItem('lineUserProfile');
+    return cached ? JSON.parse(cached) : null;
   } catch (error) {
-    console.error('❌ 統一系統初始化失敗:', error);
-    updateDeviceIndicator();
+    console.error('讀取快取認證資料失敗:', error);
+    return null;
   }
 }
 
-// 🧪 測試版本一般模式初始化 - 延遲載入優化版本
+// 🆕 檢查認證資料是否有效（24小時內）
+function isProfileValid(profile) {
+  if (!profile || !profile.timestamp) return false;
+  
+  const now = Date.now();
+  const profileAge = now - profile.timestamp;
+  const maxAge = 24 * 60 * 60 * 1000; // 24小時
+  
+  return profileAge < maxAge;
+}
+
+// 🆕 填充表單資料
+function fillFormWithData(cardData) {
+  console.log('📝 填充表單資料:', cardData);
+  
+  Object.keys(cardData).forEach(key => {
+    const input = document.getElementById(key);
+    if (input && cardData[key] !== undefined) {
+      setInputDefaultStyle(input, cardData[key]);
+      
+      // 觸發圖片預覽更新
+      if (key.includes('_url') && key.includes('image')) {
+        const previewId = key.replace('_url', '_preview');
+        const preview = document.getElementById(previewId);
+        if (preview && cardData[key]) {
+          setImageUserStyle(preview, cardData[key]);
+        }
+      }
+    }
+  });
+  
+  console.log('✅ 表單資料填充完成');
+}
+
+// 🚀 優化：快速初始化一般模式
 async function initGeneralMode() {
   try {
-    // 🚀 優化：並行處理用戶資料載入
-    const profilePromise = UNIFIED_LIFF.profile.userId ? 
-      fillAllFieldsWithProfile() : Promise.resolve();
+    console.log('📝 快速初始化一般模式...');
     
-    // 立即初始化必要的UI功能（不等待）
-    initImagePreviews();
+    // 🚀 並行處理所有初始化任務
+    const initTasks = [
+      initImagePreviews(),
+      initMobileTabs(),
+      initMobileNavigation(),
+      initPreviewNavigation()
+    ];
     
-    // 等待用戶資料載入完成
-    await profilePromise;
+    // 立即執行所有並行任務
+    await Promise.all(initTasks);
     
-    // 🆕 檢查當前活動頁籤，如果是預覽頁面，立即載入完整功能
+    // 🔧 修復排序問題：移除立即渲染，讓loadPromoCards處理完card_order後再渲染
+    // 🚀 優化：檢查預覽頁面是否為活動頁籤
     const activeContent = document.querySelector('.tab-content.active');
     if (activeContent && activeContent.id === 'tab-preview') {
-      console.log('📊 預設頁籤為預覽，載入完整預覽功能...');
-      // 🔄 立即顯示載入提示，不渲染任何卡片
-      showPreviewLoading();
-      
-      try {
-        // 🔧 修正：先載入宣傳卡片，再渲染預覽，避免閃爍
-        await loadPromoCards();
-        window.promoCardsLoaded = true; // 標記已載入
-        
-        // 🔧 小延遲讓用戶看到載入提示
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // 🔧 修正：直接渲染完整預覽，不要延遲
-        renderPreview();
-        renderShareJsonBox();
-      } finally {
-        // 🔄 隱藏載入提示
-        hidePreviewLoading();
-      }
+      console.log('📊 預覽頁面為活動頁籤，等待宣傳卡片載入後再渲染');
+      // 🔧 關鍵修復：不立即渲染，等待宣傳卡片載入完成
+      // renderPreview();
+      // renderShareJsonBox();
     } else {
-      // 🆕 簡化預覽：只渲染主卡片（非預覽頁面）
+      // 簡化預覽
       renderMainCardPreview();
     }
     
-    console.log('✅ 測試版本初始化完成 (快速模式)');
+    console.log('✅ 快速初始化完成');
   } catch (error) {
-    console.error('❌ 一般模式初始化失敗:', error);
+    console.error('❌ 初始化失敗:', error);
   }
 }
 
@@ -4386,11 +5082,11 @@ function switchTab(tabName) {
     
     console.log('✅ 頁籤切換完成:', tabName);
     
-    // 特殊處理：切換到不同頁籤時的資料載入
+    // 🔧 修復排序問題：特殊處理不同頁籤的資料載入
     if (tabName === 'preview') {
-      // 🔧 修正：先確保宣傳卡片已載入，再渲染預覽
+      // 🔧 關鍵修復：檢查是否已有排序資料，避免重新載入
       if (!window.promoCardsLoaded) {
-        console.log('🔄 載入宣傳卡片中...');
+        console.log('🔄 宣傳卡片尚未載入，載入中...');
         showPreviewLoading();
         
         loadPromoCards().then(async () => {
@@ -4404,7 +5100,8 @@ function switchTab(tabName) {
           hidePreviewLoading();
         });
       } else {
-        // 宣傳卡片已載入，直接渲染
+        // 🔧 關鍵修復：宣傳卡片已載入，直接渲染，不重新載入
+        console.log('✅ 宣傳卡片已載入，直接渲染預覽，保持現有排序');
         setTimeout(() => {
           console.log('🔄 更新預覽內容...');
           try {
@@ -4413,22 +5110,26 @@ function switchTab(tabName) {
           } catch (e) {
             console.error('❌ 預覽更新失敗:', e);
           }
-        }, 200); // 縮短延遲時間
+        }, 200);
       }
     } else if (tabName === 'promo-cards') {
-      // 載入宣傳卡片數據（如果還沒載入）
-      setTimeout(() => {
-        console.log('🔄 載入宣傳卡片資料...');
-        try {
-          if (!window.promoCardsLoaded) {
-            loadPromoCards().then(() => {
-              window.promoCardsLoaded = true;
-            });
-          }
-        } catch (e) {
+      // 🔧 關鍵修復：宣傳卡片頁面不重新載入，只更新界面
+      console.log('🔄 切換到宣傳卡片頁面，保持現有排序，不重新載入');
+      
+      // 如果宣傳卡片尚未載入，才載入一次
+      if (!window.promoCardsLoaded) {
+        console.log('⚠️ 宣傳卡片尚未載入，執行一次性載入');
+        loadPromoCards().then(() => {
+          window.promoCardsLoaded = true;
+          console.log('✅ 宣傳卡片載入完成，保持現有排序');
+        }).catch((e) => {
           console.error('❌ 宣傳卡片載入失敗:', e);
-        }
-      }, 300);
+        });
+      } else {
+        console.log('✅ 宣傳卡片已載入，保持現有排序');
+        // 只更新界面顯示，不改變排序
+        renderPromoCardListSortable();
+      }
     }
   } else {
     console.error('❌ 頁籤切換失敗 - 找不到目標元素');
@@ -4532,4 +5233,380 @@ function hidePreviewLoading() {
     console.log('✅ 隱藏預覽載入提示');
   }
 }
+
+// 🔧 修正：增強card_order解析邏輯和錯誤處理
+function parseCardOrder(cardOrder) {
+  try {
+    // 詳細的調試日誌
+    console.log('🔍 [排序調試] 開始解析card_order:', { 
+      value: cardOrder, 
+      type: typeof cardOrder,
+      isArray: Array.isArray(cardOrder),
+      length: cardOrder?.length 
+    });
+    
+    // 如果已經是有效的陣列，直接返回
+    if (Array.isArray(cardOrder)) {
+      console.log('✅ [排序調試] card_order已經是陣列格式');
+      return cardOrder;
+    }
+    
+    // 如果是字串，嘗試解析
+    if (typeof cardOrder === 'string') {
+      console.log('🔄 [排序調試] 嘗試解析card_order字串');
+      const parsed = JSON.parse(cardOrder);
+      if (Array.isArray(parsed)) {
+        console.log('✅ [排序調試] 字串解析成功');
+        return parsed;
+      }
+    }
+    
+    // 其他情況返回null
+    console.log('❌ [排序調試] card_order格式不正確');
+    return null;
+  } catch (error) {
+    console.error('❌ [排序調試] card_order解析失敗:', error);
+    return null;
+  }
+}
+
+// 🔧 修正：增強異步載入時序控制
+class SortingSequenceManager {
+  constructor() {
+    this.promoCardsLoaded = false;
+    this.userDataLoaded = false;
+    this.pendingCardData = null;
+    this.loadingPromise = null;
+  }
+  
+  async waitForBothLoaded() {
+    if (!this.loadingPromise) {
+      this.loadingPromise = new Promise((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (this.promoCardsLoaded && this.userDataLoaded) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 50); // 50ms檢查間隔，更快響應
+      });
+    }
+    return this.loadingPromise;
+  }
+  
+  async processCardOrder() {
+    await this.waitForBothLoaded();
+    if (this.pendingCardData && this.pendingCardData.card_order) {
+      console.log('🔄 [排序調試] 開始處理排序，兩個資料都已載入');
+      console.log('📋 [排序調試] 待處理的card_order:', this.pendingCardData.card_order);
+      
+      const result = this.rebuildCardOrder(this.pendingCardData.card_order);
+      if (result) {
+        console.log('✅ [排序調試] 排序處理成功');
+        // 清除暫存資料
+        this.pendingCardData = null;
+        // 🔧 修復排序問題：排序處理完成後渲染預覽
+        console.log('🎯 [排序調試] 排序處理完成，開始渲染預覽');
+        renderPreview();
+        renderShareJsonBox();
+      } else {
+        console.log('❌ [排序調試] 排序處理失敗，將使用預設初始化');
+        // 使用預設初始化
+        initAllCardsSortable();
+        renderPromoCardListSortable();
+        // 🔧 修復排序問題：預設初始化完成後渲染預覽
+        console.log('🎯 [排序調試] 預設初始化完成，開始渲染預覽');
+        renderPreview();
+        renderShareJsonBox();
+      }
+    } else {
+      console.log('⚠️ [排序調試] 沒有可處理的排序資料');
+      console.log('📋 [排序調試] pendingCardData:', this.pendingCardData);
+      // 使用預設初始化
+      initAllCardsSortable();
+      renderPromoCardListSortable();
+      // 🔧 修復排序問題：預設初始化完成後渲染預覽
+      console.log('🎯 [排序調試] 預設初始化完成，開始渲染預覽');
+      renderPreview();
+      renderShareJsonBox();
+    }
+  }
+  
+  rebuildCardOrder(cardOrder) {
+    const parsedOrder = parseCardOrder(cardOrder);
+    if (!parsedOrder) {
+      console.log('❌ [排序調試] 無法解析card_order，使用預設順序');
+      return false;
+    }
+    
+    let newAllCards = [];
+    let newSelectedPromo = [];
+    
+    console.log('📋 [排序調試] 按照card_order重建卡片:', parsedOrder);
+    
+    parsedOrder.forEach(cardId => {
+      if (cardId === 'main') {
+        // 主卡片
+        newAllCards.push({ 
+          type: 'main', 
+          id: 'main', 
+          flex_json: getMainBubble(getFormData()), 
+          img: getFormData().main_image_url || defaultCard.main_image_url 
+        });
+        console.log('✅ [排序調試] 加入主卡片');
+      } else {
+        // 宣傳卡片
+        const found = promoCardList.find(c => c.id === cardId);
+        if (found) {
+          const promoFlexJson = JSON.parse(JSON.stringify(found.flex_json));
+          promoFlexJson._cardId = found.id;
+          promoFlexJson._cardType = 'promo';
+          console.log('✅ [排序調試] 加入宣傳卡片:', found.id, found.main_title_1);
+          
+          newAllCards.push({ 
+            type: 'promo', 
+            id: found.id, 
+            flex_json: promoFlexJson, 
+            img: found.flex_json.body.contents[0].url 
+          });
+          newSelectedPromo.push(found.id);
+        } else {
+          console.log('⚠️ [排序調試] 找不到宣傳卡片:', cardId);
+        }
+      }
+    });
+    
+    if (newAllCards.length > 0) {
+      allCardsSortable = newAllCards;
+      selectedPromoCards = newSelectedPromo;
+      renderPromoCardSelector();
+      renderPromoCardListSortable();
+      console.log('✅ [排序調試] 卡片排序重建完成，順序:', allCardsSortable.map(c => c.id));
+      return true;
+    }
+    
+    return false;
+  }
+}
+
+// 全域排序管理器
+const sortingManager = new SortingSequenceManager();
+
+// 🔧 修正：增強調試功能
+function debugCardSorting(step, data) {
+  console.log(`🔍 [MTEST排序調試] ${step}:`, {
+    timestamp: new Date().toISOString(),
+    step: step,
+    allCardsSortable: allCardsSortable?.map(c => ({ id: c.id, type: c.type })),
+    selectedPromoCards: selectedPromoCards,
+    promoCardListLength: promoCardList?.length || 0,
+    promoCardsLoaded: sortingManager.promoCardsLoaded,
+    userDataLoaded: sortingManager.userDataLoaded,
+    pendingCardData: data ? { hasCardOrder: !!data.card_order } : null
+  });
+}
+
+// 🔧 增加：從Flex JSON中提取標題的輔助函數
+function extractTitleFromFlex(flex) {
+  try {
+    if (!flex.body?.contents) return null;
+    
+    // 遞迴搜尋文字內容
+    function findText(contents) {
+      if (!Array.isArray(contents)) return null;
+      
+      for (const item of contents) {
+        if (item.type === 'text' && item.text) {
+          // 過濾掉pageview數字和特殊字符
+          const text = item.text.replace('\u200B', '').trim();
+          if (text && !/^\d{1,4}$/.test(text) && text !== '呈璽元宇宙3D展覽館') {
+            return text;
+          }
+        }
+        if (item.contents && Array.isArray(item.contents)) {
+          const found = findText(item.contents);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+    
+    return findText(flex.body.contents);
+  } catch (error) {
+    console.error('標題提取失敗:', error);
+    return null;
+  }
+}
+
+// 🔧 增加：MTEST排序功能效能測試
+function testSortingPerformance() {
+  console.log('🧪 開始MTEST排序功能效能測試');
+  
+  const testResults = {
+    loadTime: 0,
+    sortingTime: 0,
+    renderTime: 0,
+    memoryUsage: 0,
+    errors: []
+  };
+  
+  try {
+    // 測試1: 載入時間
+    const loadStart = performance.now();
+    loadPromoCards();
+    const loadEnd = performance.now();
+    testResults.loadTime = loadEnd - loadStart;
+    
+    // 測試2: 排序時間
+    const sortStart = performance.now();
+    if (allCardsSortable.length > 0) {
+      // 模擬拖拉排序
+      for (let i = 0; i < 5; i++) {
+        if (allCardsSortable.length > 1) {
+          moveCardLeft(1);
+          moveCardRight(0);
+        }
+      }
+    }
+    const sortEnd = performance.now();
+    testResults.sortingTime = sortEnd - sortStart;
+    
+    // 測試3: 渲染時間
+    const renderStart = performance.now();
+    renderPromoCardListSortable();
+    renderPreview();
+    const renderEnd = performance.now();
+    testResults.renderTime = renderEnd - renderStart;
+    
+    // 測試4: 記憶體使用量
+    if (performance.memory) {
+      testResults.memoryUsage = performance.memory.usedJSHeapSize / (1024 * 1024); // MB
+    }
+    
+    // 輸出測試結果
+    console.log('📊 MTEST排序效能測試結果:', {
+      載入時間: `${testResults.loadTime.toFixed(2)}ms`,
+      排序時間: `${testResults.sortingTime.toFixed(2)}ms`,
+      渲染時間: `${testResults.renderTime.toFixed(2)}ms`,
+      記憶體使用: `${testResults.memoryUsage.toFixed(2)}MB`,
+      錯誤數量: testResults.errors.length
+    });
+    
+    // 驗收標準檢查
+    const passed = {
+      loadTime: testResults.loadTime < 1000, // < 1秒
+      sortingTime: testResults.sortingTime < 200, // < 0.2秒
+      renderTime: testResults.renderTime < 500, // < 0.5秒
+      memoryUsage: testResults.memoryUsage < 50, // < 50MB
+      noErrors: testResults.errors.length === 0
+    };
+    
+    const allPassed = Object.values(passed).every(Boolean);
+    
+    console.log('✅ 驗收標準檢查:', {
+      載入速度: passed.loadTime ? '✅ 通過' : '❌ 失敗',
+      排序響應: passed.sortingTime ? '✅ 通過' : '❌ 失敗',
+      渲染效能: passed.renderTime ? '✅ 通過' : '❌ 失敗',
+      記憶體控制: passed.memoryUsage ? '✅ 通過' : '❌ 失敗',
+      無錯誤: passed.noErrors ? '✅ 通過' : '❌ 失敗',
+      總體評估: allPassed ? '🎉 全部通過' : '⚠️ 需要改進'
+    });
+    
+    return { success: allPassed, results: testResults, passed };
+    
+  } catch (error) {
+    console.error('❌ 排序效能測試失敗:', error);
+    testResults.errors.push(error.message);
+    return { success: false, results: testResults, error: error.message };
+  }
+}
+
+// 🔧 增加：排序穩定性測試
+function testSortingStability() {
+  console.log('🧪 開始排序穩定性測試');
+  
+  const testCases = [
+    { name: '空卡片陣列', cards: [] },
+    { name: '只有主卡片', cards: ['main'] },
+    { name: '主卡片+1個宣傳卡片', cards: ['main', 'promo1'] },
+    { name: '主卡片+多個宣傳卡片', cards: ['main', 'promo1', 'promo2', 'promo3'] },
+    { name: '亂序卡片', cards: ['promo2', 'main', 'promo1'] }
+  ];
+  
+  let passedTests = 0;
+  let totalTests = testCases.length;
+  
+  for (const testCase of testCases) {
+    try {
+      console.log(`🧪 測試案例: ${testCase.name}`);
+      
+      // 模擬card_order
+      const mockOrder = parseCardOrder(testCase.cards);
+      
+      if (mockOrder) {
+        const result = sortingManager.rebuildCardOrder(mockOrder);
+        
+        if (result || testCase.cards.length <= 1) {
+          console.log(`✅ ${testCase.name} - 通過`);
+          passedTests++;
+        } else {
+          console.log(`❌ ${testCase.name} - 失敗`);
+        }
+      } else {
+        console.log(`⚠️ ${testCase.name} - 跳過（無效排序）`);
+        if (testCase.cards.length === 0) {
+          passedTests++; // 空陣列是有效的
+        }
+      }
+      
+    } catch (error) {
+      console.error(`❌ ${testCase.name} - 錯誤:`, error);
+    }
+  }
+  
+  const stabilityScore = (passedTests / totalTests) * 100;
+  console.log(`📊 穩定性測試結果: ${passedTests}/${totalTests} 通過 (${stabilityScore.toFixed(1)}%)`);
+  
+  return {
+    passed: passedTests,
+    total: totalTests,
+    score: stabilityScore,
+    success: stabilityScore >= 80
+  };
+}
+
+// 🔧 增加：全面測試函數
+function runMtestSortingTests() {
+  console.log('🚀 開始MTEST排序功能全面測試');
+  
+  const performanceTest = testSortingPerformance();
+  const stabilityTest = testSortingStability();
+  
+  const overallResult = {
+    performance: performanceTest.success,
+    stability: stabilityTest.success,
+    overall: performanceTest.success && stabilityTest.success
+  };
+  
+  console.log('📋 測試總結:', {
+    效能測試: performanceTest.success ? '✅ 通過' : '❌ 失敗',
+    穩定性測試: stabilityTest.success ? '✅ 通過' : '❌ 失敗',
+    整體評估: overallResult.overall ? '🎉 測試通過，可以部署' : '⚠️ 需要進一步優化'
+  });
+  
+  return overallResult;
+}
+
+// 🔧 增加：自動測試觸發（開發環境）
+if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
+  // 開發環境自動執行測試
+  setTimeout(() => {
+    console.log('🔧 開發環境檢測到，自動執行排序測試');
+    runMtestSortingTests();
+  }, 3000);
+}
+
+// 暴露測試函數到全域（供手動測試使用）
+window.testMtestSorting = runMtestSortingTests;
+window.testSortingPerformance = testSortingPerformance;
+window.testSortingStability = testSortingStability;
  
