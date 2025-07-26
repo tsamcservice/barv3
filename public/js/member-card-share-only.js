@@ -208,8 +208,24 @@ function renderCardPreview(flexJson) {
     
     // 使用flex2html渲染
     if (typeof window.flex2html === 'function') {
-      window.flex2html(containerId, flexMessage);
-      console.log('✅ 卡片預覽渲染完成 (使用flex2html函數)');
+      // 等待DOM更新後再渲染
+      setTimeout(() => {
+        try {
+          window.flex2html(containerId, flexMessage);
+          console.log('✅ 卡片預覽渲染完成 (使用flex2html函數)');
+        } catch (error) {
+          console.error('❌ flex2html渲染錯誤:', error);
+          // 使用備用方案
+          previewContainer.innerHTML = `
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        color: white; padding: 20px; border-radius: 15px; text-align: center;">
+              <h3>🎯 專屬會員卡</h3>
+              <p style="margin: 10px 0;">呈璽元宇宙</p>
+              <p style="font-size: 14px;">渲染完成，準備分享</p>
+            </div>
+          `;
+        }
+      }, 100);
     } else if (typeof renderFlexMessage === 'function') {
       renderFlexMessage(previewContainer, flexJson);
       console.log('✅ 卡片預覽渲染完成 (使用renderFlexMessage)');
@@ -316,10 +332,28 @@ async function calculateSharePoints() {
       
       // 更新統計資訊
       if (result.new_points !== undefined) {
+        const oldPoints = cardData.user_points || 0;
+        const newPoints = result.new_points;
+        const pointsGained = newPoints - oldPoints;
+        
         updateStatsInfo({
           ...cardData,
-          user_points: result.new_points
+          user_points: newPoints
         });
+        
+        // 顯示點數增加提示
+        if (pointsGained > 0) {
+          console.log(`🎉 恭喜！獲得 ${pointsGained} 點數！總點數：${newPoints}`);
+          
+          // 更新按鈕顯示點數增加
+          const shareButton = document.getElementById('shareButton');
+          shareButton.innerHTML = `<span>🎉</span><span>+${pointsGained} 點數！</span>`;
+          
+          // 3秒後顯示分享成功
+          setTimeout(() => {
+            shareButton.innerHTML = '<span>✅</span><span>分享成功</span>';
+          }, 2000);
+        }
       }
     } else {
       console.warn('⚠️ 點數計算失敗:', response.status);
@@ -345,10 +379,20 @@ async function executeShare() {
     shareButton.innerHTML = '<span>⏳</span><span>分享中...</span>';
     
     // 準備分享資料
+    let parsedFlexJson = cardData.flex_json;
+    if (typeof cardData.flex_json === 'string') {
+      try {
+        parsedFlexJson = JSON.parse(cardData.flex_json);
+      } catch (e) {
+        console.error('❌ 分享資料解析失敗:', e);
+        throw new Error('分享資料格式錯誤');
+      }
+    }
+    
     const shareContent = {
       type: 'flex',
-      altText: cardData.card_alt_title || '專屬會員卡',
-      contents: cardData.flex_json
+      altText: cardData.card_alt_title || cardData.main_title_1 || '專屬會員卡',
+      contents: parsedFlexJson
     };
     
     // 執行分享
@@ -361,15 +405,12 @@ async function executeShare() {
       console.log('💎 開始計算點數...');
       await calculateSharePoints();
       
-      // 更新按鈕狀態
-      shareButton.innerHTML = '<span>✅</span><span>分享成功</span>';
-      
-      // 延遲後關閉視窗
+      // 延遲後關閉視窗（等待點數提示顯示完成）
       setTimeout(() => {
         if (liff.isInClient()) {
           liff.closeWindow();
         }
-      }, 1500);
+      }, 4000); // 延長到4秒，讓用戶看到點數增加提示
       
     } else {
       throw new Error('分享功能不可用');
