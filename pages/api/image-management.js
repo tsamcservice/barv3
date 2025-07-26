@@ -38,12 +38,13 @@ export default async function handler(req, res) {
 
       console.log('🔍 準備刪除圖片:', imageUrl);
 
-      // 1. 從會員卡記錄中移除這個圖片URL
-      const { data: memberCards, error: fetchError } = await supabase
+      // 1. 查詢所有會員卡記錄，然後在代碼中篩選
+      console.log('🔍 查詢所有會員卡記錄...');
+      
+      const { data: allCards, error: fetchError } = await supabase
         .from('member_cards')
-        .select('*')
-        .eq('line_user_id', userId);
-
+        .select('*');
+      
       if (fetchError) {
         console.error('❌ 查詢會員卡失敗:', fetchError);
         return res.status(500).json({ 
@@ -51,8 +52,16 @@ export default async function handler(req, res) {
           message: '查詢會員卡失敗: ' + fetchError.message 
         });
       }
+      
+      // 2. 篩選包含此圖片URL的記錄
+      const imageFields = ['main_image_url', 'snow_image_url', 'calendar_image_url', 'love_icon_url', 'member_image_url'];
+      const memberCards = allCards.filter(card => 
+        imageFields.some(field => card[field] === imageUrl)
+      );
+      
+      console.log('🔍 找到包含此圖片的卡片數量:', memberCards.length);
 
-      // 2. 更新所有包含此圖片URL的記錄
+      // 3. 更新所有包含此圖片URL的記錄
       const updates = [];
       memberCards.forEach(card => {
         const updatedCard = { ...card };

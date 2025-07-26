@@ -118,7 +118,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('Supabase upload error:', error);
       return res.status(500).json({ 
         success: false, 
-        error: '上傳失敗，請稍後再試' 
+        error: `上傳失敗: ${error.message || '請稍後再試'}`,
+        details: error
       });
     }
 

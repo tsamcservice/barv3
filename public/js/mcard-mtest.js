@@ -3505,9 +3505,14 @@ async function compressImage(file, maxSize) {
       let quality = 0.7; // 從較低品質開始
       const tryCompress = () => {
         canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('圖片壓縮失敗'));
+            return;
+          }
+          
           if (blob.size <= maxSize || quality <= 0.1) {
             // 轉換為File物件
-            const compressedFile = new File([blob], file.name, {
+            const compressedFile = new File([blob], file.name.replace(/\.(png|gif)$/i, '.jpg'), {
               type: 'image/jpeg', // 強制轉為JPEG以獲得更好的壓縮率
               lastModified: Date.now()
             });
