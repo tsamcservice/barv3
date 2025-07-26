@@ -77,6 +77,19 @@ async function loadCardDataDirect(pageId, userId) {
     console.log('🔍 API請求:', apiUrl);
     
     const response = await fetch(apiUrl);
+    
+    // 檢查HTTP狀態
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    // 檢查回應是否為JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`API回應不是JSON格式: ${text.substring(0, 100)}`);
+    }
+    
     const result = await response.json();
     
     if (result.success && result.data && result.data.length > 0) {
