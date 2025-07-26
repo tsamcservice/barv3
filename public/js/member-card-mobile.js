@@ -3473,6 +3473,65 @@ window.addEventListener('DOMContentLoaded', function() {
   console.log('✅ DOMContentLoaded: 初始化完成');
 });
 
+// 圖片壓縮函數
+async function compressImage(file, maxSize) {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = function() {
+      // 計算壓縮比例
+      let { width, height } = img;
+      const maxDimension = 1920; // 最大尺寸限制
+      
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = (height * maxDimension) / width;
+          width = maxDimension;
+        } else {
+          width = (width * maxDimension) / height;
+          height = maxDimension;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // 繪製壓縮後的圖片
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // 嘗試不同的品質設定直到檔案大小符合要求
+      let quality = 0.7; // 從較低品質開始
+      const tryCompress = () => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('圖片壓縮失敗'));
+            return;
+          }
+          
+          if (blob.size <= maxSize || quality <= 0.1) {
+            // 轉換為File物件
+            const compressedFile = new File([blob], file.name.replace(/\.(png|gif)$/i, '.jpg'), {
+              type: 'image/jpeg', // 強制轉為JPEG以獲得更好的壓縮率
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          } else {
+            quality -= 0.05; // 更細微的品質調整
+            tryCompress();
+          }
+        }, 'image/jpeg', quality); // 強制使用JPEG格式
+      };
+      
+      tryCompress();
+    };
+    
+    img.onerror = () => reject(new Error('圖片載入失敗'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 // 圖片上傳功能
 // 更新後的圖片上傳函數，支援檔案資訊顯示
 function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
@@ -3532,16 +3591,50 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
     }
     const file = input.files[0];
     
-    // 檢查檔案大小 (1.2MB限制)
-    const maxFileSize = 1.2 * 1024 * 1024; // 1.2MB
+    // 檢查檔案大小並自動壓縮
+    const maxFileSize = 800 * 1024; // 800KB
+    let processedFile = file;
+    
     if (file.size > maxFileSize) {
       const fileSizeKB = Math.round(file.size / 1024);
-      const maxSizeMB = (maxFileSize / (1024 * 1024)).toFixed(1);
-      alert(`檔案大小 ${fileSizeKB}KB 超過限制！\n\n請上傳小於 ${maxSizeMB}MB 的圖片。\n建議使用圖片壓縮工具先壓縮圖片。`);
-      return;
+      const maxSizeKB = Math.round(maxFileSize / 1024);
+      
+      // 詢問是否自動壓縮
+      const shouldCompress = confirm(`檔案大小 ${fileSizeKB}KB 超過限制！\n\n是否自動壓縮圖片至 ${maxSizeKB}KB 以下？\n\n點擊「確定」自動壓縮，點擊「取消」請手動壓縮後重新上傳。`);
+      
+      if (!shouldCompress) {
+        return;
+      }
+      
+      // 顯示壓縮進度
+      if (infoDiv) {
+        infoDiv.innerHTML = '🔄 正在自動壓縮圖片...';
+        infoDiv.classList.add('show');
+      }
+      
+      try {
+        processedFile = await compressImage(file, maxFileSize);
+        console.log('✅ 圖片壓縮完成:', Math.round(processedFile.size / 1024) + 'KB');
+        
+        if (infoDiv) {
+          const compressedSizeKB = Math.round(processedFile.size / 1024);
+          infoDiv.innerHTML = `✅ 壓縮完成：${fileSizeKB}KB → ${compressedSizeKB}KB`;
+        }
+      } catch (error) {
+        console.error('❌ 圖片壓縮失敗:', error);
+        alert('圖片壓縮失敗，請手動壓縮後重新上傳。');
+        if (infoDiv) {
+          infoDiv.classList.remove('show');
+        }
+        return;
+      }
+    } else {
+      // 檔案大小在限制內，直接使用原檔案
+      const fileSizeKB = Math.round(file.size / 1024);
+      console.log(`✅ 檔案大小 ${fileSizeKB}KB 在限制內，直接上傳不壓縮`);
     }
     
-    console.log('📤 準備上傳圖片:', file.name, 'size:', Math.round(file.size / 1024) + 'KB');
+    console.log('📤 準備上傳圖片:', processedFile.name, 'userId:', liffProfile.userId, 'size:', Math.round(processedFile.size / 1024) + 'KB');
     const reader = new FileReader();
     reader.onload = async function(e) {
       try {
@@ -3556,8 +3649,8 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
           },
           body: JSON.stringify({
             file: e.target.result,
-            fileName: file.name,
-            fileType: file.type,
+            fileName: processedFile.name,
+            fileType: processedFile.type,
             userId: liffProfile?.userId || null,
           }),
         });
@@ -3591,7 +3684,7 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
         hideImageInfo();
       }
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(processedFile);
   });
   
   // URL輸入框變化時隱藏資訊（因為可能是手動輸入的URL）
@@ -4334,22 +4427,7 @@ async function deleteImage(imageUrl, event) {
       throw new Error(result.message || '刪除失敗');
     }
     
-            // 根據API回應顯示詳細的刪除結果
-        let message = '✅ 圖片刪除成功！\n\n';
-        
-        if (result.memberCardsUpdated && result.uploadedImagesUpdated) {
-          message += `• 已從 ${result.memberCardsUpdated} 個會員卡中移除圖片引用\n`;
-          message += `• 已從圖片庫中移除 ${result.uploadedImagesUpdated} 個圖片記錄\n`;
-          message += `• 總計影響 ${result.updatedRecords} 個記錄`;
-        } else if (result.memberCardsUpdated > 0) {
-          message += `已從 ${result.memberCardsUpdated} 個會員卡中移除圖片引用`;
-        } else if (result.uploadedImagesUpdated > 0) {
-          message += `已從圖片庫中移除 ${result.uploadedImagesUpdated} 個圖片記錄`;
-        } else {
-          message += `圖片已從系統中移除（影響 ${result.updatedRecords} 個記錄）`;
-        }
-        
-        alert(message);
+            alert('✅ 圖片刪除成功！');
     
     // 重新載入圖片庫
     showImageLibrary();

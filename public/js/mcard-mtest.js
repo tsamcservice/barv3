@@ -4460,22 +4460,7 @@ async function deleteImage(imageUrl, event) {
       throw new Error(result.message || '刪除失敗');
     }
     
-            // 根據API回應顯示詳細的刪除結果
-        let message = '✅ 圖片刪除成功！\n\n';
-        
-        if (result.memberCardsUpdated && result.uploadedImagesUpdated) {
-          message += `• 已從 ${result.memberCardsUpdated} 個會員卡中移除圖片引用\n`;
-          message += `• 已從圖片庫中移除 ${result.uploadedImagesUpdated} 個圖片記錄\n`;
-          message += `• 總計影響 ${result.updatedRecords} 個記錄`;
-        } else if (result.memberCardsUpdated > 0) {
-          message += `已從 ${result.memberCardsUpdated} 個會員卡中移除圖片引用`;
-        } else if (result.uploadedImagesUpdated > 0) {
-          message += `已從圖片庫中移除 ${result.uploadedImagesUpdated} 個圖片記錄`;
-        } else {
-          message += `圖片已從系統中移除（影響 ${result.updatedRecords} 個記錄）`;
-        }
-        
-        alert(message);
+            alert('✅ 圖片刪除成功！');
     
     // 重新載入圖片庫
     showImageLibrary();
