@@ -181,10 +181,32 @@ function renderCardPreview(flexJson) {
     if (typeof renderFlexMessage === 'function') {
       renderFlexMessage(previewContainer, flexJson);
       console.log('✅ 卡片預覽渲染完成');
+    } else if (typeof window.flex2html !== 'undefined' && window.flex2html.renderFlexMessage) {
+      // 嘗試使用全域flex2html物件
+      window.flex2html.renderFlexMessage(previewContainer, flexJson);
+      console.log('✅ 卡片預覽渲染完成 (使用全域flex2html)');
     } else {
-      // 備用方案：直接插入HTML
-      previewContainer.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">預覽載入中...</div>';
-      console.warn('⚠️ flex2html未載入，使用備用方案');
+      // 備用方案：使用基本HTML結構
+      previewContainer.innerHTML = `
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    color: white; padding: 20px; border-radius: 15px; text-align: center;">
+          <h3>🎯 專屬會員卡</h3>
+          <p style="margin: 10px 0;">呈璽元宇宙</p>
+          <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 10px; margin: 10px 0;">
+            <p>卡片預覽載入中...</p>
+            <p style="font-size: 12px; opacity: 0.8;">flex2html載入中，請稍候</p>
+          </div>
+        </div>
+      `;
+      console.warn('⚠️ flex2html未載入，使用備用HTML方案');
+      
+      // 延遲重試載入
+      setTimeout(() => {
+        if (typeof renderFlexMessage === 'function') {
+          renderFlexMessage(previewContainer, flexJson);
+          console.log('✅ 延遲載入成功');
+        }
+      }, 1000);
     }
   } catch (error) {
     console.error('❌ 卡片預覽渲染失敗:', error);
@@ -344,10 +366,36 @@ async function initShareOnlyPage() {
   }
 }
 
+// 檢查資源載入狀態
+function checkResourcesLoaded() {
+  console.log('🔍 檢查資源載入狀態:');
+  console.log('- LIFF SDK:', typeof window.liff !== 'undefined' ? '✅' : '❌');
+  console.log('- flex2html (renderFlexMessage):', typeof renderFlexMessage !== 'undefined' ? '✅' : '❌');
+  console.log('- flex2html (window.flex2html):', typeof window.flex2html !== 'undefined' ? '✅' : '❌');
+  
+  // 嘗試等待flex2html載入
+  if (typeof renderFlexMessage === 'undefined' && typeof window.flex2html === 'undefined') {
+    console.log('⏳ flex2html尚未載入，等待中...');
+    return false;
+  }
+  return true;
+}
+
 // 頁面載入完成後執行
 window.addEventListener('DOMContentLoaded', () => {
   console.log('📄 DOM載入完成，開始初始化...');
-  initShareOnlyPage();
+  
+  // 檢查資源載入狀態
+  if (!checkResourcesLoaded()) {
+    // 延遲重試
+    setTimeout(() => {
+      console.log('🔄 重新檢查資源載入狀態...');
+      checkResourcesLoaded();
+      initShareOnlyPage();
+    }, 1000);
+  } else {
+    initShareOnlyPage();
+  }
 });
 
 // 錯誤處理
