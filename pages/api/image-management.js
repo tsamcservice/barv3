@@ -10,6 +10,14 @@ export default async function handler(req, res) {
   console.log('🔍 請求方法:', req.method);
   console.log('🔍 請求內容:', req.body);
 
+  // 檢查請求方法
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      success: false, 
+      message: `方法 ${req.method} 不被允許，請使用 POST` 
+    });
+  }
+
   try {
     const { userId, action, imageUrl } = req.body;
 
