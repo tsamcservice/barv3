@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>🚀 快速分享 - 專屬會員卡</title>
+    
+    <!-- 動態OG Meta Tags -->
+    <meta property="og:title" content="🎯 專屬會員卡 - 呈璽元宇宙" id="og-title">
+    <meta property="og:description" content="歡迎來到呈璽元宇宙3D展覽館，體驗獨特的會員卡分享！" id="og-description">
+    <meta property="og:image" content="https://barv3.vercel.app/uploads/vip/TS-LOGO.png" id="og-image">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://barv3.vercel.app/member-card-share-only.html" id="og-url">
+    
+    <!-- 輕量化CSS - 僅載入必要樣式 -->
+    <link rel="stylesheet" href="js/flex2html.css?v=20250717">
+    <script src="js/flex2html.min.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+            position: relative;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .loading-section {
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .loading-detail {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .preview-section {
+            padding: 20px;
+            display: none;
+        }
+        
+        .card-preview {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        #main-card-preview {
+            width: 100%;
+            max-width: 350px;
+            margin: 0 auto;
+            background: transparent;
+            overflow-x: auto;
+            overflow-y: hidden;
+            border-radius: 8px;
+        }
+        
+        #main-card-preview .chatbox {
+            background-color: #849ebf;
+            width: 350px;
+            height: auto;
+            min-height: 250px;
+            margin: 0;
+            padding: 20px 12px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        
+        .share-section {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            display: none;
+        }
+        
+        .share-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #00c300, #00a000);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .share-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 195, 0, 0.3);
+        }
+        
+        .share-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-section {
+            padding: 40px 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .error-title {
+            font-size: 18px;
+            color: #c62828;
+            margin-bottom: 8px;
+        }
+        
+        .error-message {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .stats-info {
+            background: #f0f8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #4CAF50;
+            text-align: center;
+        }
+        
+        .version-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            z-index: 1000;
+        }
+        
+        /* 手機版優化 */
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                max-width: calc(100% - 20px);
+            }
+            
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            #main-card-preview .chatbox {
+                width: 320px;
+                min-height: 220px;
+                padding: 15px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 標題區域 -->
+        <div class="header">
+            <h1>🚀 快速分享</h1>
+            <p>輕量級會員卡分享系統</p>
+        </div>
+        
+        <!-- 載入中區域 -->
+        <div class="loading-section" id="loadingSection">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">正在載入您的會員卡...</div>
+            <div class="loading-detail">直接從資料庫載入，無需編輯器</div>
+        </div>
+        
+        <!-- 預覽區域 -->
+        <div class="preview-section" id="previewSection">
+            <div class="stats-info" id="statsInfo">
+                載入中...
+            </div>
+            <div class="card-preview">
+                <div id="main-card-preview">
+                    <div class="chatbox">
+                        <!-- flex2html內容將插入這裡 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分享區域 -->
+        <div class="share-section" id="shareSection">
+            <button type="button" id="shareButton" class="share-button">
+                <span>📱</span>
+                <span>分享到LINE</span>
+            </button>
+        </div>
+        
+        <!-- 錯誤區域 -->
+        <div class="error-section" id="errorSection">
+            <div class="error-icon">⚠️</div>
+            <div class="error-title">載入失敗</div>
+            <div class="error-message" id="errorMessage">
+                請檢查連結是否正確，或稍後再試
+            </div>
+        </div>
+    </div>
+    
+    <!-- 版本資訊 -->
+    <div class="version-info">
+        Share-Only v20250717 | LIFF: 2007327814-BdWpj70m
+    </div>
+    
+    <script src="js/member-card-share-only.js"></script>
+</body>
+</html> 
