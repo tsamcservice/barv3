@@ -100,9 +100,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    // 清理檔名：移除特殊字符和中文，只保留英數字、點和連字符
+    const cleanFileName = fileName
+      .replace(/[^\w\-_.]/g, '') // 移除特殊字符
+      .replace(/[\u4e00-\u9fff]/g, '') // 移除中文字符
+      .replace(/\s+/g, '-') // 空格轉連字符
+      .replace(/--+/g, '-') // 多個連字符合併
+      .toLowerCase(); // 轉小寫
+    
     // 生成唯一檔名
     const timestamp = Date.now();
-    const uniqueFileName = `${timestamp}-${fileName}`;
+    const fileExtension = cleanFileName.split('.').pop() || 'jpg';
+    const uniqueFileName = `${timestamp}-upload.${fileExtension}`;
+    
+    console.log('原始檔名:', fileName);
+    console.log('清理後檔名:', uniqueFileName);
 
     console.log('開始上傳檔案到 Supabase Storage:', uniqueFileName);
 

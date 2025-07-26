@@ -100,6 +100,19 @@ export default async function handler(req, res) {
           }
         }
       }
+      
+      // 4. 同時從uploaded_images表中標記圖片為非活躍狀態
+      console.log('🔍 更新uploaded_images表...');
+      const { data: uploadedImagesUpdate, error: uploadedImagesError } = await supabase
+        .from('uploaded_images')
+        .update({ is_active: false })
+        .eq('image_url', imageUrl);
+      
+      if (uploadedImagesError) {
+        console.error('❌ 更新uploaded_images失敗:', uploadedImagesError);
+      } else {
+        console.log('✅ uploaded_images更新成功:', uploadedImagesUpdate);
+      }
 
       // 4. 嘗試從Storage中刪除檔案（如果是我們的域名）
       if (imageUrl.includes('supabase.co') && imageUrl.includes('member-cards')) {
@@ -125,10 +138,15 @@ export default async function handler(req, res) {
         }
       }
 
+      // 計算總影響記錄數
+      const totalUpdated = updates.length + (uploadedImagesUpdate ? 1 : 0);
+      
       return res.status(200).json({
         success: true,
-        message: '圖片已從會員卡記錄中移除',
-        updatedRecords: updates.length
+        message: '圖片已從系統中移除',
+        updatedRecords: totalUpdated,
+        memberCardsUpdated: updates.length,
+        uploadedImagesUpdated: uploadedImagesUpdate ? 1 : 0
       });
 
     } else if (action === 'list') {
