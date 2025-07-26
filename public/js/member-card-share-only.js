@@ -163,7 +163,7 @@ async function loadFromShareData(shareDataParam) {
   }
 }
 
-// 渲染卡片預覽
+// 渲染卡片預覽 - 使用與其他頁面相同的邏輯
 function renderCardPreview(flexJson) {
   try {
     if (!flexJson) {
@@ -171,19 +171,7 @@ function renderCardPreview(flexJson) {
     }
     
     console.log('🎨 渲染卡片預覽...');
-    console.log('📋 Flex JSON 資料:', flexJson);
-    
-    const previewContainer = document.querySelector('#main-card-preview .chatbox');
-    if (!previewContainer) {
-      throw new Error('找不到預覽容器');
-    }
-    
-    // 清空容器
-    previewContainer.innerHTML = '';
-    
-    // 為容器設定ID
-    const containerId = 'share-preview-' + Date.now();
-    previewContainer.id = containerId;
+    console.log('📋 原始 Flex JSON:', flexJson);
     
     // 檢查flex_json是否為字串需要解析
     let parsedFlexJson = flexJson;
@@ -197,61 +185,56 @@ function renderCardPreview(flexJson) {
       }
     }
     
-    // 構建完整的flex消息格式
+    // 構建完整的flex消息格式（與其他頁面相同）
     const flexMessage = {
       type: 'flex',
-      altText: '專屬會員卡',
+      altText: cardData.card_alt_title || cardData.main_title_1 || '專屬會員卡',
       contents: parsedFlexJson
     };
     
     console.log('📤 準備渲染的完整消息:', flexMessage);
     
-    // 使用flex2html渲染
-    if (typeof window.flex2html === 'function') {
-      // 等待DOM更新後再渲染
-      setTimeout(() => {
-        try {
-          window.flex2html(containerId, flexMessage);
-          console.log('✅ 卡片預覽渲染完成 (使用flex2html函數)');
-        } catch (error) {
-          console.error('❌ flex2html渲染錯誤:', error);
-          // 使用備用方案
-          previewContainer.innerHTML = `
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                        color: white; padding: 20px; border-radius: 15px; text-align: center;">
-              <h3>🎯 專屬會員卡</h3>
-              <p style="margin: 10px 0;">呈璽元宇宙</p>
-              <p style="font-size: 14px;">渲染完成，準備分享</p>
-            </div>
-          `;
-        }
-      }, 100);
-    } else if (typeof renderFlexMessage === 'function') {
-      renderFlexMessage(previewContainer, flexJson);
-      console.log('✅ 卡片預覽渲染完成 (使用renderFlexMessage)');
+    // 使用與其他頁面相同的渲染邏輯
+    const preview = document.getElementById('main-card-preview');
+    if (!preview) {
+      throw new Error('找不到預覽容器');
+    }
+    
+    let chatbox = preview.querySelector('.chatbox');
+    if (!chatbox) {
+      chatbox = document.createElement('div');
+      chatbox.className = 'chatbox';
+      preview.appendChild(chatbox);
+    }
+    chatbox.innerHTML = '';
+    
+    // 創建臨時ID並渲染（與其他頁面相同的方式）
+    const tempId = 'temp-chatbox-' + Date.now();
+    chatbox.id = tempId;
+    
+    // 使用全域flex2html函數渲染
+    if (typeof flex2html === 'function') {
+      flex2html(tempId, flexMessage);
+      console.log('✅ 卡片預覽渲染完成 (使用flex2html全域函數)');
+    } else if (typeof window.flex2html === 'function') {
+      window.flex2html(tempId, flexMessage);
+      console.log('✅ 卡片預覽渲染完成 (使用window.flex2html)');
     } else {
       // 備用方案：使用基本HTML結構
-      previewContainer.innerHTML = `
+      chatbox.innerHTML = `
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                     color: white; padding: 20px; border-radius: 15px; text-align: center;">
           <h3>🎯 專屬會員卡</h3>
           <p style="margin: 10px 0;">呈璽元宇宙</p>
-          <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 10px; margin: 10px 0;">
-            <p>卡片預覽載入中...</p>
-            <p style="font-size: 12px; opacity: 0.8;">flex2html載入中，請稍候</p>
+          <p style="font-size: 14px; margin: 10px 0;">預覽準備完成</p>
+          <div style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 8px; font-size: 12px;">
+            flex2html載入中...
           </div>
         </div>
       `;
       console.warn('⚠️ flex2html未載入，使用備用HTML方案');
-      
-      // 延遲重試載入
-      setTimeout(() => {
-        if (typeof renderFlexMessage === 'function') {
-          renderFlexMessage(previewContainer, flexJson);
-          console.log('✅ 延遲載入成功');
-        }
-      }, 1000);
     }
+    
   } catch (error) {
     console.error('❌ 卡片預覽渲染失敗:', error);
     throw error;
@@ -345,14 +328,25 @@ async function calculateSharePoints() {
         if (pointsGained > 0) {
           console.log(`🎉 恭喜！獲得 ${pointsGained} 點數！總點數：${newPoints}`);
           
-          // 更新按鈕顯示點數增加
+          // 立即更新按鈕顯示點數增加
           const shareButton = document.getElementById('shareButton');
-          shareButton.innerHTML = `<span>🎉</span><span>+${pointsGained} 點數！</span>`;
-          
-          // 3秒後顯示分享成功
-          setTimeout(() => {
-            shareButton.innerHTML = '<span>✅</span><span>分享成功</span>';
-          }, 2000);
+          if (shareButton) {
+            shareButton.disabled = false;
+            shareButton.innerHTML = `<span>🎉</span><span>+${pointsGained} 點數！</span>`;
+            shareButton.style.background = '#28a745';
+            shareButton.style.color = 'white';
+            
+            console.log('✅ 按鈕已更新為點數提示');
+            
+            // 2秒後顯示分享成功
+            setTimeout(() => {
+              shareButton.innerHTML = '<span>✅</span><span>分享成功</span>';
+              shareButton.style.background = '#6c757d';
+              console.log('✅ 按鈕已更新為分享成功');
+            }, 2000);
+          }
+        } else {
+          console.log('💡 沒有獲得點數或點數計算失敗');
         }
       }
     } else {
@@ -492,16 +486,21 @@ async function initShareOnlyPage() {
 function checkResourcesLoaded() {
   console.log('🔍 檢查資源載入狀態:');
   console.log('- LIFF SDK:', typeof window.liff !== 'undefined' ? '✅' : '❌');
-  console.log('- flex2html (function):', typeof window.flex2html === 'function' ? '✅' : '❌');
+  console.log('- flex2html (全域):', typeof flex2html === 'function' ? '✅' : '❌');
+  console.log('- flex2html (window):', typeof window.flex2html === 'function' ? '✅' : '❌');
   console.log('- renderFlexMessage:', typeof renderFlexMessage !== 'undefined' ? '✅' : '❌');
   
-  // flex2html載入檢查（只要有一個可用即可）
-  const hasFlexRenderer = typeof window.flex2html === 'function' || typeof renderFlexMessage !== 'undefined';
+  // flex2html載入檢查（優先使用全域函數）
+  const hasFlexRenderer = typeof flex2html === 'function' || 
+                          typeof window.flex2html === 'function' || 
+                          typeof renderFlexMessage !== 'undefined';
   
   if (!hasFlexRenderer) {
     console.log('⏳ flex2html尚未載入，等待中...');
     return false;
   }
+  
+  console.log('✅ 渲染函數已就緒');
   return true;
 }
 
