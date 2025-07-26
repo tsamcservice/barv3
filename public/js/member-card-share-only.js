@@ -171,22 +171,40 @@ function renderCardPreview(flexJson) {
     }
     
     console.log('🎨 渲染卡片預覽...');
+    console.log('📋 Flex JSON 資料:', flexJson);
     
     const previewContainer = document.querySelector('#main-card-preview .chatbox');
     if (!previewContainer) {
       throw new Error('找不到預覽容器');
     }
     
+    // 清空容器
+    previewContainer.innerHTML = '';
+    
     // 為容器設定ID
     const containerId = 'share-preview-' + Date.now();
     previewContainer.id = containerId;
+    
+    // 檢查flex_json是否為字串需要解析
+    let parsedFlexJson = flexJson;
+    if (typeof flexJson === 'string') {
+      try {
+        parsedFlexJson = JSON.parse(flexJson);
+        console.log('📋 解析後的 Flex JSON:', parsedFlexJson);
+      } catch (e) {
+        console.error('❌ Flex JSON 解析失敗:', e);
+        throw new Error('Flex JSON 格式錯誤');
+      }
+    }
     
     // 構建完整的flex消息格式
     const flexMessage = {
       type: 'flex',
       altText: '專屬會員卡',
-      contents: flexJson
+      contents: parsedFlexJson
     };
+    
+    console.log('📤 準備渲染的完整消息:', flexMessage);
     
     // 使用flex2html渲染
     if (typeof window.flex2html === 'function') {
@@ -277,10 +295,12 @@ async function calculateSharePoints() {
     console.log('💎 開始計算分享點數...');
     
     const pointsData = {
-      pageId: cardData.page_id || 'M01001',
+      cardId: cardData.id,
       userId: liffProfile.userId,
-      action: 'share'
+      source: 'share_only'
     };
+    
+    console.log('💎 點數計算參數:', pointsData);
     
     const response = await fetch('/api/cards/auto-share-reward', {
       method: 'POST',
@@ -333,10 +353,12 @@ async function executeShare() {
     
     // 執行分享
     if (liff.isApiAvailable('shareTargetPicker')) {
+      console.log('📤 準備分享內容:', shareContent);
       await liff.shareTargetPicker([shareContent]);
       console.log('✅ 分享完成');
       
       // 計算分享點數
+      console.log('💎 開始計算點數...');
       await calculateSharePoints();
       
       // 更新按鈕狀態
@@ -400,7 +422,9 @@ async function initShareOnlyPage() {
     }
     
     cardData = loadedData;
-    console.log('✅ 卡片資料載入完成');
+    console.log('✅ 卡片資料載入完成:', cardData);
+    console.log('📋 卡片ID:', cardData.id);
+    console.log('📋 Flex JSON 存在:', !!cardData.flex_json);
     
     // 4. 渲染預覽
     renderCardPreview(cardData.flex_json);
