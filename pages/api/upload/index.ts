@@ -49,8 +49,8 @@ function getImageDimensions(buffer: Buffer): Promise<{width: number, height: num
   });
 }
 
-// 設定檔案大小限制為 1.2MB (考慮Vercel限制和base64編碼增加約33%大小)
-const MAX_FILE_SIZE = 1.2 * 1024 * 1024; // 1.2MB
+// 設定檔案大小限制為 800KB (確保在Vercel限制內，考慮base64編碼)
+const MAX_FILE_SIZE = 800 * 1024; // 800KB
 
 // 允許的檔案類型
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
@@ -58,7 +58,7 @@ const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '2mb', // 降低到2MB避免Vercel限制
+      sizeLimit: '4mb', // 提升到4MB支援壓縮後的圖片
     },
   },
 };
@@ -93,10 +93,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 驗證檔案大小
     if (buffer.length > MAX_FILE_SIZE) {
       const fileSizeKB = Math.round(buffer.length / 1024);
-      const maxSizeMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(1);
+      const maxSizeKB = Math.round(MAX_FILE_SIZE / 1024);
       return res.status(400).json({ 
         success: false, 
-        error: `檔案大小 ${fileSizeKB}KB 超過限制，請上傳小於 ${maxSizeMB}MB 的圖片。建議先壓縮圖片後再上傳。` 
+        error: `檔案大小 ${fileSizeKB}KB 超過限制，請上傳小於 ${maxSizeKB}KB 的圖片。建議先壓縮圖片後再上傳。` 
       });
     }
 

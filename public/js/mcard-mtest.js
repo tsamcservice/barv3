@@ -3502,21 +3502,21 @@ async function compressImage(file, maxSize) {
       ctx.drawImage(img, 0, 0, width, height);
       
       // 嘗試不同的品質設定直到檔案大小符合要求
-      let quality = 0.8;
+      let quality = 0.7; // 從較低品質開始
       const tryCompress = () => {
         canvas.toBlob((blob) => {
           if (blob.size <= maxSize || quality <= 0.1) {
             // 轉換為File物件
             const compressedFile = new File([blob], file.name, {
-              type: file.type,
+              type: 'image/jpeg', // 強制轉為JPEG以獲得更好的壓縮率
               lastModified: Date.now()
             });
             resolve(compressedFile);
           } else {
-            quality -= 0.1;
+            quality -= 0.05; // 更細微的品質調整
             tryCompress();
           }
-        }, file.type, quality);
+        }, 'image/jpeg', quality); // 強制使用JPEG格式
       };
       
       tryCompress();
@@ -3594,15 +3594,15 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
     const file = input.files[0];
     
     // 檢查檔案大小並自動壓縮
-    const maxFileSize = 1.2 * 1024 * 1024; // 1.2MB
+    const maxFileSize = 800 * 1024; // 800KB
     let processedFile = file;
     
     if (file.size > maxFileSize) {
       const fileSizeKB = Math.round(file.size / 1024);
-      const maxSizeMB = (maxFileSize / (1024 * 1024)).toFixed(1);
+      const maxSizeKB = Math.round(maxFileSize / 1024);
       
       // 詢問是否自動壓縮
-      const shouldCompress = confirm(`檔案大小 ${fileSizeKB}KB 超過限制！\n\n是否自動壓縮圖片至 ${maxSizeMB}MB 以下？\n\n點擊「確定」自動壓縮，點擊「取消」請手動壓縮後重新上傳。`);
+      const shouldCompress = confirm(`檔案大小 ${fileSizeKB}KB 超過限制！\n\n是否自動壓縮圖片至 ${maxSizeKB}KB 以下？\n\n點擊「確定」自動壓縮，點擊「取消」請手動壓縮後重新上傳。`);
       
       if (!shouldCompress) {
         return;
