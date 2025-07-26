@@ -3530,7 +3530,15 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
       alert('請選擇圖片');
       return;
     }
+    
+    // 檢查LIFF登入狀態
+    if (!liffProfile || !liffProfile.userId) {
+      alert('請先登入LINE帳號才能上傳圖片');
+      return;
+    }
+    
     const file = input.files[0];
+    console.log('📤 準備上傳圖片:', file.name, 'userId:', liffProfile.userId);
     const reader = new FileReader();
     reader.onload = async function(e) {
       try {
@@ -3538,19 +3546,48 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
           infoDiv.innerHTML = '⏳ 正在上傳...';
         }
         
+        const uploadData = {
+          file: e.target.result,
+          fileName: file.name,
+          fileType: file.type,
+          userId: liffProfile.userId,
+        };
+        
+        console.log('📤 上傳資料:', { 
+          fileName: uploadData.fileName, 
+          fileType: uploadData.fileType, 
+          userId: uploadData.userId,
+          fileSize: Math.round(uploadData.file.length / 1024) + 'KB'
+        });
+        
         const response = await fetch('/api/upload', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            file: e.target.result,
-            fileName: file.name,
-            fileType: file.type,
-            userId: liffProfile?.userId || null,
-          }),
+          body: JSON.stringify(uploadData),
         });
+        
+        console.log('📥 上傳回應:', response.status, response.statusText);
+        
+        // 檢查回應狀態
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ 上傳API錯誤:', response.status, errorText);
+          throw new Error(`上傳失敗 (${response.status}): ${errorText.substring(0, 100)}`);
+        }
+        
+        // 檢查回應是否為JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const responseText = await response.text();
+          console.error('❌ API回應不是JSON格式:', responseText.substring(0, 200));
+          throw new Error('伺服器回應格式錯誤，請稍後再試');
+        }
+        
         const data = await response.json();
+        console.log('✅ 上傳回應資料:', data);
+        
         if (!data.success) {
           throw new Error(data.error || '上傳失敗');
         }
@@ -3571,6 +3608,7 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
           );
           
           renderPreview();
+          console.log('🎉 圖片上傳成功:', data.data.url);
         } else {
           throw new Error('未收到上傳 URL');
         }
