@@ -177,14 +177,24 @@ function renderCardPreview(flexJson) {
       throw new Error('找不到預覽容器');
     }
     
+    // 為容器設定ID
+    const containerId = 'share-preview-' + Date.now();
+    previewContainer.id = containerId;
+    
+    // 構建完整的flex消息格式
+    const flexMessage = {
+      type: 'flex',
+      altText: '專屬會員卡',
+      contents: flexJson
+    };
+    
     // 使用flex2html渲染
-    if (typeof renderFlexMessage === 'function') {
+    if (typeof window.flex2html === 'function') {
+      window.flex2html(containerId, flexMessage);
+      console.log('✅ 卡片預覽渲染完成 (使用flex2html函數)');
+    } else if (typeof renderFlexMessage === 'function') {
       renderFlexMessage(previewContainer, flexJson);
-      console.log('✅ 卡片預覽渲染完成');
-    } else if (typeof window.flex2html !== 'undefined' && window.flex2html.renderFlexMessage) {
-      // 嘗試使用全域flex2html物件
-      window.flex2html.renderFlexMessage(previewContainer, flexJson);
-      console.log('✅ 卡片預覽渲染完成 (使用全域flex2html)');
+      console.log('✅ 卡片預覽渲染完成 (使用renderFlexMessage)');
     } else {
       // 備用方案：使用基本HTML結構
       previewContainer.innerHTML = `
@@ -256,6 +266,50 @@ async function initLiff() {
   }
 }
 
+// 計算分享點數
+async function calculateSharePoints() {
+  try {
+    if (!liffProfile || !cardData) {
+      console.warn('⚠️ 缺少用戶資料或卡片資料，跳過點數計算');
+      return;
+    }
+    
+    console.log('💎 開始計算分享點數...');
+    
+    const pointsData = {
+      pageId: cardData.page_id || 'M01001',
+      userId: liffProfile.userId,
+      action: 'share'
+    };
+    
+    const response = await fetch('/api/cards/auto-share-reward', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(pointsData)
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      console.log('✅ 點數計算完成:', result);
+      
+      // 更新統計資訊
+      if (result.new_points !== undefined) {
+        updateStatsInfo({
+          ...cardData,
+          user_points: result.new_points
+        });
+      }
+    } else {
+      console.warn('⚠️ 點數計算失敗:', response.status);
+    }
+    
+  } catch (error) {
+    console.error('❌ 點數計算錯誤:', error);
+  }
+}
+
 // 執行分享
 async function executeShare() {
   try {
@@ -281,6 +335,9 @@ async function executeShare() {
     if (liff.isApiAvailable('shareTargetPicker')) {
       await liff.shareTargetPicker([shareContent]);
       console.log('✅ 分享完成');
+      
+      // 計算分享點數
+      await calculateSharePoints();
       
       // 更新按鈕狀態
       shareButton.innerHTML = '<span>✅</span><span>分享成功</span>';
@@ -370,11 +427,13 @@ async function initShareOnlyPage() {
 function checkResourcesLoaded() {
   console.log('🔍 檢查資源載入狀態:');
   console.log('- LIFF SDK:', typeof window.liff !== 'undefined' ? '✅' : '❌');
-  console.log('- flex2html (renderFlexMessage):', typeof renderFlexMessage !== 'undefined' ? '✅' : '❌');
-  console.log('- flex2html (window.flex2html):', typeof window.flex2html !== 'undefined' ? '✅' : '❌');
+  console.log('- flex2html (function):', typeof window.flex2html === 'function' ? '✅' : '❌');
+  console.log('- renderFlexMessage:', typeof renderFlexMessage !== 'undefined' ? '✅' : '❌');
   
-  // 嘗試等待flex2html載入
-  if (typeof renderFlexMessage === 'undefined' && typeof window.flex2html === 'undefined') {
+  // flex2html載入檢查（只要有一個可用即可）
+  const hasFlexRenderer = typeof window.flex2html === 'function' || typeof renderFlexMessage !== 'undefined';
+  
+  if (!hasFlexRenderer) {
     console.log('⏳ flex2html尚未載入，等待中...');
     return false;
   }
