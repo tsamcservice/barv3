@@ -2276,12 +2276,12 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
     }
     const file = input.files[0];
     
-    // 檢查檔案大小 (800KB限制)
-    const maxFileSize = 800 * 1024; // 800KB
+    // 檢查檔案大小 (1.2MB限制)
+    const maxFileSize = 1.2 * 1024 * 1024; // 1.2MB
     if (file.size > maxFileSize) {
       const fileSizeKB = Math.round(file.size / 1024);
-      const maxSizeKB = Math.round(maxFileSize / 1024);
-      alert(`檔案大小 ${fileSizeKB}KB 超過限制！\n\n請上傳小於 ${maxSizeKB}KB 的圖片。\n建議使用圖片壓縮工具先壓縮圖片。`);
+      const maxSizeMB = (maxFileSize / (1024 * 1024)).toFixed(1);
+      alert(`檔案大小 ${fileSizeKB}KB 超過限制！\n\n請上傳小於 ${maxSizeMB}MB 的圖片。\n建議使用圖片壓縮工具先壓縮圖片。`);
       return;
     }
     

@@ -3532,12 +3532,12 @@ function bindImageUpload(inputId, btnId, previewId, urlId, infoId) {
     }
     const file = input.files[0];
     
-    // 檢查檔案大小 (800KB限制)
-    const maxFileSize = 800 * 1024; // 800KB
+    // 檢查檔案大小 (1.2MB限制)
+    const maxFileSize = 1.2 * 1024 * 1024; // 1.2MB
     if (file.size > maxFileSize) {
       const fileSizeKB = Math.round(file.size / 1024);
-      const maxSizeKB = Math.round(maxFileSize / 1024);
-      alert(`檔案大小 ${fileSizeKB}KB 超過限制！\n\n請上傳小於 ${maxSizeKB}KB 的圖片。\n建議使用圖片壓縮工具先壓縮圖片。`);
+      const maxSizeMB = (maxFileSize / (1024 * 1024)).toFixed(1);
+      alert(`檔案大小 ${fileSizeKB}KB 超過限制！\n\n請上傳小於 ${maxSizeMB}MB 的圖片。\n建議使用圖片壓縮工具先壓縮圖片。`);
       return;
     }
     
@@ -4309,6 +4309,23 @@ async function deleteImage(imageUrl, event) {
         imageUrl: imageUrl
       })
     });
+    
+    console.log('📥 刪除API回應狀態:', response.status, response.statusText);
+    
+    // 檢查回應狀態
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ 刪除API錯誤:', response.status, errorText);
+      throw new Error(`刪除失敗 (${response.status}): ${errorText.substring(0, 100)}`);
+    }
+    
+    // 檢查回應是否為JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const responseText = await response.text();
+      console.error('❌ 刪除API回應不是JSON格式:', responseText.substring(0, 200));
+      throw new Error('伺服器回應格式錯誤，請稍後再試');
+    }
     
     const result = await response.json();
     console.log('🔍 刪除API響應:', result);
