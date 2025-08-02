@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>點數系統調試工具</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { background: #f9f9f9; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 點數系統調試工具</h1>
+    
+    <div class="section">
+        <h3>📊 1. 檢查用戶當前點數</h3>
+        <input type="text" id="userIdInput" placeholder="輸入LINE用戶ID" />
+        <button onclick="checkUserPoints()">查詢點數</button>
+        <div id="userPointsResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>⚙️ 2. 檢查初始點數設定</h3>
+        <button onclick="checkInitialPointsConfig()">查詢初始點數設定</button>
+        <div id="configResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>🎯 3. 模擬分享點數計算</h3>
+        <input type="text" id="simulateUserId" placeholder="用戶ID" />
+        <input type="number" id="simulateCurrentPoints" placeholder="當前點數" value="200" />
+        <button onclick="simulateShareCalculation()">模擬計算</button>
+        <div id="simulateResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>📈 4. 檢查點數交易記錄</h3>
+        <input type="text" id="transactionUserId" placeholder="用戶ID" />
+        <button onclick="checkTransactionHistory()">查詢交易記錄</button>
+        <div id="transactionResult" class="result"></div>
+    </div>
+
+    <script>
+        // 查詢用戶點數
+        async function checkUserPoints() {
+            const userId = document.getElementById('userIdInput').value;
+            if (!userId) {
+                alert('請輸入用戶ID');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('userPointsResult');
+            resultDiv.innerHTML = '查詢中...';
+            
+            try {
+                const response = await fetch(`/api/cards?pageId=M01001&userId=${userId}`);
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const userData = result.data[0];
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ 找到用戶資料</h4>
+                        <p><strong>用戶ID:</strong> ${userData.line_user_id}</p>
+                        <p><strong>顯示名稱:</strong> ${userData.display_name}</p>
+                        <p><strong>當前點數:</strong> ${userData.user_points}</p>
+                        <p><strong>卡片ID:</strong> ${userData.id}</p>
+                        <p><strong>最後更新:</strong> ${userData.updated_at}</p>
+                        <pre>${JSON.stringify(userData, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ 未找到用戶資料</h4>
+                        <p>這是新用戶，將使用初始點數設定</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ 查詢失敗</h4><p>${error.message}</p>`;
+            }
+        }
+        
+        // 查詢初始點數設定
+        async function checkInitialPointsConfig() {
+            const resultDiv = document.getElementById('configResult');
+            resultDiv.innerHTML = '查詢中...';
+            
+            try {
+                const response = await fetch('/api/initial-points-settings?pageId=M01001');
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ 初始點數設定</h4>
+                        <p><strong>頁面ID:</strong> ${result.data.pageId}</p>
+                        <p><strong>初始點數:</strong> ${result.data.initialPoints}</p>
+                        <p><strong>資料來源:</strong> ${result.data.source}</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ 讀取失敗</h4>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ 查詢失敗</h4><p>${error.message}</p>`;
+            }
+        }
+        
+        // 模擬分享點數計算
+        async function simulateShareCalculation() {
+            const userId = document.getElementById('simulateUserId').value;
+            const currentPoints = parseInt(document.getElementById('simulateCurrentPoints').value);
+            
+            if (!userId || !currentPoints) {
+                alert('請填入完整資訊');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('simulateResult');
+            resultDiv.innerHTML = '計算中...';
+            
+            try {
+                // 模擬MTEST的checkUserPointsAsync邏輯
+                const userResponse = await fetch(`/api/cards?pageId=M01001&userId=${userId}`);
+                const userResult = await userResponse.json();
+                
+                let pointsData;
+                if (userResult.success && userResult.data && userResult.data.length > 0) {
+                    const actualPoints = userResult.data[0].user_points;
+                    pointsData = {
+                        mainCardId: userResult.data[0].id,
+                        currentPoints: actualPoints,
+                        cardExists: true,
+                        cardData: userResult.data[0]
+                    };
+                } else {
+                    const configResponse = await fetch('/api/initial-points-settings?pageId=M01001');
+                    const configResult = await configResponse.json();
+                    const defaultPoints = configResult.success ? configResult.data.initialPoints : 168;
+                    
+                    pointsData = {
+                        mainCardId: null,
+                        currentPoints: defaultPoints,
+                        cardExists: false,
+                        cardData: null
+                    };
+                }
+                
+                // 計算分享所需點數 (假設1張卡)
+                const requiredPoints = 10;
+                const canShare = pointsData.currentPoints >= requiredPoints;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <h4>🎯 分享點數計算結果</h4>
+                    <p><strong>用戶存在:</strong> ${pointsData.cardExists ? '是' : '否'}</p>
+                    <p><strong>主卡ID:</strong> ${pointsData.mainCardId || '無(新用戶)'}</p>
+                    <p><strong>當前點數:</strong> ${pointsData.currentPoints}</p>
+                    <p><strong>需要點數:</strong> ${requiredPoints}</p>
+                    <p><strong>可以分享:</strong> ${canShare ? '✅ 是' : '❌ 否'}</p>
+                    
+                    <h5>📊 詳細資料:</h5>
+                    <pre>${JSON.stringify(pointsData, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ 計算失敗</h4><p>${error.message}</p>`;
+            }
+        }
+        
+        // 查詢交易記錄 (如果有的話)
+        async function checkTransactionHistory() {
+            const userId = document.getElementById('transactionUserId').value;
+            if (!userId) {
+                alert('請輸入用戶ID');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('transactionResult');
+            resultDiv.innerHTML = '查詢中...';
+            
+            try {
+                // 這裡可以添加查詢points_transactions的邏輯
+                // 暫時顯示提示
+                resultDiv.className = 'result';
+                resultDiv.innerHTML = `
+                    <h4>📈 交易記錄查詢</h4>
+                    <p>此功能需要額外的API端點來查詢points_transactions表</p>
+                    <p>用戶ID: ${userId}</p>
+                    <p>建議檢查Supabase中的points_transactions表</p>
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ 查詢失敗</h4><p>${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html> 

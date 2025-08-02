@@ -41,19 +41,43 @@ BEGIN
     END IF;
 END $$;
 
--- 🔧 修正：刪除舊的限制性政策，創建新的寬鬆政策
+-- 🔧 修正：完善的政策管理，避免重複創建錯誤
 DO $$ 
 BEGIN
-    -- 刪除可能存在的舊政策
-    DROP POLICY IF EXISTS "Enable read access for all users" ON points_config;
-    DROP POLICY IF EXISTS "Enable update access for authenticated users" ON points_config;
-    DROP POLICY IF EXISTS "Enable insert access for authenticated users" ON points_config;
+    -- 刪除可能存在的舊政策 (忽略不存在的錯誤)
+    BEGIN
+        DROP POLICY IF EXISTS "Enable read access for all users" ON points_config;
+    EXCEPTION WHEN undefined_object THEN
+        NULL; -- 忽略政策不存在的錯誤
+    END;
     
-    -- 創建新的寬鬆政策 (允許所有操作)
-    CREATE POLICY "Allow all operations for points_config" ON points_config
-        FOR ALL USING (true) WITH CHECK (true);
+    BEGIN
+        DROP POLICY IF EXISTS "Enable update access for authenticated users" ON points_config;
+    EXCEPTION WHEN undefined_object THEN
+        NULL;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Enable insert access for authenticated users" ON points_config;
+    EXCEPTION WHEN undefined_object THEN
+        NULL;
+    END;
+    
+    -- 檢查新政策是否已存在，如果不存在才創建
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'points_config' 
+        AND policyname = 'Allow all operations for points_config'
+    ) THEN
+        CREATE POLICY "Allow all operations for points_config" ON points_config
+            FOR ALL USING (true) WITH CHECK (true);
+        RAISE NOTICE '✅ 已創建新的RLS政策';
+    ELSE
+        RAISE NOTICE '⚠️ RLS政策已存在，跳過創建';
+    END IF;
 END $$;
 
 -- 查詢確認
 SELECT 'points_config表狀態' as status, COUNT(*) as total_configs FROM points_config;
+SELECT 'RLS政策狀態' as status, COUNT(*) as total_policies FROM pg_policies WHERE tablename = 'points_config';
 SELECT * FROM points_config ORDER BY config_key; 
