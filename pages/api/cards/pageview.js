@@ -111,27 +111,47 @@ export default async function handler(req, res) {
           continue;
         }
         
-        // 🔧 臨時主卡特殊處理 - 修正：使用動態初始點數
+        // 🔧 臨時主卡特殊處理 - 修正：讀取用戶實際點數
         if (isTempMainCard && type === 'main') {
-          console.log(`使用臨時主卡ID，查詢動態初始點數設定`);
+          console.log(`使用臨時主卡ID，查詢用戶實際點數`);
           
-          // 🔧 修正：從points_config讀取動態初始點數
+          // 🔧 關鍵修正：先嘗試從用戶ID查詢實際點數
           let tempCurrentPoints = 168; // fallback
-          try {
-            const { data: configData } = await supabase
-              .from('points_config')
-              .select('config_value')
-              .eq('config_key', 'initial_points_M01001')
-              .single();
-            
-            if (configData) {
-              tempCurrentPoints = configData.config_value;
-              console.log(`✅ 讀取到動態初始點數: ${tempCurrentPoints}`);
-            } else {
-              console.log(`⚠️ 未找到初始點數設定，使用fallback: ${tempCurrentPoints}`);
+          const userId = req.body.userId;
+          
+          if (userId) {
+            try {
+              // 優先查詢用戶實際點數
+              const { data: userData, error: userError } = await supabase
+                .from('member_cards')
+                .select('user_points')
+                .eq('line_user_id', userId)
+                .eq('pageId', 'M01001') // 確保是M01001頁面
+                .single();
+              
+              if (!userError && userData && userData.user_points !== null) {
+                tempCurrentPoints = userData.user_points;
+                console.log(`✅ 讀取到用戶實際點數: ${tempCurrentPoints}`);
+              } else {
+                // 新用戶才使用初始設定
+                const { data: configData } = await supabase
+                  .from('points_config')
+                  .select('config_value')
+                  .eq('config_key', 'initial_points_M01001')
+                  .single();
+                
+                if (configData) {
+                  tempCurrentPoints = configData.config_value;
+                  console.log(`✅ 新用戶使用動態初始點數: ${tempCurrentPoints}`);
+                } else {
+                  console.log(`⚠️ 未找到初始點數設定，使用fallback: ${tempCurrentPoints}`);
+                }
+              }
+            } catch (error) {
+              console.log(`⚠️ 查詢用戶點數失敗，使用fallback: ${tempCurrentPoints}`, error);
             }
-          } catch (configError) {
-            console.log(`⚠️ 讀取初始點數設定失敗，使用fallback: ${tempCurrentPoints}`, configError);
+          } else {
+            console.log(`⚠️ 無用戶ID，使用fallback: ${tempCurrentPoints}`);
           }
           const afterDeduct = tempCurrentPoints - 10;
           

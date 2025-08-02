@@ -488,9 +488,15 @@
             }
         }
         
-        // 🆕 載入初始點數設定 - 🔧 從資料庫讀取
+        // 🆕 載入初始點數設定 - 🔧 修正閃現問題
         async function loadInitialPointsSettings() {
             const pageId = document.getElementById('pageId').value.trim() || 'M01001';
+            const initialPointsInput = document.getElementById('initialPoints');
+            
+            // 🔧 修正：載入前顯示載入中狀態，避免168閃現
+            initialPointsInput.value = '';
+            initialPointsInput.placeholder = '載入中...';
+            initialPointsInput.disabled = true;
             
             try {
                 const response = await fetch(`/api/initial-points-settings?pageId=${pageId}`);
@@ -498,17 +504,23 @@
                 
                 if (result.success) {
                     const initialPoints = result.data.initialPoints;
-                    document.getElementById('initialPoints').value = initialPoints;
+                    initialPointsInput.value = initialPoints;
+                    initialPointsInput.placeholder = '';
                     showInitialPointsStatus(`✅ 已從資料庫載入 ${pageId} 的設定: ${initialPoints} 點`, 'success');
                 } else {
                     showInitialPointsStatus(`⚠️ 載入失敗: ${result.error}`, 'error');
-                    // 設定預設值
-                    document.getElementById('initialPoints').value = 168;
+                    // 🔧 修正：失敗時才設定預設值
+                    initialPointsInput.value = 168;
+                    initialPointsInput.placeholder = '';
                 }
             } catch (error) {
                 showInitialPointsStatus(`⚠️ 載入失敗: ${error.message}`, 'error');
-                // 設定預設值
-                document.getElementById('initialPoints').value = 168;
+                // 🔧 修正：失敗時才設定預設值
+                initialPointsInput.value = 168;
+                initialPointsInput.placeholder = '';
+            } finally {
+                // 🔧 恢復輸入框可用狀態
+                initialPointsInput.disabled = false;
             }
         }
         
