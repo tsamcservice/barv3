@@ -4978,22 +4978,19 @@ async function loadUserCardDataFast(userData) {
         
         setTimeout(() => {
           try {
-            renderPreview();
+            // 🔧 關鍵：觸發input事件確保標題更新
+            const displayNameInput = document.getElementById('display_name');
+            if (displayNameInput) {
+              displayNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            
+            renderMainCardPreview(); // 先顯示主卡預覽
             renderShareJsonBox();
             console.log('✅ 首次登入預覽更新完成');
           } catch (error) {
             console.error('❌ 首次登入預覽更新失敗:', error);
-            // 備用預覽方案
-            setTimeout(() => {
-              try {
-                renderMainCardPreview();
-                console.log('✅ 首次登入備用預覽完成');
-              } catch (backupError) {
-                console.error('❌ 首次登入備用預覽也失敗:', backupError);
-              }
-            }, 500);
           }
-        }, 300); // 增加延遲
+        }, 50); // 立即顯示
         
         console.log('✅ 創建首次登入用戶資料');
       }
@@ -5070,25 +5067,21 @@ async function fillLineProfileData(userData) {
   // 🔧 關鍵：立即觸發預覽更新，確保LINE個人資料能顯示在預覽卡片中
   console.log('🔄 LINE個人資料已填入，觸發預覽更新...');
   
-  // 🔧 修正：增加延遲確保DOM更新完成，避免預覽卡住
+  // 🔧 修正：立即觸發預覽更新和input事件
   setTimeout(() => {
     try {
-      renderPreview();
+      // 🔧 關鍵：觸發input事件確保標題更新
+      if (displayNameInput) {
+        displayNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      
+      renderMainCardPreview(); // 先顯示主卡預覽
       renderShareJsonBox();
       console.log('✅ LINE個人資料預覽更新完成');
     } catch (error) {
       console.error('❌ 預覽更新失敗:', error);
-      // 如果預覽失敗，嘗試簡單的主卡預覽
-      setTimeout(() => {
-        try {
-          renderMainCardPreview();
-          console.log('✅ 備用主卡預覽完成');
-        } catch (backupError) {
-          console.error('❌ 備用預覽也失敗:', backupError);
-        }
-      }, 500);
     }
-  }, 300); // 增加延遲到300ms
+  }, 50); // 極短延遲，立即顯示
 }
 
 // 🚀 新增：認證錯誤處理
@@ -5293,34 +5286,36 @@ function switchTab(tabName) {
     
     // 🔧 修復排序問題：特殊處理不同頁籤的資料載入
     if (tabName === 'preview') {
-      // 🔧 關鍵修復：檢查是否已有排序資料，避免重新載入
-      if (!window.promoCardsLoaded) {
-        console.log('🔄 宣傳卡片尚未載入，載入中...');
-        showPreviewLoading();
-        
-        loadPromoCards().then(async () => {
-          window.promoCardsLoaded = true;
-          // 小延遲讓用戶看到載入提示
-          await new Promise(resolve => setTimeout(resolve, 600));
-          renderPreview();
+      // 🔧 關鍵修正：預覽頁面不需要等待附加活動卡片，直接顯示主卡
+      console.log('🎯 切換到預覽頁面，立即顯示主卡預覽');
+      
+      // 立即渲染主卡預覽，不等待附加活動卡片
+      setTimeout(() => {
+        try {
+          // 優先顯示主卡預覽
+          renderMainCardPreview();
           renderShareJsonBox();
-          hidePreviewLoading();
-        }).catch(() => {
-          hidePreviewLoading();
-        });
-      } else {
-        // 🔧 關鍵修復：宣傳卡片已載入，直接渲染，不重新載入
-        console.log('✅ 宣傳卡片已載入，直接渲染預覽，保持現有排序');
-        setTimeout(() => {
-          console.log('🔄 更新預覽內容...');
-          try {
+          console.log('✅ 主卡預覽渲染完成');
+          
+          // 背景載入附加活動卡片（如果需要）
+          if (!window.promoCardsLoaded) {
+            console.log('🔄 背景載入附加活動卡片...');
+            loadPromoCards().then(() => {
+              console.log('✅ 附加活動卡片載入完成，更新完整預覽');
+              renderPreview();
+              renderShareJsonBox();
+            }).catch(error => {
+              console.log('⚠️ 附加活動卡片載入失敗，保持主卡預覽:', error);
+            });
+          } else {
+            // 附加活動卡片已載入，顯示完整預覽
             renderPreview();
             renderShareJsonBox();
-          } catch (e) {
-            console.error('❌ 預覽更新失敗:', e);
           }
-        }, 200);
-      }
+        } catch (error) {
+          console.error('❌ 預覽渲染失敗:', error);
+        }
+      }, 50); // 極短延遲，立即顯示
     } else if (tabName === 'promo-cards') {
       // 🔧 關鍵修復：宣傳卡片頁面不重新載入，只更新界面
       console.log('🔄 切換到宣傳卡片頁面，保持現有排序，不重新載入');
