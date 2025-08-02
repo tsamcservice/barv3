@@ -1,5 +1,5 @@
--- 創建點數設定表
--- 用於存儲系統點數相關設定
+-- 點數系統配置表 (統一管理所有點數相關設定)
+-- 用於存儲：初始點數、獎勵設定、系統參數等
 
 CREATE TABLE IF NOT EXISTS points_config (
     id SERIAL PRIMARY KEY,
@@ -22,16 +22,19 @@ VALUES
 ON CONFLICT (config_key) DO NOTHING;
 
 -- 添加註釋
-COMMENT ON TABLE points_config IS '點數系統設定表';
-COMMENT ON COLUMN points_config.config_key IS '設定鍵值';
+COMMENT ON TABLE points_config IS '點數系統統一配置表 - 管理初始點數、獎勵設定等';
+COMMENT ON COLUMN points_config.config_key IS '設定鍵值 (如: initial_points_M01001)';
 COMMENT ON COLUMN points_config.config_value IS '設定數值';
 
 -- 啟用RLS
 ALTER TABLE points_config ENABLE ROW LEVEL SECURITY;
 
--- 創建RLS政策
+-- 創建RLS政策 (允許讀取和更新)
 CREATE POLICY "Enable read access for all users" ON points_config
     FOR SELECT USING (true);
 
 CREATE POLICY "Enable update access for authenticated users" ON points_config
-    FOR UPDATE USING (true); 
+    FOR UPDATE USING (true);
+
+-- 查詢確認
+SELECT * FROM points_config ORDER BY config_key; 

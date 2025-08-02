@@ -2868,9 +2868,13 @@ async function checkUserPointsAsync(userId) {
     const result = await response.json();
     
     if (result.success && result.data && result.data.length > 0) {
+      // 🔧 修正：直接使用資料庫的實際點數值，不使用fallback
+      const actualPoints = result.data[0].user_points;
+      console.log('📊 讀取到用戶實際點數:', actualPoints);
+      
       return {
         mainCardId: result.data[0].id,
-        currentPoints: result.data[0].user_points || 168, // 從資料庫讀取，如果為空則使用168
+        currentPoints: actualPoints, // 🔧 修正：直接使用資料庫值
         cardExists: true,
         cardData: result.data[0]
       };
@@ -4757,6 +4761,9 @@ async function loadUserCardData(userData) {
         // 找到沒有user_id的預設卡片
         const defaultCard = defaultResult.data.find(card => !card.line_user_id) || defaultResult.data[0];
         
+        // 🔧 修正：讀取動態初始點數設定
+        const initialPoints = await getDefaultInitialPoints();
+        
         // 融合LINE個人資料到初始卡片
         const personalizedCard = {
           ...defaultCard,
@@ -4765,15 +4772,15 @@ async function loadUserCardData(userData) {
           user_id: userData.userId,
           display_name: userData.displayName,
           picture_url: userData.pictureUrl,
-          // 確保點數為168
-          user_points: 168
+          // 🔧 修正：使用動態讀取的初始點數
+          user_points: initialPoints
         };
         
-        console.log('🎨 融合LINE個人資料到初始卡片');
+        console.log('🎨 融合LINE個人資料到初始卡片，初始點數:', initialPoints);
         fillFormWithData(personalizedCard);
         
-        // 更新點數顯示
-        updatePointsDisplay(168);
+        // 🔧 修正：使用動態點數更新顯示
+        updatePointsDisplay(initialPoints);
         
         console.log('✅ 已創建首次登入的個人化卡片');
       } else {
@@ -4943,16 +4950,19 @@ async function loadUserCardDataFast(userData) {
       ]);
       
       if (defaultCard) {
+        // 🔧 修正：讀取動態初始點數設定
+        const initialPoints = await getDefaultInitialPoints();
+        
         const personalizedCard = {
           ...defaultCard,
           line_user_id: userData.userId,
           display_name: userData.displayName,
           member_image_url: userData.pictureUrl,
-          user_points: 168
+          user_points: initialPoints // 🔧 修正：使用動態點數
         };
         
         fillFormWithData(personalizedCard);
-        updatePointsDisplay(168);
+        updatePointsDisplay(initialPoints); // 🔧 修正：使用動態點數
         
         // 🔧 關鍵：首次登入後立即觸發預覽更新，確保LINE個人資料顯示
         console.log('🎨 首次登入，立即更新預覽以顯示LINE個人資料...');
