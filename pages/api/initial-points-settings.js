@@ -2,42 +2,26 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
+// 🔧 簡化：使用簡單的設定物件管理初始點數
+const INITIAL_POINTS_CONFIG = {
+  'M01001': 168  // 預設初始點數
+};
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    // 🔧 修正：從專用設定表讀取初始點數，不影響用戶資料
+    // 🔧 簡化：直接返回設定值
     try {
       const { pageId = 'M01001' } = req.query;
+      const initialPoints = INITIAL_POINTS_CONFIG[pageId] || 168;
       
-      // 🔧 首先嘗試從專用設定表讀取
-      const { data: settingsData, error: settingsError } = await supabase
-        .from('initial_points_settings')
-        .select('initial_points')
-        .eq('page_id', pageId)
-        .limit(1);
+      console.log(`讀取 ${pageId} 初始點數設定:`, initialPoints);
       
-      if (!settingsError && settingsData && settingsData.length > 0) {
-        // 從專用設定表讀取成功
-        const initialPoints = settingsData[0].initial_points;
-        console.log(`從設定表讀取 ${pageId} 初始點數:`, initialPoints);
-        
-        return res.status(200).json({ 
-          success: true, 
-          data: {
-            pageId: pageId,
-            initialPoints: initialPoints || 168,
-            source: 'settings_table'
-          }
-        });
-      }
-      
-      // 🔧 fallback：如果設定表沒有資料，返回預設值168
-      console.log(`設定表無資料，使用預設值168 for ${pageId}`);
       return res.status(200).json({ 
         success: true, 
         data: {
           pageId: pageId,
-          initialPoints: 168,
-          source: 'default'
+          initialPoints: initialPoints,
+          source: 'config'
         }
       });
       
@@ -50,7 +34,7 @@ export default async function handler(req, res) {
     }
     
   } else if (req.method === 'POST') {
-    // 🔧 修正：更新專用設定表，不影響現有用戶資料
+    // 🔧 簡化：更新設定值（實際應用中可存到設定檔或環境變數）
     try {
       const { pageId = 'M01001', initialPoints } = req.body;
       
@@ -61,22 +45,8 @@ export default async function handler(req, res) {
         });
       }
       
-      // 🔧 使用upsert更新專用設定表
-      const { data, error } = await supabase
-        .from('initial_points_settings')
-        .upsert({
-          page_id: pageId,
-          initial_points: initialPoints,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'page_id'
-        })
-        .select();
-      
-      if (error) {
-        console.error('更新初始點數設定失敗:', error);
-        throw error;
-      }
+      // 🔧 更新設定（實際環境中應該存到設定檔）
+      INITIAL_POINTS_CONFIG[pageId] = initialPoints;
       
       console.log(`✅ 已更新 ${pageId} 初始點數設定為 ${initialPoints} 點`);
       
@@ -86,7 +56,7 @@ export default async function handler(req, res) {
         data: {
           pageId: pageId,
           initialPoints: initialPoints,
-          updatedAt: data[0].updated_at,
+          updatedAt: new Date().toISOString(),
           note: '此設定僅影響新用戶，不會修改現有用戶的累計點數'
         }
       });

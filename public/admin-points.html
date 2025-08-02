@@ -211,9 +211,13 @@
                            style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px;">
                 </div>
                 <div class="setting-item">
-                    <div class="position-label">用戶ID</div>
-                    <input type="text" id="userId" placeholder="LINE用戶ID" 
-                           style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px;">
+                    <div class="position-label">選擇用戶</div>
+                    <select id="userSelect" onchange="onUserSelectChange()" 
+                            style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px; background: white;">
+                        <option value="">-- 選擇用戶或手動輸入 --</option>
+                    </select>
+                    <input type="text" id="userId" placeholder="或手動輸入LINE用戶ID" 
+                           style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px; margin-top: 8px; font-size: 12px;">
                 </div>
                 <div class="setting-item">
                     <div class="position-label">調整點數</div>
@@ -224,6 +228,9 @@
             </div>
             
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 20px 0;">
+                <button class="test-btn" onclick="loadUserList()" style="background: #6f42c1; font-size: 14px; padding: 10px 20px;">
+                    📋 載入用戶清單
+                </button>
                 <button class="test-btn" onclick="queryUserPoints()" style="background: #17a2b8; font-size: 14px; padding: 10px 20px;">
                     🔍 查詢用戶點數
                 </button>
@@ -505,7 +512,7 @@
             }
         }
         
-        // 🆕 查詢用戶點數 - 🔧 真正的資料庫查詢
+        // 🔧 修正：查詢用戶點數 - 顯示用戶名稱
         async function queryUserPoints() {
             const pageId = document.getElementById('userPageId').value.trim();
             const userId = document.getElementById('userId').value.trim();
@@ -522,7 +529,15 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showUserPointsStatus(`✅ 查詢成功！用戶 ${userId} 在 ${pageId} 的點數為: ${result.data.points}`, 'success');
+                    const user = result.data;
+                    showUserPointsStatus(
+                        `✅ 查詢成功！\n` +
+                        `👤 用戶名稱: ${user.displayName}\n` +
+                        `🆔 用戶ID: ${user.userId}\n` +
+                        `💰 當前點數: ${user.points}\n` +
+                        `📅 更新時間: ${new Date(user.updatedAt).toLocaleString('zh-TW')}`, 
+                        'success'
+                    );
                 } else {
                     showUserPointsStatus(`❌ 查詢失敗: ${result.error}`, 'error');
                 }
@@ -531,7 +546,7 @@
             }
         }
 
-        // 🆕 調整用戶點數 - 🔧 真正的資料庫調整
+        // 🔧 修正：調整用戶點數 - 顯示詳細資訊
         async function adjustUserPoints() {
             const pageId = document.getElementById('userPageId').value.trim();
             const userId = document.getElementById('userId').value.trim();
@@ -558,7 +573,18 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showUserPointsStatus(`✅ 調整成功！用戶 ${userId} 在 ${pageId} 的點數已調整為: ${result.data.points}`, 'success');
+                    const user = result.data;
+                    showUserPointsStatus(
+                        `✅ 調整成功！\n` +
+                        `👤 用戶名稱: ${user.displayName}\n` +
+                        `🆔 用戶ID: ${user.userId}\n` +
+                        `📊 點數變化: ${user.previousPoints} → ${user.points} (${user.pointsAdjustment >= 0 ? '+' : ''}${user.pointsAdjustment})\n` +
+                        `📅 調整時間: ${new Date(user.updatedAt).toLocaleString('zh-TW')}`, 
+                        'success'
+                    );
+                    
+                    // 🔧 清空調整值，方便下次操作
+                    document.getElementById('pointsAdjustment').value = '0';
                 } else {
                     showUserPointsStatus(`❌ 調整失敗: ${result.error}`, 'error');
                 }
@@ -567,9 +593,10 @@
             }
         }
 
-        // 🆕 顯示個別用戶點數狀態
+        // 🔧 修正：顯示個別用戶點數狀態 - 支援多行顯示
         function showUserPointsStatus(message, type) {
             const status = document.getElementById('userPointsStatus');
+            status.style.whiteSpace = 'pre-line'; // 支援換行顯示
             status.textContent = message;
             status.className = type === 'success' ? 'success' : type === 'error' ? 'error' : '';
             status.style.display = 'block';
@@ -577,7 +604,52 @@
             if (type === 'success' || type === 'info') {
                 setTimeout(() => {
                     status.style.display = 'none';
-                }, 4000);
+                }, 8000); // 延長顯示時間以便閱讀詳細資訊
+            }
+        }
+        
+        // 🆕 載入用戶清單 - 🔧 從資料庫讀取所有用戶
+        async function loadUserList() {
+            const userSelect = document.getElementById('userSelect');
+            const userIdInput = document.getElementById('userId');
+            const pageId = document.getElementById('userPageId').value.trim();
+
+            if (!pageId) {
+                showUserPointsStatus('❌ 請先輸入頁面ID', 'error');
+                return;
+            }
+
+            try {
+                showUserPointsStatus('📋 載入用戶清單中...', 'info');
+                const response = await fetch(`/api/users/list?pageId=${pageId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    userSelect.innerHTML = '<option value="">-- 選擇用戶或手動輸入 --</option>';
+                    result.data.forEach(user => {
+                        userSelect.innerHTML += `<option value="${user.userId}">${user.displayName} (${user.userId})</option>`;
+                    });
+                    showUserPointsStatus(`✅ 已載入 ${result.data.length} 位用戶`, 'success');
+                } else {
+                    showUserPointsStatus(`❌ 載入用戶失敗: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showUserPointsStatus('❌ 載入用戶失敗: ' + error.message, 'error');
+            }
+        }
+
+        // 🆕 用戶選擇變更時更新輸入框
+        function onUserSelectChange() {
+            const userSelect = document.getElementById('userSelect');
+            const userIdInput = document.getElementById('userId');
+            const selectedUserId = userSelect.value;
+
+            if (selectedUserId) {
+                userIdInput.value = selectedUserId;
+                userIdInput.disabled = true; // 禁用手動輸入
+            } else {
+                userIdInput.value = '';
+                userIdInput.disabled = false; // 啟用手動輸入
             }
         }
         
