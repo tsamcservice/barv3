@@ -2,26 +2,33 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-// 🔧 簡化：使用簡單的設定物件管理初始點數
-const INITIAL_POINTS_CONFIG = {
-  'M01001': 168  // 預設初始點數
-};
-
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    // 🔧 簡化：直接返回設定值
+    // 🔧 修正：從資料庫讀取初始點數設定
     try {
       const { pageId = 'M01001' } = req.query;
-      const initialPoints = INITIAL_POINTS_CONFIG[pageId] || 168;
+      const configKey = `initial_points_${pageId}`;
       
-      console.log(`讀取 ${pageId} 初始點數設定:`, initialPoints);
+      const { data, error } = await supabase
+        .from('points_config')
+        .select('config_value')
+        .eq('config_key', configKey)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 = 找不到記錄
+        console.error('讀取初始點數設定失敗:', error);
+        throw error;
+      }
+      
+      const initialPoints = data ? data.config_value : 168; // 預設值
+      console.log(`從資料庫讀取 ${pageId} 初始點數設定:`, initialPoints);
       
       return res.status(200).json({ 
         success: true, 
         data: {
           pageId: pageId,
           initialPoints: initialPoints,
-          source: 'config'
+          source: 'database'
         }
       });
       
@@ -34,7 +41,7 @@ export default async function handler(req, res) {
     }
     
   } else if (req.method === 'POST') {
-    // 🔧 簡化：更新設定值（實際應用中可存到設定檔或環境變數）
+    // 🔧 修正：儲存初始點數設定到資料庫
     try {
       const { pageId = 'M01001', initialPoints } = req.body;
       
@@ -45,19 +52,36 @@ export default async function handler(req, res) {
         });
       }
       
-      // 🔧 更新設定（實際環境中應該存到設定檔）
-      INITIAL_POINTS_CONFIG[pageId] = initialPoints;
+      const configKey = `initial_points_${pageId}`;
       
-      console.log(`✅ 已更新 ${pageId} 初始點數設定為 ${initialPoints} 點`);
+      // 🔧 使用upsert儲存到資料庫
+      const { data, error } = await supabase
+        .from('points_config')
+        .upsert({
+          config_key: configKey,
+          config_value: initialPoints,
+          description: `${pageId}頁面新用戶初始點數`,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'config_key'
+        })
+        .select();
+      
+      if (error) {
+        console.error('儲存初始點數設定失敗:', error);
+        throw error;
+      }
+      
+      console.log(`✅ 已儲存 ${pageId} 初始點數設定到資料庫: ${initialPoints} 點`);
       
       res.status(200).json({ 
         success: true, 
-        message: `已成功更新 ${pageId} 的初始點數設定為 ${initialPoints} 點 (僅影響新用戶)`,
+        message: `已成功儲存 ${pageId} 的初始點數設定為 ${initialPoints} 點 (僅影響新用戶)`,
         data: {
           pageId: pageId,
           initialPoints: initialPoints,
-          updatedAt: new Date().toISOString(),
-          note: '此設定僅影響新用戶，不會修改現有用戶的累計點數'
+          updatedAt: data[0].updated_at,
+          note: '此設定已儲存到資料庫，僅影響新用戶'
         }
       });
     } catch (error) {
