@@ -176,7 +176,7 @@
         <!-- 🆕 初始點數設定區域 -->
         <div class="test-section" style="margin-top: 40px;">
             <h3>💰 初始點數設定</h3>
-            <p>設定新用戶首次建立會員卡時的初始點數</p>
+            <p>設定新用戶首次建立會員卡時的初始點數 (不影響現有用戶)</p>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
                 <div class="setting-item">
@@ -185,7 +185,7 @@
                            style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px;">
                 </div>
                 <div class="setting-item">
-                    <div class="position-label">初始點數</div>
+                    <div class="position-label">新用戶初始點數</div>
                     <input type="number" id="initialPoints" value="168" min="0" max="10000" step="10"
                            style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px; font-size: 18px; font-weight: bold;">
                     <div class="percentage-label">點數</div>
@@ -197,6 +197,42 @@
             </button>
             
             <div id="initialPointsStatus" style="margin-top: 12px; padding: 8px; border-radius: 6px; display: none;"></div>
+        </div>
+
+        <!-- 🆕 個別用戶點數管理區域 -->
+        <div class="test-section" style="margin-top: 40px; border-top: 2px solid #e9ecef; padding-top: 40px;">
+            <h3>👤 個別用戶點數管理</h3>
+            <p>查詢和調整特定用戶的點數 (支援充值和扣款)</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin: 20px 0;">
+                <div class="setting-item">
+                    <div class="position-label">頁面ID</div>
+                    <input type="text" id="userPageId" value="M01001" 
+                           style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px;">
+                </div>
+                <div class="setting-item">
+                    <div class="position-label">用戶ID</div>
+                    <input type="text" id="userId" placeholder="LINE用戶ID" 
+                           style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px;">
+                </div>
+                <div class="setting-item">
+                    <div class="position-label">調整點數</div>
+                    <input type="number" id="pointsAdjustment" value="0" step="10"
+                           style="width: 100%; padding: 8px; text-align: center; border: 2px solid #dee2e6; border-radius: 6px; font-size: 16px; font-weight: bold;">
+                    <div class="percentage-label">+正數充值 -負數扣款</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 20px 0;">
+                <button class="test-btn" onclick="queryUserPoints()" style="background: #17a2b8; font-size: 14px; padding: 10px 20px;">
+                    🔍 查詢用戶點數
+                </button>
+                <button class="test-btn" onclick="adjustUserPoints()" style="background: #ffc107; color: #212529; font-size: 14px; padding: 10px 20px;">
+                    ⚡ 調整用戶點數
+                </button>
+            </div>
+            
+            <div id="userPointsStatus" style="margin-top: 12px; padding: 12px; border-radius: 6px; display: none; font-family: monospace;"></div>
         </div>
 
         <div class="test-section">
@@ -466,6 +502,82 @@
                 showInitialPointsStatus(`⚠️ 載入失敗: ${error.message}`, 'error');
                 // 設定預設值
                 document.getElementById('initialPoints').value = 168;
+            }
+        }
+        
+        // 🆕 查詢用戶點數 - 🔧 真正的資料庫查詢
+        async function queryUserPoints() {
+            const pageId = document.getElementById('userPageId').value.trim();
+            const userId = document.getElementById('userId').value.trim();
+            const statusDiv = document.getElementById('userPointsStatus');
+
+            if (!pageId || !userId) {
+                showUserPointsStatus('❌ 請輸入頁面ID和用戶ID', 'error');
+                return;
+            }
+
+            try {
+                showUserPointsStatus('🔍 查詢中...', 'info');
+                const response = await fetch(`/api/users/points?pageId=${pageId}&userId=${userId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    showUserPointsStatus(`✅ 查詢成功！用戶 ${userId} 在 ${pageId} 的點數為: ${result.data.points}`, 'success');
+                } else {
+                    showUserPointsStatus(`❌ 查詢失敗: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showUserPointsStatus('❌ 查詢失敗: ' + error.message, 'error');
+            }
+        }
+
+        // 🆕 調整用戶點數 - 🔧 真正的資料庫調整
+        async function adjustUserPoints() {
+            const pageId = document.getElementById('userPageId').value.trim();
+            const userId = document.getElementById('userId').value.trim();
+            const pointsAdjustment = parseInt(document.getElementById('pointsAdjustment').value);
+            const statusDiv = document.getElementById('userPointsStatus');
+
+            if (!pageId || !userId) {
+                showUserPointsStatus('❌ 請輸入頁面ID和用戶ID', 'error');
+                return;
+            }
+
+            if (isNaN(pointsAdjustment)) {
+                showUserPointsStatus('❌ 請輸入有效的點數調整值 (整數)', 'error');
+                return;
+            }
+
+            try {
+                showUserPointsStatus('⚡ 調整中...', 'info');
+                const response = await fetch(`/api/users/points`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pageId, userId, pointsAdjustment })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showUserPointsStatus(`✅ 調整成功！用戶 ${userId} 在 ${pageId} 的點數已調整為: ${result.data.points}`, 'success');
+                } else {
+                    showUserPointsStatus(`❌ 調整失敗: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showUserPointsStatus('❌ 調整失敗: ' + error.message, 'error');
+            }
+        }
+
+        // 🆕 顯示個別用戶點數狀態
+        function showUserPointsStatus(message, type) {
+            const status = document.getElementById('userPointsStatus');
+            status.textContent = message;
+            status.className = type === 'success' ? 'success' : type === 'error' ? 'error' : '';
+            status.style.display = 'block';
+            
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 4000);
             }
         }
         

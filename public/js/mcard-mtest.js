@@ -2896,21 +2896,21 @@ async function checkUserPointsAsync(userId) {
   }
 }
 
-// 🆕 從資料庫M01001讀取預設初始點數
+// 🔧 修正：從專用API讀取新用戶初始點數設定 (不影響已登入用戶)
 async function getDefaultInitialPoints() {
   try {
-    const response = await fetch('/api/cards?pageId=M01001');
+    // 🔧 使用專用的初始點數設定API，不查詢用戶資料
+    const response = await fetch('/api/initial-points-settings?pageId=M01001');
     const result = await response.json();
     
-    if (result.success && result.data && result.data.length > 0) {
-      // 找到M01001的預設卡片資料
-      const defaultCard = result.data[0];
-      return defaultCard.user_points || 168;
+    if (result.success && result.data) {
+      console.log('📊 讀取到新用戶初始點數設定:', result.data.initialPoints);
+      return result.data.initialPoints || 168;
     }
     
     return 168; // 最終fallback
   } catch (error) {
-    console.log('⚠️ 讀取預設點數失敗，使用168:', error);
+    console.log('⚠️ 讀取初始點數設定失敗，使用168:', error);
     return 168;
   }
 }
