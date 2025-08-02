@@ -4743,8 +4743,8 @@ async function loadUserCardData(userData) {
       const userCard = result.data[0];
       fillFormWithData(userCard);
       
-      // 更新點數顯示
-      updatePointsDisplay(userCard.user_points || 168);
+      // 更新點數顯示  
+      updatePointsDisplay(userCard.user_points || 0); // 🔧 修正：不使用固定168
       
       console.log('✅ 已載入用戶的個人化卡片資料');
       
@@ -4940,7 +4940,7 @@ async function loadUserCardDataFast(userData) {
       // 已有資料 - 直接填入表單
       const userCard = result.data[0];
       fillFormWithData(userCard);
-      updatePointsDisplay(userCard.user_points || 168);
+      updatePointsDisplay(userCard.user_points || 0); // 🔧 修正：不使用固定168
       console.log('✅ 載入用戶個人化資料');
     } else {
       // 首次登入 - 並行載入預設資料和LINE資料
