@@ -13,7 +13,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    let currentPoints = 168.0; // 預設點數（統一為168）
+    // 🔧 修正：動態讀取初始點數設定
+    let currentPoints = 168.0; // fallback
+    try {
+      const { data: configData } = await supabase
+        .from('points_config')
+        .select('config_value')
+        .eq('config_key', 'initial_points_M01001')
+        .single();
+      
+      if (configData) {
+        currentPoints = configData.config_value;
+        console.log(`✅ points.js讀取到動態初始點數: ${currentPoints}`);
+      }
+    } catch (configError) {
+      console.log(`⚠️ points.js讀取初始點數設定失敗，使用fallback: ${currentPoints}`, configError);
+    }
     
     // 1. 取得現有會員卡點數
     if (cardId !== 'temp-card-id') {
@@ -24,12 +39,12 @@ export default async function handler(req, res) {
         .single();
       
       if (getError) {
-        console.log('查詢會員卡失敗，使用預設點數:', getError.message);
+        console.log('查詢會員卡失敗，使用初始點數:', getError.message);
       } else {
-        currentPoints = memberCard?.user_points || 168.0;
+        currentPoints = memberCard?.user_points || currentPoints; // 🔧 修正：使用動態初始點數作為fallback
       }
     } else {
-      console.log('使用臨時cardId，採用預設點數:', currentPoints);
+      console.log('使用臨時cardId，採用初始點數:', currentPoints);
     }
     
     // 2. 檢查點數是否足夠 (小於0無法附加)

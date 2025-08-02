@@ -80,9 +80,21 @@ export default async function handler(req, res) {
         updated_at: new Date().toISOString()
       };
       
-      // 如果是新卡片且沒有設定user_points，使用168作為初始點數
+      // 🔧 修正：如果是新卡片且沒有設定user_points，使用動態初始點數
       if (!cardPayload.user_points) {
-        cardPayload.user_points = 168.0;
+        try {
+          const { data: configData } = await supabase
+            .from('points_config')
+            .select('config_value')
+            .eq('config_key', 'initial_points_M01001')
+            .single();
+          
+          cardPayload.user_points = configData ? configData.config_value : 168.0;
+          console.log(`✅ 新卡片使用動態初始點數: ${cardPayload.user_points}`);
+        } catch (configError) {
+          cardPayload.user_points = 168.0; // fallback
+          console.log(`⚠️ 讀取初始點數設定失敗，使用fallback: ${cardPayload.user_points}`, configError);
+        }
       }
       
       // upsert member_cards
