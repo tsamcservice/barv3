@@ -4966,11 +4966,34 @@ async function loadUserCardDataFast(userData) {
         
         // 🔧 關鍵：首次登入後立即觸發預覽更新，確保LINE個人資料顯示
         console.log('🎨 首次登入，立即更新預覽以顯示LINE個人資料...');
+        
+        // 🔧 修正：強制更新card_alt_title
+        const mainTitle = document.getElementById('main_title_1').value;
+        const cardAltTitleInput = document.getElementById('card_alt_title');
+        if (cardAltTitleInput && mainTitle && userData.displayName) {
+          const newAltTitle = `${mainTitle}/${userData.displayName}`;
+          cardAltTitleInput.value = newAltTitle;
+          console.log('✅ 首次登入已更新card_alt_title:', newAltTitle);
+        }
+        
         setTimeout(() => {
-          renderPreview();
-          renderShareJsonBox();
-          console.log('✅ 首次登入預覽更新完成');
-        }, 200);
+          try {
+            renderPreview();
+            renderShareJsonBox();
+            console.log('✅ 首次登入預覽更新完成');
+          } catch (error) {
+            console.error('❌ 首次登入預覽更新失敗:', error);
+            // 備用預覽方案
+            setTimeout(() => {
+              try {
+                renderMainCardPreview();
+                console.log('✅ 首次登入備用預覽完成');
+              } catch (backupError) {
+                console.error('❌ 首次登入備用預覽也失敗:', backupError);
+              }
+            }, 500);
+          }
+        }, 300); // 增加延遲
         
         console.log('✅ 創建首次登入用戶資料');
       }
@@ -5035,15 +5058,37 @@ async function fillLineProfileData(userData) {
     setImageUserStyle(memberImagePreview, userData.pictureUrl);
   }
   
+  // 🔧 關鍵修正：強制更新card_alt_title
+  const mainTitle = document.getElementById('main_title_1').value;
+  const cardAltTitleInput = document.getElementById('card_alt_title');
+  if (cardAltTitleInput && mainTitle && userData.displayName) {
+    const newAltTitle = `${mainTitle}/${userData.displayName}`;
+    cardAltTitleInput.value = newAltTitle;
+    console.log('✅ 已更新card_alt_title:', newAltTitle);
+  }
+  
   // 🔧 關鍵：立即觸發預覽更新，確保LINE個人資料能顯示在預覽卡片中
   console.log('🔄 LINE個人資料已填入，觸發預覽更新...');
   
-  // 延遲一點時間確保DOM更新完成
+  // 🔧 修正：增加延遲確保DOM更新完成，避免預覽卡住
   setTimeout(() => {
-    renderPreview();
-    renderShareJsonBox();
-    console.log('✅ LINE個人資料預覽更新完成');
-  }, 100);
+    try {
+      renderPreview();
+      renderShareJsonBox();
+      console.log('✅ LINE個人資料預覽更新完成');
+    } catch (error) {
+      console.error('❌ 預覽更新失敗:', error);
+      // 如果預覽失敗，嘗試簡單的主卡預覽
+      setTimeout(() => {
+        try {
+          renderMainCardPreview();
+          console.log('✅ 備用主卡預覽完成');
+        } catch (backupError) {
+          console.error('❌ 備用預覽也失敗:', backupError);
+        }
+      }, 500);
+    }
+  }, 300); // 增加延遲到300ms
 }
 
 // 🚀 新增：認證錯誤處理
