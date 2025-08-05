@@ -1508,7 +1508,9 @@ function getMainBubble(cardData) {
   // 產生 s_button_url，優先用 userId
   const pageId = 'M01001';
   let s_button_url = `https://liff.line.me/${liffId}?pageId=${pageId}`;
-  if (liffProfile.userId) {
+  
+  // 🔧 修復：檢查 liffProfile 是否存在且有 userId
+  if (liffProfile && liffProfile.userId) {
     s_button_url += `&userId=${liffProfile.userId}`;
   } else if (getQueryParam('userId')) {
     s_button_url += `&userId=${getQueryParam('userId')}`;
