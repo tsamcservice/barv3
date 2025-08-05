@@ -2492,6 +2492,13 @@ let allCardsSortable = [];
 
 // 🔧 修正：優化初始化排序區卡片陣列
 function initAllCardsSortable() {
+  // 🔧 新會員模式：禁止初始化宣傳卡片排序
+  const isNewUserMode = window.isNewUserMode === true;
+  if (isNewUserMode) {
+    console.log('🚫 新會員模式：禁止初始化宣傳卡片排序');
+    return;
+  }
+  
   debugCardSorting('初始化卡片陣列');
   console.log('🔄 [排序調試] initAllCardsSortable被調用，當前allCardsSortable:', allCardsSortable?.map(c => c.id));
   
@@ -2544,6 +2551,13 @@ function initAllCardsSortable() {
 
 // 🔧 修正：優化卡片列表渲染邏輯
 function renderPromoCardListSortable() {
+  // 🔧 新會員模式：禁止渲染宣傳卡片列表
+  const isNewUserMode = window.isNewUserMode === true;
+  if (isNewUserMode) {
+    console.log('🚫 新會員模式：禁止渲染宣傳卡片列表');
+    return;
+  }
+  
   const container = document.getElementById('promo-cards');
   if (!container) return;
   
@@ -2584,6 +2598,13 @@ function renderPromoCardListSortable() {
 
 // 宣傳卡片選擇時初始化 allCardsSortable
 function renderPromoCardSelector() {
+  // 🔧 新會員模式：禁止渲染宣傳卡片選擇器
+  const isNewUserMode = window.isNewUserMode === true;
+  if (isNewUserMode) {
+    console.log('🚫 新會員模式：禁止渲染宣傳卡片選擇器');
+    return;
+  }
+  
   const selector = document.getElementById('promo-card-selector');
   if (!selector) return;
   selector.innerHTML = '';
@@ -3878,6 +3899,13 @@ function initSyncScrolling() {
 // 載入宣傳卡片時同時渲染 selector
 async function loadPromoCards() {
   try {
+    // 🔧 新會員模式：禁止載入宣傳卡片
+    const isNewUserMode = window.isNewUserMode === true;
+    if (isNewUserMode) {
+      console.log('🚫 新會員模式：禁止載入宣傳卡片');
+      return;
+    }
+    
     // 🔧 關鍵修復：檢查是否已經載入過，避免重複載入
     if (window.promoCardsLoaded && promoCardList.length > 0) {
       console.log('✅ 宣傳卡片已載入，跳過重複載入');
