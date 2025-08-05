@@ -2666,9 +2666,9 @@ window.moveCardRight = function(idx) {
 async function shareToLine() {
   if (!window.liff) return alert('LIFF 未載入');
   
-  // 檢查是否為新會員模式
-  const promoSelector = document.getElementById('promo-card-selector');
-  const isNewUserMode = promoSelector && promoSelector.style.display === 'none';
+  // 檢查是否為新會員模式（使用全局標記）
+  const isNewUserMode = window.isNewUserMode === true;
+  console.log('🏷️ 分享時新會員模式檢查:', isNewUserMode);
   
   if (isNewUserMode) {
     // 🆕 新會員：使用簡化分享
@@ -4944,15 +4944,24 @@ async function saveAuthData(userData) {
 // 🚀 新增：快速載入用戶卡片資料（分流模式）
 async function loadUserCardDataFast(userData) {
   console.log('🔍 快速載入用戶卡片資料...');
+  console.log('👤 用戶資料:', userData);
   
   try {
-    const response = await fetch(`/api/cards?pageId=M01001&userId=${userData.userId}`);
+    const apiUrl = `/api/cards?pageId=M01001&userId=${userData.userId}`;
+    console.log('🌐 API 請求:', apiUrl);
+    
+    const response = await fetch(apiUrl);
     const result = await response.json();
+    
+    console.log('📊 API 回應:', result);
+    console.log('📊 回應成功:', result.success);
+    console.log('📊 資料長度:', result.data ? result.data.length : '無資料');
     
     if (result.success && result.data && result.data.length > 0) {
       // 🎯 舊會員：有資料庫記錄，走完整流程
       console.log('✅ 舊會員：載入用戶個人化資料');
       const userCard = result.data[0];
+      console.log('📋 用戶卡片資料:', userCard);
       fillFormWithData(userCard);
       updatePointsDisplay(userCard.user_points || 0);
       
@@ -4967,13 +4976,17 @@ async function loadUserCardDataFast(userData) {
       hidePromoCardSections();
       
       // 直接載入預設資料並填入LINE個人資料
+      console.log('📥 載入預設卡片資料...');
       const [defaultCard] = await Promise.all([
         loadDefaultCardData(),
         fillLineProfileData(userData)
       ]);
       
+      console.log('📋 預設卡片資料:', defaultCard);
+      
       if (defaultCard) {
         const initialPoints = await getDefaultInitialPoints();
+        console.log('💰 初始積分:', initialPoints);
         
         const personalizedCard = {
           ...defaultCard,
@@ -4983,6 +4996,7 @@ async function loadUserCardDataFast(userData) {
           user_points: initialPoints
         };
         
+        console.log('🎨 個人化卡片:', personalizedCard);
         fillFormWithData(personalizedCard);
         updatePointsDisplay(initialPoints);
         
@@ -5032,22 +5046,37 @@ function hidePromoCardSections() {
   
   // 隱藏宣傳卡片選擇器
   const promoSelector = document.getElementById('promo-card-selector');
+  console.log('🎯 宣傳卡片選擇器元素:', promoSelector);
   if (promoSelector) {
     promoSelector.style.display = 'none';
+    console.log('✅ 宣傳卡片選擇器已隱藏');
+  } else {
+    console.log('⚠️ 宣傳卡片選擇器元素不存在');
   }
   
   // 隱藏宣傳卡片排序區域
   const promoCards = document.getElementById('promo-cards');
+  console.log('🎯 宣傳卡片排序區域元素:', promoCards);
   if (promoCards) {
     promoCards.style.display = 'none';
+    console.log('✅ 宣傳卡片排序區域已隱藏');
+  } else {
+    console.log('⚠️ 宣傳卡片排序區域元素不存在');
   }
   
   // 隱藏相關的標題或說明
   const promoSection = document.querySelector('.promo-section');
+  console.log('🎯 宣傳卡片區段元素:', promoSection);
   if (promoSection) {
     promoSection.style.display = 'none';
+    console.log('✅ 宣傳卡片區段已隱藏');
+  } else {
+    console.log('⚠️ 宣傳卡片區段元素不存在');
   }
   
+  // 設置新會員模式標記
+  window.isNewUserMode = true;
+  console.log('🏷️ 設置新會員模式標記:', window.isNewUserMode);
   console.log('✅ 宣傳卡片相關頁面已隱藏');
 }
 
@@ -5372,9 +5401,9 @@ function switchTab(tabName) {
       // 🔧 關鍵修正：預覽頁面不需要等待附加活動卡片，直接顯示主卡
       console.log('🎯 切換到預覽頁面，立即顯示主卡預覽');
       
-      // 檢查是否為新會員模式（宣傳卡片區域被隱藏）
-      const promoSelector = document.getElementById('promo-card-selector');
-      const isNewUserMode = promoSelector && promoSelector.style.display === 'none';
+      // 檢查是否為新會員模式（使用全局標記）
+      const isNewUserMode = window.isNewUserMode === true;
+      console.log('🏷️ 新會員模式檢查:', isNewUserMode);
       
       if (isNewUserMode) {
         // 🆕 新會員模式：直接渲染主卡預覽
