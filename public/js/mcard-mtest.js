@@ -4974,6 +4974,10 @@ async function loadUserCardDataFast(userData) {
       // 🎯 新會員：無資料庫記錄，走簡化流程
       console.log('🆕 新會員：進入簡化模式');
       
+      // 🔧 強制設置新會員模式標記
+      window.isNewUserMode = true;
+      console.log('🏷️ 強制設置新會員模式標記:', window.isNewUserMode);
+      
       // 隱藏宣傳卡片相關頁面
       hidePromoCardSections();
       
@@ -5046,40 +5050,67 @@ async function loadUserCardDataFast(userData) {
 function hidePromoCardSections() {
   console.log('🔄 隱藏宣傳卡片相關頁面');
   
-  // 隱藏宣傳卡片選擇器
+  // 🔧 強制隱藏宣傳卡片選擇器
   const promoSelector = document.getElementById('promo-card-selector');
   console.log('🎯 宣傳卡片選擇器元素:', promoSelector);
   if (promoSelector) {
     promoSelector.style.display = 'none';
-    console.log('✅ 宣傳卡片選擇器已隱藏');
+    promoSelector.style.visibility = 'hidden';
+    promoSelector.style.opacity = '0';
+    console.log('✅ 宣傳卡片選擇器已強制隱藏');
   } else {
     console.log('⚠️ 宣傳卡片選擇器元素不存在');
   }
   
-  // 隱藏宣傳卡片排序區域
+  // 🔧 強制隱藏宣傳卡片排序區域
   const promoCards = document.getElementById('promo-cards');
   console.log('🎯 宣傳卡片排序區域元素:', promoCards);
   if (promoCards) {
     promoCards.style.display = 'none';
-    console.log('✅ 宣傳卡片排序區域已隱藏');
+    promoCards.style.visibility = 'hidden';
+    promoCards.style.opacity = '0';
+    console.log('✅ 宣傳卡片排序區域已強制隱藏');
   } else {
     console.log('⚠️ 宣傳卡片排序區域元素不存在');
   }
   
-  // 隱藏相關的標題或說明
+  // 🔧 強制隱藏宣傳卡片頁籤
+  const promoCardTab = document.querySelector('[data-tab="promo-cards"]');
+  console.log('🎯 宣傳卡片頁籤元素:', promoCardTab);
+  if (promoCardTab) {
+    promoCardTab.style.display = 'none';
+    promoCardTab.style.visibility = 'hidden';
+    console.log('✅ 宣傳卡片頁籤已強制隱藏');
+  } else {
+    console.log('⚠️ 宣傳卡片頁籤元素不存在');
+  }
+  
+  // 🔧 強制隱藏宣傳卡片內容區域
+  const promoCardContent = document.getElementById('tab-promo-cards');
+  console.log('🎯 宣傳卡片內容區域元素:', promoCardContent);
+  if (promoCardContent) {
+    promoCardContent.style.display = 'none';
+    promoCardContent.style.visibility = 'hidden';
+    console.log('✅ 宣傳卡片內容區域已強制隱藏');
+  } else {
+    console.log('⚠️ 宣傳卡片內容區域元素不存在');
+  }
+  
+  // 🔧 強制隱藏相關的標題或說明
   const promoSection = document.querySelector('.promo-section');
   console.log('🎯 宣傳卡片區段元素:', promoSection);
   if (promoSection) {
     promoSection.style.display = 'none';
-    console.log('✅ 宣傳卡片區段已隱藏');
+    promoSection.style.visibility = 'hidden';
+    console.log('✅ 宣傳卡片區段已強制隱藏');
   } else {
     console.log('⚠️ 宣傳卡片區段元素不存在');
   }
   
-  // 設置新會員模式標記
+  // 🔧 強制設置新會員模式標記
   window.isNewUserMode = true;
-  console.log('🏷️ 設置新會員模式標記:', window.isNewUserMode);
-  console.log('✅ 宣傳卡片相關頁面已隱藏');
+  console.log('🏷️ 強制設置新會員模式標記:', window.isNewUserMode);
+  console.log('✅ 宣傳卡片相關頁面已強制隱藏');
 }
 
 // 🆕 新增：新會員簡化分享功能
@@ -5370,6 +5401,13 @@ function initMobileTabs() {
 // 切換頁籤功能
 function switchTab(tabName) {
   console.log('🔄 切換到頁籤:', tabName);
+  
+  // 🔧 新會員模式：禁止切換到宣傳卡片頁籤
+  const isNewUserMode = window.isNewUserMode === true;
+  if (isNewUserMode && tabName === 'promo-cards') {
+    console.log('🚫 新會員模式：禁止切換到宣傳卡片頁籤');
+    return;
+  }
   
   // 移除所有active類別
   const allBtns = document.querySelectorAll('.tab-btn');
