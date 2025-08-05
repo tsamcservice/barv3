@@ -2662,10 +2662,23 @@ window.moveCardRight = function(idx) {
   console.log('✅ [排序調試] 右移完成，新順序:', allCardsSortable.map(c => c.id));
 };
 
-// 🚀 高效能點數系統 - 先分享後處理策略
+// 🚀 高效能點數系統 - 先分享後處理策略（分流模式）
 async function shareToLine() {
   if (!window.liff) return alert('LIFF 未載入');
   
+  // 檢查是否為新會員模式
+  const promoSelector = document.getElementById('promo-card-selector');
+  const isNewUserMode = promoSelector && promoSelector.style.display === 'none';
+  
+  if (isNewUserMode) {
+    // 🆕 新會員：使用簡化分享
+    console.log('🆕 新會員：使用簡化分享功能');
+    await shareForNewUser();
+    return;
+  }
+  
+  // 舊會員：使用完整分享流程
+  console.log('🔄 舊會員：使用完整分享流程');
   showShareLoading();
   
   try {
@@ -4772,7 +4785,7 @@ async function loadUserCardData(userData) {
           user_id: userData.userId,
           display_name: userData.displayName,
           picture_url: userData.pictureUrl,
-          // 🔧 修正：使用動態讀取的初始點數
+          // 🔧 修正：使用動態初始點數
           user_points: initialPoints
         };
         
@@ -4928,7 +4941,7 @@ async function saveAuthData(userData) {
   console.log('💾 認證資料已儲存');
 }
 
-// 🚀 新增：快速載入用戶卡片資料
+// 🚀 新增：快速載入用戶卡片資料（分流模式）
 async function loadUserCardDataFast(userData) {
   console.log('🔍 快速載入用戶卡片資料...');
   
@@ -4937,20 +4950,29 @@ async function loadUserCardDataFast(userData) {
     const result = await response.json();
     
     if (result.success && result.data && result.data.length > 0) {
-      // 已有資料 - 直接填入表單
+      // 🎯 舊會員：有資料庫記錄，走完整流程
+      console.log('✅ 舊會員：載入用戶個人化資料');
       const userCard = result.data[0];
       fillFormWithData(userCard);
-      updatePointsDisplay(userCard.user_points || 0); // 🔧 修正：不使用固定168
-      console.log('✅ 載入用戶個人化資料');
+      updatePointsDisplay(userCard.user_points || 0);
+      
+      // 舊會員：進入完整模式（包含宣傳卡片、排序等）
+      console.log('🔄 舊會員：進入完整模式');
+      
     } else {
-      // 首次登入 - 並行載入預設資料和LINE資料
+      // 🎯 新會員：無資料庫記錄，走簡化流程
+      console.log('🆕 新會員：進入簡化模式');
+      
+      // 隱藏宣傳卡片相關頁面
+      hidePromoCardSections();
+      
+      // 直接載入預設資料並填入LINE個人資料
       const [defaultCard] = await Promise.all([
         loadDefaultCardData(),
         fillLineProfileData(userData)
       ]);
       
       if (defaultCard) {
-        // 🔧 修正：讀取動態初始點數設定
         const initialPoints = await getDefaultInitialPoints();
         
         const personalizedCard = {
@@ -4958,45 +4980,106 @@ async function loadUserCardDataFast(userData) {
           line_user_id: userData.userId,
           display_name: userData.displayName,
           member_image_url: userData.pictureUrl,
-          user_points: initialPoints // 🔧 修正：使用動態點數
+          user_points: initialPoints
         };
         
         fillFormWithData(personalizedCard);
-        updatePointsDisplay(initialPoints); // 🔧 修正：使用動態點數
+        updatePointsDisplay(initialPoints);
         
-        // 🔧 關鍵：首次登入後立即觸發預覽更新，確保LINE個人資料顯示
-        console.log('🎨 首次登入，立即更新預覽以顯示LINE個人資料...');
-        
-        // 🔧 修正：強制更新card_alt_title
+        // 強制更新card_alt_title
         const mainTitle = document.getElementById('main_title_1').value;
         const cardAltTitleInput = document.getElementById('card_alt_title');
         if (cardAltTitleInput && mainTitle && userData.displayName) {
           const newAltTitle = `${mainTitle}/${userData.displayName}`;
           cardAltTitleInput.value = newAltTitle;
-          console.log('✅ 首次登入已更新card_alt_title:', newAltTitle);
+          console.log('✅ 新會員已更新card_alt_title:', newAltTitle);
         }
         
+        // 新會員：直接切換到預覽頁面並渲染
+        console.log('🎨 新會員：直接渲染預覽');
         setTimeout(() => {
           try {
-            // 🔧 關鍵：觸發input事件確保標題更新
+            // 觸發input事件確保標題更新
             const displayNameInput = document.getElementById('display_name');
             if (displayNameInput) {
               displayNameInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
             
-            renderMainCardPreview(); // 先顯示主卡預覽
+            // 直接渲染主卡預覽
+            renderMainCardPreview();
             renderShareJsonBox();
-            console.log('✅ 首次登入預覽更新完成');
+            
+            // 自動切換到預覽頁面
+            switchTab('preview');
+            
+            console.log('✅ 新會員預覽渲染完成');
           } catch (error) {
-            console.error('❌ 首次登入預覽更新失敗:', error);
+            console.error('❌ 新會員預覽渲染失敗:', error);
           }
-        }, 50); // 立即顯示
+        }, 100);
         
-        console.log('✅ 創建首次登入用戶資料');
+        console.log('✅ 新會員簡化模式設置完成');
       }
     }
   } catch (error) {
     console.error('❌ 載入用戶資料失敗:', error);
+  }
+}
+
+// 🆕 新增：隱藏宣傳卡片相關頁面（新會員用）
+function hidePromoCardSections() {
+  console.log('🔄 隱藏宣傳卡片相關頁面');
+  
+  // 隱藏宣傳卡片選擇器
+  const promoSelector = document.getElementById('promo-card-selector');
+  if (promoSelector) {
+    promoSelector.style.display = 'none';
+  }
+  
+  // 隱藏宣傳卡片排序區域
+  const promoCards = document.getElementById('promo-cards');
+  if (promoCards) {
+    promoCards.style.display = 'none';
+  }
+  
+  // 隱藏相關的標題或說明
+  const promoSection = document.querySelector('.promo-section');
+  if (promoSection) {
+    promoSection.style.display = 'none';
+  }
+  
+  console.log('✅ 宣傳卡片相關頁面已隱藏');
+}
+
+// 🆕 新增：新會員簡化分享功能
+async function shareForNewUser() {
+  try {
+    console.log('🆕 新會員：執行簡化分享');
+    
+    // 準備分享內容
+    const bubble = getMainBubble(getFormData());
+    const shareContent = {
+      type: 'flex',
+      altText: getFormData().card_alt_title || getFormData().main_title_1 || '我的會員卡',
+      contents: bubble
+    };
+    
+    // 執行分享
+    if (liff.isApiAvailable('shareTargetPicker')) {
+      console.log('📤 新會員分享內容:', shareContent);
+      await liff.shareTargetPicker([shareContent]);
+      console.log('✅ 新會員分享完成');
+      
+      // 分享成功後，可以考慮保存到資料庫（轉為舊會員模式）
+      console.log('💡 建議：分享後保存資料到資料庫，轉為舊會員模式');
+      
+    } else {
+      throw new Error('分享功能不可用');
+    }
+    
+  } catch (error) {
+    console.error('❌ 新會員分享失敗:', error);
+    alert('分享失敗：' + error.message);
   }
 }
 
@@ -5289,33 +5372,52 @@ function switchTab(tabName) {
       // 🔧 關鍵修正：預覽頁面不需要等待附加活動卡片，直接顯示主卡
       console.log('🎯 切換到預覽頁面，立即顯示主卡預覽');
       
-      // 立即渲染主卡預覽，不等待附加活動卡片
-      setTimeout(() => {
-        try {
-          // 優先顯示主卡預覽
-          renderMainCardPreview();
-          renderShareJsonBox();
-          console.log('✅ 主卡預覽渲染完成');
-          
-          // 背景載入附加活動卡片（如果需要）
-          if (!window.promoCardsLoaded) {
-            console.log('🔄 背景載入附加活動卡片...');
-            loadPromoCards().then(() => {
-              console.log('✅ 附加活動卡片載入完成，更新完整預覽');
+      // 檢查是否為新會員模式（宣傳卡片區域被隱藏）
+      const promoSelector = document.getElementById('promo-card-selector');
+      const isNewUserMode = promoSelector && promoSelector.style.display === 'none';
+      
+      if (isNewUserMode) {
+        // 🆕 新會員模式：直接渲染主卡預覽
+        console.log('🆕 新會員模式：直接渲染主卡預覽');
+        setTimeout(() => {
+          try {
+            renderMainCardPreview();
+            renderShareJsonBox();
+            console.log('✅ 新會員主卡預覽渲染完成');
+          } catch (error) {
+            console.error('❌ 新會員預覽渲染失敗:', error);
+          }
+        }, 50);
+      } else {
+        // 舊會員模式：完整預覽流程
+        console.log('🔄 舊會員模式：完整預覽流程');
+        setTimeout(() => {
+          try {
+            // 優先顯示主卡預覽
+            renderMainCardPreview();
+            renderShareJsonBox();
+            console.log('✅ 主卡預覽渲染完成');
+            
+            // 背景載入附加活動卡片（如果需要）
+            if (!window.promoCardsLoaded) {
+              console.log('🔄 背景載入附加活動卡片...');
+              loadPromoCards().then(() => {
+                console.log('✅ 附加活動卡片載入完成，更新完整預覽');
+                renderPreview();
+                renderShareJsonBox();
+              }).catch(error => {
+                console.log('⚠️ 附加活動卡片載入失敗，保持主卡預覽:', error);
+              });
+            } else {
+              // 附加活動卡片已載入，顯示完整預覽
               renderPreview();
               renderShareJsonBox();
-            }).catch(error => {
-              console.log('⚠️ 附加活動卡片載入失敗，保持主卡預覽:', error);
-            });
-          } else {
-            // 附加活動卡片已載入，顯示完整預覽
-            renderPreview();
-            renderShareJsonBox();
+            }
+          } catch (error) {
+            console.error('❌ 預覽渲染失敗:', error);
           }
-        } catch (error) {
-          console.error('❌ 預覽渲染失敗:', error);
-        }
-      }, 50); // 極短延遲，立即顯示
+        }, 50); // 極短延遲，立即顯示
+      }
     } else if (tabName === 'promo-cards') {
       // 🔧 關鍵修復：宣傳卡片頁面不重新載入，只更新界面
       console.log('🔄 切換到宣傳卡片頁面，保持現有排序，不重新載入');
