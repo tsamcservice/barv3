@@ -5519,7 +5519,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // 延遲執行確保LIFF SDK完全載入
   setTimeout(() => {
     console.log('🚀 開始手機版統一LIFF系統初始化...');
-    initUnifiedSystem();
+    initUnifiedLiff();
   }, 500);
   
   // 🆕 視窗大小變化時更新設備指示器
